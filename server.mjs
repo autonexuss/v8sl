@@ -72,6 +72,7 @@ async function videosForChannel(query, handle, displayName) {
     title: item.snippet?.title || `${query} review`,
     channel: item.snippet?.channelTitle || displayName,
     publishedAt: item.snippet?.publishedAt || '',
+    thumbnail: item.snippet?.thumbnails?.maxres?.url || item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || `https://i.ytimg.com/vi/${encodeURIComponent(item.id.videoId)}/hqdefault.jpg`,
     watchUrl: `https://www.youtube.com/watch?v=${encodeURIComponent(item.id.videoId)}`,
     embedUrl: `https://www.youtube-nocookie.com/embed/${encodeURIComponent(item.id.videoId)}?cc_load_policy=1`
   }));
@@ -159,3 +160,4 @@ function listenOnAvailablePort(port, attemptsLeft = 25) {
 }
 
 listenOnAvailablePort(firstPort);
+
