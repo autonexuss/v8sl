@@ -162,24 +162,36 @@ function renderKnownProfile(index) {
 
 function renderWikipediaResult(car, query) {
   finderResult.replaceChildren();
-  const card = document.createElement('article');
-  card.className = 'wiki-result-card';
-  const title = document.createElement('h3');
-  const summary = document.createElement('p');
-  const note = document.createElement('small');
-  title.textContent = car?.title || `Search Wikipedia for “${query}”`;
-  summary.textContent = car?.extract || 'No matching article summary was found. Open Wikipedia search to browse other results.';
-  note.textContent = 'General reference only. Confirm specifications and variants with the manufacturer.';
-  const links = document.createElement('div');
-  links.className = 'finder-actions';
+  const articles = Array.isArray(car) ? car : car ? [car] : [];
+  if (!articles.length) {
+    const empty = document.createElement('article');
+    empty.className = 'wiki-result-card';
+    const title = document.createElement('h3'); title.textContent = `No reference preview found for “${query}”`;
+    const summary = document.createElement('p'); summary.textContent = 'Try a shorter make or model name, or use the direct searches below.';
+    empty.append(title, summary, makeLink('Search Wikipedia ↗', `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`));
+    finderResult.append(empty);
+  } else {
+    articles.forEach((article, index) => {
+      const card = document.createElement('article'); card.className = 'wiki-result-card';
+      const label = document.createElement('span'); label.className = 'result-kicker'; label.textContent = `PUBLIC REFERENCE ${String(index + 1).padStart(2, '0')} · VERIFY YEAR & VARIANT`;
+      const title = document.createElement('h3'); title.textContent = article.title;
+      const summary = document.createElement('p'); summary.textContent = article.extract || 'Open the article for more information.';
+      const articleLink = makeLink('Open Wikipedia article ↗', article.url);
+      card.append(label, title, summary, articleLink);
+      finderResult.append(card);
+    });
+  }
+  const sources = document.createElement('article'); sources.className = 'wiki-result-card source-result-card';
+  const sourceTitle = document.createElement('h3'); sourceTitle.textContent = `More sources for ${query}`;
+  const note = document.createElement('p'); note.textContent = 'Wikipedia is a general reference. These searches open other websites; prices, listings and specifications are not imported into Chassis.';
+  const links = document.createElement('div'); links.className = 'finder-actions';
   links.append(
-    makeLink('Open Wikipedia article ↗', car?.url || `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`),
     makeLink('Search official manufacturer pages ↗', `https://www.google.com/search?q=${encodeURIComponent(`${query} official manufacturer`)}`),
     makeLink('Search CarDekho ↗', `https://www.google.com/search?q=${encodeURIComponent(`site:cardekho.com ${query} car`)}`),
     makeLink('Search used-car listings ↗', `https://www.google.com/search?q=${encodeURIComponent(`site:cardekho.com/used-cars ${query}`)}`)
   );
-  card.append(title, summary, note, links);
-  finderResult.append(card);
+  sources.append(sourceTitle, note, links);
+  finderResult.append(sources);
 }
 
 async function wikipediaOverview(query) {
@@ -187,33 +199,38 @@ async function wikipediaOverview(query) {
   searchUrl.searchParams.set('action', 'query');
   searchUrl.searchParams.set('list', 'search');
   searchUrl.searchParams.set('srsearch', query);
-  searchUrl.searchParams.set('srlimit', '1');
+  searchUrl.searchParams.set('srlimit', '5');
+  searchUrl.searchParams.set('srnamespace', '0');
   searchUrl.searchParams.set('format', 'json');
   searchUrl.searchParams.set('origin', '*');
   const searchResponse = await fetch(searchUrl);
   if (!searchResponse.ok) throw new Error('Wikipedia search unavailable');
   const searchData = await searchResponse.json();
-  const title = searchData.query?.search?.[0]?.title;
-  if (!title) return null;
+  const titles = (searchData.query?.search || []).map(result => result.title).filter(Boolean);
+  if (!titles.length) return [];
 
   const summaryUrl = new URL('https://en.wikipedia.org/w/api.php');
   summaryUrl.searchParams.set('action', 'query');
-  summaryUrl.searchParams.set('prop', 'extracts|info');
+  summaryUrl.searchParams.set('prop', 'extracts|info|pageimages');
   summaryUrl.searchParams.set('exintro', '1');
   summaryUrl.searchParams.set('explaintext', '1');
+  summaryUrl.searchParams.set('pithumbsize', '640');
   summaryUrl.searchParams.set('inprop', 'url');
-  summaryUrl.searchParams.set('titles', title);
+  summaryUrl.searchParams.set('titles', titles.join('|'));
   summaryUrl.searchParams.set('format', 'json');
   summaryUrl.searchParams.set('origin', '*');
   const summaryResponse = await fetch(summaryUrl);
   if (!summaryResponse.ok) throw new Error('Wikipedia article unavailable');
   const summaryData = await summaryResponse.json();
-  const article = Object.values(summaryData.query?.pages || {})[0];
-  return article ? {
-    title: article.title || title,
-    extract: article.extract || '',
-    url: article.fullurl || `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replaceAll(' ', '_'))}`
-  } : null;
+  const pages = Object.values(summaryData.query?.pages || {});
+  return titles.map(title => pages.find(page => page.title?.toLowerCase() === title.toLowerCase()))
+    .filter(Boolean)
+    .map(article => ({
+      title: article.title,
+      extract: article.extract || '',
+      thumbnail: article.thumbnail?.source || '',
+      url: article.fullurl || `https://en.wikipedia.org/wiki/${encodeURIComponent(article.title.replaceAll(' ', '_'))}`
+    }));
 }
 
 function renderFallbackVideoLinks(query) {
@@ -289,21 +306,12 @@ async function searchCar(query) {
     renderKnownProfile(localIndex);
   } else {
     try {
-      const response = await fetch(`/api/car?q=${encodeURIComponent(term)}`);
-      if (!response.ok) throw new Error('Search is available when you open this project through its local server.');
-      const data = await response.json();
-      if (!data.car) throw new Error('No overview from the local route; try the browser search fallback.');
-      renderWikipediaResult(data.car, term);
-      finderStatus.textContent = 'Wikipedia overview found. Confirm the exact model year and variant with the manufacturer.';
+      const articles = await wikipediaOverview(term);
+      renderWikipediaResult(articles, term);
+      finderStatus.textContent = articles.length ? `${articles.length} public reference results found. Confirm exact model year and variant with the manufacturer.` : 'No matching article preview found; direct source searches are ready.';
     } catch {
-      try {
-        const article = await wikipediaOverview(term);
-        renderWikipediaResult(article, term);
-        finderStatus.textContent = article ? 'Wikipedia overview found.' : 'No exact overview found; use the Wikipedia search link.';
-      } catch {
-        renderWikipediaResult(null, term);
-        finderStatus.textContent = 'The direct Wikipedia search link is available below. Check your internet connection to load a preview.';
-      }
+      renderWikipediaResult(null, term);
+      finderStatus.textContent = 'Online reference could not load. Direct source searches are ready below.';
     }
   }
   loadVideos(term);
@@ -377,3 +385,4 @@ function renderComparison() {
   table.append(tbody);
   comparePanel.append(table);
 }
+
