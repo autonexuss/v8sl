@@ -1,15 +1,128 @@
-const photos = ['assets/1.jpg', 'assets/2.jpg', 'assets/3.jpg'];
-const heroImage = document.querySelector('.hero-photo');
-const switches = [...document.querySelectorAll('.switch')];
-let currentPhoto = 0;
-function showPhoto(index) {
-  currentPhoto = index;
-  heroImage.style.opacity = '0.25';
-  window.setTimeout(() => { heroImage.src = photos[index]; heroImage.style.opacity = '1'; }, 120);
-  switches.forEach((button, i) => button.classList.toggle('active', i === index));
+// The hero advances only when its active film ends or the visitor uses Next/Previous.
+const heroFilms = [
+  { src: 'assets/videos/bmw-7-series.mp4', title: 'BMW 7 Series' },
+  { src: 'assets/videos/mercedes-s-class.mp4', title: 'Mercedes-Benz S-Class' },
+  { src: 'assets/videos/chassis-film.mp4', title: 'Supplied film 03' }
+];
+const heroVideo = document.querySelector('.hero-video');
+const ambientCanvas = document.querySelector('.ambient-canvas');
+const ambientContext = ambientCanvas?.getContext('2d', { alpha: false });
+const heroVideoCount = document.getElementById('hero-video-count');
+const heroVideoTitle = document.getElementById('hero-video-title');
+const heroVideoProgress = document.getElementById('hero-video-progress');
+const heroToggle = document.querySelector('[data-video-toggle]');
+const heroMuteToggle = document.querySelector('[data-video-mute]');
+let currentFilm = 0;
+let ambientTimer;
+let filmLoadId = 0;
+
+function paintAmbientFrame() {
+  if (!ambientContext || !heroVideo || heroVideo.readyState < 2) return;
+  const sourceWidth = heroVideo.videoWidth || 16;
+  const sourceHeight = heroVideo.videoHeight || 9;
+  const targetRatio = ambientCanvas.width / ambientCanvas.height;
+  const sourceRatio = sourceWidth / sourceHeight;
+  let sx = 0, sy = 0, sw = sourceWidth, sh = sourceHeight;
+  if (sourceRatio > targetRatio) { sw = sourceHeight * targetRatio; sx = (sourceWidth - sw) / 2; }
+  else { sh = sourceWidth / targetRatio; sy = (sourceHeight - sh) / 2; }
+  ambientContext.drawImage(heroVideo, sx, sy, sw, sh, 0, 0, ambientCanvas.width, ambientCanvas.height);
 }
-switches.forEach(button => button.addEventListener('click', () => showPhoto(Number(button.dataset.slide))));
-window.setInterval(() => showPhoto((currentPhoto + 1) % photos.length), 7000);
+
+function updateFilmControls() {
+  if (!heroVideo) return;
+  const duration = Number.isFinite(heroVideo.duration) && heroVideo.duration > 0 ? heroVideo.duration : 0;
+  heroVideoProgress.style.width = duration ? `${Math.min(100, heroVideo.currentTime / duration * 100)}%` : '0%';
+  heroToggle.textContent = heroVideo.paused ? '▶' : 'Ⅱ';
+  heroToggle.setAttribute('aria-label', heroVideo.paused ? 'Play film' : 'Pause film');
+  heroMuteToggle.textContent = heroVideo.muted ? '◖' : '◖))';
+  heroMuteToggle.setAttribute('aria-label', heroVideo.muted ? 'Turn sound on' : 'Turn sound off');
+  heroMuteToggle.title = heroVideo.muted ? 'Turn sound on' : 'Turn sound off';
+}
+
+function showFilm(index) {
+  if (!heroVideo) return;
+  const loadId = ++filmLoadId;
+  currentFilm = (index + heroFilms.length) % heroFilms.length;
+  const film = heroFilms[currentFilm];
+  heroVideo.pause();
+  window.clearInterval(ambientTimer);
+  heroVideo.src = film.src;
+  heroVideo.load();
+  heroVideoCount.textContent = `${String(currentFilm + 1).padStart(2, '0')} / ${String(heroFilms.length).padStart(2, '0')}`;
+  heroVideoTitle.textContent = `${film.title} · Supplied film`;
+  heroVideoProgress.style.width = '0%';
+  heroVideo.play().then(() => {
+    if (loadId !== filmLoadId || heroVideo.paused) return;
+    window.clearInterval(ambientTimer);
+    ambientTimer = window.setInterval(paintAmbientFrame, 90);
+    updateFilmControls();
+  }).catch(() => {
+    if (loadId !== filmLoadId) return;
+    updateFilmControls();
+    heroVideoTitle.textContent = `${film.title} · Press play to begin`;
+  });
+}
+
+heroVideo?.addEventListener('ended', () => showFilm(currentFilm + 1));
+heroVideo?.addEventListener('timeupdate', updateFilmControls);
+heroVideo?.addEventListener('play', () => {
+  window.clearInterval(ambientTimer);
+  ambientTimer = window.setInterval(paintAmbientFrame, 90);
+  updateFilmControls();
+});
+heroVideo?.addEventListener('pause', () => { window.clearInterval(ambientTimer); paintAmbientFrame(); updateFilmControls(); });
+document.querySelector('[data-video-prev]')?.addEventListener('click', () => showFilm(currentFilm - 1));
+document.querySelector('[data-video-next]')?.addEventListener('click', () => showFilm(currentFilm + 1));
+heroToggle?.addEventListener('click', () => {
+  if (heroVideo.paused) heroVideo.play().catch(() => updateFilmControls());
+  else heroVideo.pause();
+});
+heroMuteToggle?.addEventListener('click', () => { heroVideo.muted = !heroVideo.muted; updateFilmControls(); });
+if (ambientCanvas) { ambientCanvas.width = 120; ambientCanvas.height = 68; }
+showFilm(0);
+
+// The dark presentation is the default; the optional light preference is local to this browser.
+const themeToggle = document.querySelector('[data-theme-toggle]');
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  if (themeToggle) {
+    const light = theme === 'light';
+    themeToggle.innerHTML = light ? '☾ <span>Dark theme</span>' : '☼ <span>Light theme</span>';
+    themeToggle.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
+  }
+}
+let preferredTheme = 'dark';
+try { preferredTheme = localStorage.getItem('chassis-theme') === 'light' ? 'light' : 'dark'; } catch { /* Theme still works without storage. */ }
+applyTheme(preferredTheme);
+themeToggle?.addEventListener('click', () => {
+  const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(theme);
+  try { localStorage.setItem('chassis-theme', theme); } catch { /* Theme remains active for this page view. */ }
+});
+
+// Revenue-model UI only: never sends, stores, looks up, or charges for the entered registration.
+const reportForm = document.getElementById('service-report-form');
+const reportRegistration = document.getElementById('report-registration');
+const reportResult = document.getElementById('report-demo-result');
+reportRegistration?.addEventListener('input', () => {
+  const start = reportRegistration.selectionStart;
+  const end = reportRegistration.selectionEnd;
+  reportRegistration.value = reportRegistration.value.toUpperCase();
+  reportRegistration.setSelectionRange(start, end);
+});
+reportForm?.addEventListener('submit', event => {
+  event.preventDefault();
+  const entered = reportRegistration.value.trim();
+  if (entered.replace(/[^A-Z0-9]/g, '').length < 5) {
+    reportResult.hidden = false;
+    reportResult.textContent = 'Enter a sample registration with at least five letters or numbers to preview the demo flow.';
+    reportRegistration.focus();
+    return;
+  }
+  reportRegistration.value = '';
+  reportResult.hidden = false;
+  reportResult.innerHTML = '<strong>Demo preview complete</strong><span>No vehicle lookup was made. No report was created, no registration was saved or sent, and no payment was taken.</span>';
+});
 
 const input = document.getElementById('car-photo');
 const preview = document.getElementById('preview-image');
@@ -34,12 +147,19 @@ document.querySelectorAll('[data-toast]').forEach(button => button.addEventListe
   toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
 }));
 const menuButton = document.querySelector('.menu-toggle');
-menuButton.addEventListener('click', () => document.querySelector('.topbar nav').classList.toggle('open'));
-document.querySelectorAll('.topbar nav a').forEach(link => link.addEventListener('click', () => document.querySelector('.topbar nav').classList.remove('open')));
+menuButton.addEventListener('click', () => {
+  const nav = document.querySelector('.topbar nav');
+  const open = nav.classList.toggle('open');
+  menuButton.setAttribute('aria-expanded', String(open));
+});
+document.querySelectorAll('.topbar nav a').forEach(link => link.addEventListener('click', () => {
+  document.querySelector('.topbar nav').classList.remove('open');
+  menuButton.setAttribute('aria-expanded', 'false');
+}));
 
 const referenceProfiles = [
   {
-    image: 'assets/1.jpg', alt: 'User photo 1: possible Mercedes-AMG A-Class hatchback', label: 'PHOTO 01 · VISUAL MATCH ONLY', overlayTitle: 'Mercedes-AMG<br>A-Class family', caption: 'Likely A 45 S · exact trim unverified',
+    image: 'assets/1.jpg', alt: 'User photo 1: possible Mercedes-AMG A-Class hatchback',
     title: 'Possible Mercedes-AMG A 45 S',
     summary: 'The first photo appears to show an AMG A-Class hatchback. The detailed figures and equipment below are a current Mercedes-Benz India A 45 S reference, not a confirmed identification of the photographed car.',
     facts: [['ENGINE', '1,991 cc · 4-cylinder turbo petrol'], ['POWER', '310 kW / 421 HP'], ['TORQUE', '500 Nm'], ['TRANSMISSION', 'AMG SPEEDSHIFT DCT 8G automatic'], ['DRIVE', 'AMG 4MATIC+ all-wheel drive'], ['0–100 KM/H', '3.9 seconds'], ['DIMENSIONS', '4,453 × 1,850 × 1,414 mm*'], ['BOOT CAPACITY', '370 L'], ['FUEL TANK', '51 L'], ['SEATING', '5 seats · 5 doors'], ['CABIN', '10.25-inch media display · 64-colour ambient lighting'], ['AUDIO', 'Optional Burmester · 12 speakers · 710 W']],
@@ -48,7 +168,7 @@ const referenceProfiles = [
     manufacturer: 'https://www.mercedes-benz.co.in/passengercars/models/hatchback/a-class/amg.html', wiki: 'https://en.wikipedia.org/wiki/Mercedes-Benz_A-Class', sourceName: 'Mercedes-Benz India · AMG A-Class'
   },
   {
-    image: 'assets/2.jpg', alt: 'User photo 2: Mercedes-Maybach SUV, likely GLS family', label: 'PHOTO 02 · VISUAL MATCH ONLY', overlayTitle: 'Mercedes-Maybach<br>GLS family', caption: 'GLS 600 is a reference · confirm variant',
+    image: 'assets/2.jpg', alt: 'User photo 2: Mercedes-Maybach SUV, likely GLS family',
     title: 'Possible Mercedes-Maybach GLS 600',
     summary: 'The second photo shows Maybach branding on a large luxury SUV; the GLS family is a strong visual candidate. The figures and equipment below describe the Mercedes-Benz India GLS 600 reference, not a verified trim or model year for this photo.',
     facts: [['ENGINE', '3,982 cc V8 petrol · mild hybrid'], ['POWER', '410 kW + 16 kW (557 + 22 HP)'], ['TORQUE', '770 Nm'], ['TRANSMISSION', '9G-TRONIC 9-speed automatic'], ['DRIVE', '4MATIC all-wheel drive'], ['0–100 KM/H', '4.9 seconds'], ['DIMENSIONS', '5,208 × 2,030 × 1,838 mm*'], ['BOOT CAPACITY', '520 L'], ['FUEL TANK', '90 L'], ['SEATING', '5 seats · 5 doors'], ['CABIN', 'First-Class rear suite · two individual seats'], ['AUDIO', 'Burmester 3D · 29 speakers · 1,610 W'], ['ASSISTANCE', '360° camera · active parking assist'], ['CHASSIS', 'E-ACTIVE BODY CONTROL available']],
@@ -57,7 +177,7 @@ const referenceProfiles = [
     manufacturer: 'https://www.mercedes-benz.co.in/passengercars/models/suv/mercedes-maybach-gls/overview.html', wiki: 'https://en.wikipedia.org/wiki/Mercedes-Benz_GLS#Mercedes-Maybach_GLS', sourceName: 'Mercedes-Benz India · Maybach GLS'
   },
   {
-    image: 'assets/3.jpg', alt: 'User photo 3: Audi luxury sedan, possible A8 L', label: 'PHOTO 03 · VISUAL MATCH ONLY', overlayTitle: 'Audi<br>luxury sedan', caption: 'A8 L is a candidate · exact model unverified',
+    image: 'assets/3.jpg', alt: 'User photo 3: Audi luxury sedan, possible A8 L',
     title: 'Possible Audi A8 L',
     summary: 'The third photo appears to show a large Audi sedan and may be an A8 L. The A8 is Audi’s full-size luxury sedan family; its engine, performance, dimensions and equipment change by generation, year and market.',
     facts: [['VEHICLE CLASS', 'Full-size luxury sedan'], ['BODY', 'Four-door; A8 L is long-wheelbase'], ['ENGINE', 'Varies by model year and market'], ['TRANSMISSION', 'Variant dependent'], ['DRIVE', 'Quattro available on select variants'], ['EXACT SPEC', 'Check VIN, RC or model documents']],
@@ -66,31 +186,6 @@ const referenceProfiles = [
     manufacturer: 'https://www.audi.in/en/', wiki: 'https://en.wikipedia.org/wiki/Audi_A8', sourceName: 'Audi India · model and owner support'
   }
 ];
-
-const profileTabs = [...document.querySelectorAll('.vehicle-tab')];
-function showReferenceProfile(index) {
-  const car = referenceProfiles[index];
-  if (!car) return;
-  document.getElementById('reference-image').src = car.image;
-  document.getElementById('reference-image').alt = car.alt;
-  document.getElementById('reference-label').textContent = car.label;
-  document.getElementById('reference-title').innerHTML = car.overlayTitle;
-  document.getElementById('reference-caption').textContent = car.caption;
-  document.getElementById('vehicle-title').textContent = car.title;
-  document.getElementById('vehicle-summary').textContent = car.summary;
-  document.getElementById('vehicle-facts').innerHTML = car.facts.map(([label, value]) => `<div><small>${label}</small><strong>${value}</strong></div>`).join('');
-  document.getElementById('spec-note').textContent = car.note;
-  document.getElementById('manufacturer-link').href = car.manufacturer;
-  document.getElementById('manufacturer-link').textContent = car.sourceName;
-  document.getElementById('wikipedia-link').href = car.wiki;
-  document.getElementById('wikipedia-link').textContent = `Wikipedia article · ${car.title.replace('Possible ', '')}`;
-  profileTabs.forEach((tab, i) => {
-    const selected = i === index;
-    tab.classList.toggle('active', selected);
-    tab.setAttribute('aria-selected', String(selected));
-  });
-}
-profileTabs.forEach(tab => tab.addEventListener('click', () => showReferenceProfile(Number(tab.dataset.profile))));
 
 const searchForm = document.getElementById('car-search-form');
 const searchInput = document.getElementById('car-search-input');
@@ -633,6 +728,15 @@ async function youtubeChannelId(handle, apiKey) {
   return id;
 }
 
+const youtubeMakeWords = new Set(['maruti','suzuki','hyundai','kia','honda','mahindra','toyota','tata','mg','audi','bmw','mercedes','benz','volkswagen','vw','skoda','renault','nissan','citroen','jeep','volvo','jaguar','land','rover','porsche','ferrari','lamborghini','ford','faisal','khan','moto','octane','car','cars','review','reviews','india','new','launch','test','drive','variant','facelift']);
+function youtubeTargetTerms(query) {
+  return String(query).toLowerCase().match(/[a-z0-9]+/g)?.filter(word => word.length >= 2 && !youtubeMakeWords.has(word) && !/^20\d{2}$/.test(word)) || [];
+}
+function youtubeResultMatches(query, title) {
+  const terms = youtubeTargetTerms(query);
+  return !terms.length || terms.some(term => String(title || '').toLowerCase().includes(term));
+}
+
 async function browserYoutubeVideos(query, apiKey) {
   const channels = [
     { handle: 'FasBeam', name: 'Faisal Khan' },
@@ -642,9 +746,9 @@ async function browserYoutubeVideos(query, apiKey) {
     const channelId = await youtubeChannelId(channel.handle, apiKey);
     const data = await youtubeApiRequest('search', {
       part: 'snippet', type: 'video', channelId, q: `${query} car review`, videoCaption: 'closedCaption',
-      maxResults: '3', regionCode: 'IN', safeSearch: 'moderate'
+      maxResults: '10', regionCode: 'IN', safeSearch: 'moderate'
     }, apiKey);
-    return (data.items || []).filter(item => item.id?.videoId).map(item => ({
+    return (data.items || []).filter(item => item.id?.videoId && youtubeResultMatches(query, item.snippet?.title)).slice(0, 3).map(item => ({
       id: item.id.videoId, title: item.snippet?.title || `${query} review`, creator: channel.name,
       channel: item.snippet?.channelTitle || channel.name, publishedAt: item.snippet?.publishedAt || '',
       thumbnail: item.snippet?.thumbnails?.maxres?.url || item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url,
@@ -782,7 +886,7 @@ function renderComparison() {
   comparePanel.append(heading);
   if (indexes.length < 2) {
     const prompt = document.createElement('p');
-    prompt.textContent = 'Search another included photo profile and add it to compare.';
+  prompt.textContent = 'Search another included model reference and add it to compare.';
     comparePanel.append(prompt);
     return;
   }
