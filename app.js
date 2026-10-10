@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 10541)
-Total output lines: 675
-
 const photos = ['assets/1.jpg', 'assets/2.jpg', 'assets/3.jpg'];
 const heroImage = document.querySelector('.hero-photo');
 const switches = [...document.querySelectorAll('.switch')];
@@ -320,7 +317,37 @@ async function wikidataVehicle(article, query) {
   const description = entity.descriptions?.en?.value || '';
   const rows = wikidataProperties.flatMap(([property, name]) => (values[property] || []).map(value => {
     let rendered = '';
-    if (value.type === 'item') ren…541 tokens truncated…ond')) return { name: 'Speed', value: amount * 3.6, unit: 'km/h', limit: 400 };
+    if (value.type === 'item') rendered = labelMap[value.id] || value.id;
+    else if (value.type === 'date') rendered = value.value;
+    else {
+      const amount = Number.isFinite(value.amount) ? Number(value.amount.toPrecision(5)).toLocaleString('en-IN') : '';
+      const unit = value.unit ? (labelMap[value.unit] || value.unit) : '';
+      rendered = `${amount}${unit ? ` ${unit}` : ''}`;
+    }
+    return { property, name, value: rendered, raw: value, source: `https://www.wikidata.org/wiki/${qid}#${property}` };
+  }));
+  return { qid, label, description, rows, values, unitLabels: labelMap, source: `https://www.wikidata.org/wiki/${qid}` };
+}
+
+function wikidataMetric(property, value, labels) {
+  if (value?.type !== 'quantity' || !Number.isFinite(value.amount)) return null;
+  const unit = (labels[value.unit] || '').toLowerCase();
+  const amount = value.amount;
+  if (property === 'P2109') {
+    if (unit.includes('kilowatt')) return { name: 'Power', value: amount, unit: 'kW', limit: 1000 };
+    if (unit === 'watt' || unit.endsWith(' watt')) return { name: 'Power', value: amount / 1000, unit: 'kW', limit: 1000 };
+    if (unit.includes('horsepower') && unit.includes('metric')) return { name: 'Power', value: amount * .7355, unit: 'kW', limit: 1000 };
+    if (unit.includes('horsepower')) return { name: 'Power', value: amount * .7457, unit: 'kW', limit: 1000 };
+  }
+  if (property === 'P2230') {
+    if (unit.includes('kilonewton')) return { name: 'Torque', value: amount * 1000, unit: 'Nm', limit: 2000 };
+    if (unit.includes('pound') || unit.includes('foot-pound')) return { name: 'Torque', value: amount * 1.3558, unit: 'Nm', limit: 2000 };
+    if (unit.includes('newton metre') || unit === 'newton-meter' || unit === 'newton metre') return { name: 'Torque', value: amount, unit: 'Nm', limit: 2000 };
+  }
+  if (property === 'P2052') {
+    if (unit.includes('kilometre per hour') || unit.includes('kilometer per hour')) return { name: 'Speed', value: amount, unit: 'km/h', limit: 400 };
+    if (unit.includes('mile per hour')) return { name: 'Speed', value: amount * 1.60934, unit: 'km/h', limit: 400 };
+    if (unit.includes('metre per second') || unit.includes('meter per second')) return { name: 'Speed', value: amount * 3.6, unit: 'km/h', limit: 400 };
   }
   return null;
 }
@@ -645,4 +672,3 @@ function renderComparison() {
   table.append(tbody);
   comparePanel.append(table);
 }
-
