@@ -22,7 +22,7 @@ No package installation is required. The local server uses Node's built-in modul
 - Filters and side-by-side model comparison use the included starter catalogue. They do not compare every model on the internet.
 - Prices, variant tables, dealer inventory, offers, valuation, insurance quotes and vehicle-history records are not live feeds. India-wide data requires a licensed provider API and a server-side account/key. No secret key is bundled in the website, and no provider credentials have been created.
 - Photo matching is only an illustrative reference. Selecting an image previews it in your browser; there is no AI scan or upload.
-- Channel-focused YouTube search links work without a key. To show individual videos with their real thumbnails and direct watch links in the local app, configure a YouTube Data API key as `YOUTUBE_API_KEY` on the server. GitHub Pages is static and cannot run this private-key-backed endpoint; it therefore shows channel search links until a separate backend is deployed. Never put a private API key in browser JavaScript or a public repository.
+- Channel-focused YouTube search links work without a key. With a Google browser key restricted to Chassis’ website and the YouTube Data API v3, the site displays matching captioned video results with real thumbnails and direct watch links. A key entered in the page is stored only in that browser. For every visitor, add the same referrer-restricted browser key as the GitHub repository secret `YOUTUBE_BROWSER_API_KEY`; the Pages workflow generates the public browser config at deploy time. Do not use an unrestricted key or a server key this way.
 - Registration and challan links open the official [VAHAN](https://vahan.parivahan.gov.in/vahanservice/) and [eChallan](https://echallan.parivahan.gov.in/index/accused-challan) services. Chassis does not read their results or submit user details.
 
 ## Put the site on the public internet
@@ -46,20 +46,14 @@ GitHub's setup steps are documented in its [Pages publishing-source guide](https
 - Open CarDekho's new-car, used-car, comparison, offers, valuation, dealer, EV charging and fuel-price sections. These links open CarDekho; they do not connect its data to Chassis.
 - Open official government links for VAHAN and eChallan. Sensitive details should only be entered on the official portals.
 
-## Optional YouTube Data API for direct video links and thumbnails
+## Turn on direct YouTube videos and thumbnails
 
-1. Create a Google Cloud project and enable [YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com).
-2. Create an API key restricted to the YouTube Data API v3. Keep the key server-side; when deploying a backend, restrict it to the backend's IP or provider as appropriate.
-3. In PowerShell, set the key for that terminal and start the local server:
+The direct video cards use YouTube's official Data API search results. Search results include each video's ID, title and thumbnail; Chassis makes the thumbnail and watch link open the exact YouTube video. Results are limited to captioned videos from Faisal Khan and MotorOctane. YouTube controls subtitle availability and playback. API quota limits apply.
 
-   ```powershell
-   $env:YOUTUBE_API_KEY = "your-key"
-   node .\server.mjs
-   ```
+For a browser-only connection, create a Google Cloud project, enable [YouTube Data API v3](https://console.cloud.google.com/apis/library/youtube.googleapis.com), and create an API key. Restrict the key to **YouTube Data API v3** and HTTP referrers for `https://v8sl-grg.github.io/*` (and `http://127.0.0.1:*/*` only if you need local testing). Then paste the key into the “Connect YouTube Videos” box after a car search. That saves the key only in that browser.
 
-The API returns individual video IDs, creator/channel names, thumbnail URLs and direct watch links. Chassis displays the thumbnail as a clickable link to that video. Never put a private key in `app.js`, `features.js` or `index.html`. API quotas and terms apply. GitHub Pages cannot run this private endpoint by itself; deploy the Node endpoint to a backend and keep the key in that host's secret settings before enabling individual videos on the public site.
+To enable the feature for everyone on the public site, add the same referrer-restricted browser key in the GitHub repository under **Settings → Secrets and variables → Actions → New repository secret**, with the name `YOUTUBE_BROWSER_API_KEY`. The Pages workflow writes it into a generated config when it publishes. Browser API keys are visible to site visitors by design; the website-referrer and YouTube-API restrictions are required. Never add an unrestricted or server key to that secret. Keep using the Node `YOUTUBE_API_KEY` only as a server-side key for the optional local API endpoint.
 
 ## Included assets and independent status
 
 Keep `assets/1.jpg`, `assets/2.jpg` and `assets/3.jpg` beside the HTML file. The hero and photo profiles use those relative paths. Chassis is an independent concept and is not affiliated with CarDekho, Wikipedia, the named manufacturers, video creators or government agencies.
-
