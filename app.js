@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 10538)
+Total output lines: 675
+
 const photos = ['assets/1.jpg', 'assets/2.jpg', 'assets/3.jpg'];
 const heroImage = document.querySelector('.hero-photo');
 const switches = [...document.querySelectorAll('.switch')];
@@ -171,19 +174,39 @@ function renderWikipediaResult(car, query) {
     empty.append(title, summary, makeLink('Search Wikipedia ↗', `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`));
     finderResult.append(empty);
   } else {
-    articles.forEach((article, index) => {
-      const card = document.createElement('article'); card.className = 'wiki-result-card';
-      const label = document.createElement('span'); label.className = 'result-kicker'; label.textContent = `PUBLIC REFERENCE ${String(index + 1).padStart(2, '0')} · VERIFY YEAR & VARIANT`;
-      const title = document.createElement('h3'); title.textContent = article.title;
-      const summary = document.createElement('p'); summary.textContent = article.extract || 'Open the article for more information.';
-      const articleLink = makeLink('Open Wikipedia article ↗', article.url);
-      card.append(label, title, summary, articleLink);
-      finderResult.append(card);
-    });
+    const article = articles[0];
+    const card = document.createElement('article'); card.className = 'wiki-result-card wiki-lead-card';
+    const media = document.createElement('div'); media.className = 'wiki-lead-media';
+    if (article.thumbnail) {
+      const image = document.createElement('img'); image.src = article.thumbnail; image.alt = `${article.title} reference image`; image.loading = 'lazy';
+      image.addEventListener('error', () => media.remove(), { once: true });
+      media.append(image);
+    }
+    const body = document.createElement('div'); body.className = 'wiki-lead-body';
+    const label = document.createElement('span'); label.className = 'result-kicker'; label.textContent = 'PUBLIC REFERENCE · VERIFY YEAR, MARKET & VARIANT';
+    const title = document.createElement('h3'); title.textContent = article.title;
+    const summary = document.createElement('p'); summary.textContent = article.extract || 'Open the article for more information.';
+    const articleLink = makeLink('Read the Wikipedia overview ↗', article.url);
+    body.append(label, title, summary, articleLink);
+    card.append(media, body);
+    finderResult.append(card);
+
+    if (articles.length > 1) {
+      const related = document.createElement('section'); related.className = 'wiki-related-results';
+      const heading = document.createElement('h4'); heading.textContent = 'Related reference pages';
+      const grid = document.createElement('div'); grid.className = 'wiki-related-grid';
+      articles.slice(1, 5).forEach(article => {
+        const item = document.createElement('article'); item.className = 'wiki-related-card';
+        const name = document.createElement('h5'); name.textContent = article.title;
+        const extract = document.createElement('p'); extract.textContent = article.extract || 'Open this related reference page.';
+        item.append(name, extract, makeLink('Open reference ↗', article.url)); grid.append(item);
+      });
+      related.append(heading, grid); finderResult.append(related);
+    }
   }
   const sources = document.createElement('article'); sources.className = 'wiki-result-card source-result-card';
   const sourceTitle = document.createElement('h3'); sourceTitle.textContent = `More sources for ${query}`;
-  const note = document.createElement('p'); note.textContent = 'Wikipedia is a general reference. These searches open other websites; prices, listings and specifications are not imported into Chassis.';
+  const note = document.createElement('p'); note.textContent = 'The profile below combines public reference text, structured Wikidata entries and Wikimedia Commons images when available. Specs may be missing, outdated or apply to a different generation or market; check the manufacturer for your exact variant.';
   const links = document.createElement('div'); links.className = 'finder-actions';
   links.append(
     makeLink('Search official manufacturer pages ↗', `https://www.google.com/search?q=${encodeURIComponent(`${query} official manufacturer`)}`),
@@ -211,9 +234,10 @@ async function wikipediaOverview(query) {
 
   const summaryUrl = new URL('https://en.wikipedia.org/w/api.php');
   summaryUrl.searchParams.set('action', 'query');
-  summaryUrl.searchParams.set('prop', 'extracts|info|pageimages');
+  summaryUrl.searchParams.set('prop', 'extracts|info|pageimages|pageprops');
   summaryUrl.searchParams.set('exintro', '1');
   summaryUrl.searchParams.set('explaintext', '1');
+  summaryUrl.searchParams.set('exchars', '5200');
   summaryUrl.searchParams.set('pithumbsize', '640');
   summaryUrl.searchParams.set('inprop', 'url');
   summaryUrl.searchParams.set('titles', titles.join('|'));
@@ -229,8 +253,229 @@ async function wikipediaOverview(query) {
       title: article.title,
       extract: article.extract || '',
       thumbnail: article.thumbnail?.source || '',
+      wikidataId: article.pageprops?.wikibase_item || '',
       url: article.fullurl || `https://en.wikipedia.org/wiki/${encodeURIComponent(article.title.replaceAll(' ', '_'))}`
     }));
+}
+
+const wikidataProperties = [
+  ['P2109', 'Power output'], ['P2230', 'Torque'], ['P8628', 'Engine displacement'],
+  ['P2052', 'Speed'], ['P3039', 'Wheelbase'], ['P2043', 'Length'],
+  ['P2049', 'Width'], ['P2048', 'Height'], ['P2073', 'Vehicle range'],
+    ['P2067', 'Mass'], ['P176', 'Manufacturer'], ['P571', 'Inception']
+];
+
+async function wikidataVehicle(article, query) {
+  let qid = article.wikidataId;
+  if (!qid) {
+    const search = new URL('https://www.wikidata.org/w/api.php');
+    search.search = new URLSearchParams({ action: 'wbsearchentities', search: query, language: 'en', limit: '5', format: 'json', origin: '*' });
+    const results = await fetch(search).then(response => response.ok ? response.json() : null);
+    const candidates = results?.search || [];
+    const matched = candidates.find(item => /car|automobile|vehicle|motor car|sports car/i.test(item.description || '') && (normalized(item.label || '').includes(normalized(query)) || normalized(query).includes(normalized(item.label || ''))));
+    qid = matched?.id || '';
+  }
+  if (!/^Q\d+$/.test(qid || '')) return null;
+
+  const entityUrl = new URL('https://www.wikidata.org/w/api.php');
+  entityUrl.search = new URLSearchParams({ action: 'wbgetentities', ids: qid, props: 'labels|descriptions|claims', languages: 'en', format: 'json', origin: '*' });
+  const result = await fetch(entityUrl).then(response => response.ok ? response.json() : null);
+  const entity = result?.entities?.[qid];
+  if (!entity || entity.missing !== undefined) return null;
+
+  const ids = new Set();
+  const labelsById = {};
+  const quantityFor = (claim, property) => {
+    const value = claim?.mainsnak?.datavalue?.value;
+    if (property === 'P176') {
+      if (value?.id) ids.add(value.id);
+      return value?.id ? { type: 'item', id: value.id } : null;
+    }
+    if (property === 'P571' && value?.time) return { type: 'date', value: value.time.slice(1, 5) };
+    if (value?.amount !== undefined) {
+      const unit = (value.unit || '').match(/Q\d+$/)?.[0] || '';
+      if (unit) ids.add(unit);
+      return { type: 'quantity', amount: Number(value.amount), unit };
+    }
+    return null;
+  };
+  const values = {};
+  wikidataProperties.forEach(([property]) => {
+    const claims = entity.claims?.[property] || [];
+    const preferred = claims.filter(claim => claim.rank === 'preferred');
+    const active = preferred.length ? preferred : claims.filter(claim => claim.rank !== 'deprecated');
+    const collected = active.map(claim => quantityFor(claim, property)).filter(Boolean);
+    if (collected.length) values[property] = collected.slice(0, 3);
+  });
+
+  if (ids.size) {
+    const labelsUrl = new URL('https://www.wikidata.org/w/api.php');
+    labelsUrl.search = new URLSearchParams({ action: 'wbgetentities', ids: [...ids].join('|'), props: 'labels', languages: 'en', format: 'json', origin: '*' });
+    const labelData = await fetch(labelsUrl).then(response => response.ok ? response.json() : null);
+    Object.entries(labelData?.entities || {}).forEach(([id, item]) => { if (item.labels?.en?.value) labelsById[id] = item.labels.en.value; });
+  }
+
+  const labelMap = labelsById;
+  const label = entity.labels?.en?.value || article.title;
+  const description = entity.descriptions?.en?.value || '';
+  const rows = wikidataProperties.flatMap(([property, name]) => (values[property] || []).map(value => {
+    let rendered = '';
+    if (value.type === 'item') rendered …538 tokens truncated…second')) return { name: 'Speed', value: amount * 3.6, unit: 'km/h', limit: 400 };
+  }
+  return null;
+}
+
+function renderSpecTable(target, vehicle) {
+  const rows = vehicle?.rows || [];
+  const section = document.createElement('section'); section.className = 'spec-table-section';
+  const heading = document.createElement('div'); heading.className = 'detail-section-heading';
+  const title = document.createElement('h4'); title.textContent = 'Specifications found in public data';
+  const context = document.createElement('p'); context.textContent = vehicle ? `${vehicle.label}${vehicle.description ? ` · ${vehicle.description}` : ''}` : 'No matching structured vehicle record was found for this search.';
+  heading.append(title, context); section.append(heading);
+
+  const metrics = [];
+  for (const [property, values] of Object.entries(vehicle?.values || {})) {
+    const metric = wikidataMetric(property, values[0], vehicle.unitLabels);
+    if (metric && !metrics.some(item => item.name === metric.name)) metrics.push(metric);
+  }
+  if (metrics.length) {
+    const chart = document.createElement('div'); chart.className = 'spec-graphic';
+    const chartTitle = document.createElement('div'); chartTitle.className = 'spec-graphic-title';
+    chartTitle.innerHTML = '<span>OUTPUT AT A GLANCE</span><small>Reference scale · not a cross-model comparison</small>';
+    chart.append(chartTitle);
+    metrics.forEach(metric => {
+      const row = document.createElement('div'); row.className = 'spec-meter-row';
+      const label = document.createElement('div'); label.className = 'spec-meter-label';
+      const name = document.createElement('span'); name.textContent = metric.name;
+      const value = document.createElement('strong'); value.textContent = `${Number(metric.value.toFixed(1)).toLocaleString('en-IN')} ${metric.unit}`;
+      label.append(name, value);
+      const track = document.createElement('div'); track.className = 'spec-meter-track';
+      const fill = document.createElement('span'); fill.style.width = `${Math.max(2, Math.min(100, metric.value / metric.limit * 100))}%`; track.append(fill);
+      row.append(label, track); chart.append(row);
+    });
+    section.append(chart);
+  }
+
+  if (rows.length) {
+    const tableWrap = document.createElement('div'); tableWrap.className = 'spec-table-wrap';
+    const table = document.createElement('table'); table.className = 'spec-table';
+    const head = document.createElement('thead'); head.innerHTML = '<tr><th scope="col">Specification</th><th scope="col">Public data value</th><th scope="col">Source</th></tr>';
+    const body = document.createElement('tbody');
+    rows.forEach(row => {
+      const tr = document.createElement('tr');
+      const name = document.createElement('th'); name.scope = 'row'; name.textContent = row.name;
+      const value = document.createElement('td'); value.textContent = row.value;
+      const source = document.createElement('td'); source.append(makeLink('Wikidata ↗', row.source, 'spec-source-link'));
+      tr.append(name, value, source); body.append(tr);
+    });
+    table.append(head, body); tableWrap.append(table); section.append(tableWrap);
+  } else {
+    const empty = document.createElement('p'); empty.className = 'spec-empty'; empty.textContent = 'Wikidata has no usable engine or dimension values for this entry yet. Chassis leaves missing figures blank rather than estimating them.'; section.append(empty);
+  }
+
+  const note = document.createElement('p'); note.className = 'spec-provenance';
+  note.textContent = vehicle ? 'Structured data is model-level and may cover another generation, trim, or market. Check the manufacturer’s brochure for the exact variant. Wikidata facts are published under CC0.' : 'Exact trim-level figures, price and availability are not claimed when public structured data does not provide them.';
+  if (vehicle) note.append(' '); section.append(note);
+  if (vehicle) section.append(makeLink('Open this Wikidata record ↗', vehicle.source, 'spec-source-link'));
+  target.append(section);
+}
+
+function cleanMetadata(value) { return String(value || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/\s+/g, ' ').trim(); }
+
+async function commonsVehicleImages(query, view) {
+  const url = new URL('https://commons.wikimedia.org/w/api.php');
+  url.search = new URLSearchParams({ action: 'query', generator: 'search', gsrsearch: `${query} car ${view}`, gsrnamespace: '6', gsrlimit: '5', prop: 'imageinfo', iiprop: 'url|extmetadata', iiurlwidth: '1200', format: 'json', origin: '*' });
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('Wikimedia Commons image search unavailable');
+  const data = await response.json();
+  return Object.values(data.query?.pages || []).map(page => {
+    const info = page.imageinfo?.[0];
+    if (!info?.thumburl || !info?.descriptionurl) return null;
+    const meta = info.extmetadata || {};
+    const artist = cleanMetadata(meta.Artist?.value || meta.Credit?.value);
+    const license = cleanMetadata(meta.LicenseShortName?.value);
+    return { title: page.title?.replace(/^File:/, '') || '', image: info.thumburl, page: info.descriptionurl, licenseUrl: meta.LicenseUrl?.value || info.descriptionurl, license: license || 'See file page', artist };
+  }).filter(Boolean);
+}
+
+function renderImageGallery(target, query, localImage) {
+  const gallery = document.createElement('section'); gallery.className = 'vehicle-image-gallery';
+  const heading = document.createElement('div'); heading.className = 'detail-section-heading';
+  const title = document.createElement('h4'); title.textContent = 'Exterior & cabin gallery';
+  const intro = document.createElement('p'); intro.textContent = 'Community images from Wikimedia Commons. The result can be a different year or trim; check the file page and its reuse terms.';
+  heading.append(title, intro); gallery.append(heading);
+  if (localImage) {
+    const supplied = document.createElement('figure'); supplied.className = 'vehicle-gallery-image supplied-gallery-image';
+    const image = document.createElement('img'); image.src = localImage.image; image.alt = localImage.alt; image.loading = 'lazy';
+    const caption = document.createElement('figcaption'); caption.innerHTML = '<strong>Supplied photo</strong><small>Visual reference only · exact year and trim unverified</small>';
+    supplied.append(image, caption);
+    const localSection = document.createElement('div'); localSection.className = 'gallery-group';
+    const localTitle = document.createElement('h5'); localTitle.textContent = 'Your car photo'; localSection.append(localTitle, supplied); gallery.append(localSection);
+  }
+  const views = [
+    { key: 'exterior', title: 'Exterior references' },
+    { key: 'interior dashboard', title: 'Interior & dashboard references' }
+  ];
+  views.forEach(view => {
+    const group = document.createElement('div'); group.className = 'gallery-group';
+    const groupTitle = document.createElement('h5'); groupTitle.textContent = view.title;
+    const grid = document.createElement('div'); grid.className = 'vehicle-gallery-grid';
+    const status = document.createElement('p'); status.className = 'gallery-status'; status.textContent = 'Finding reusable reference images…';
+    group.append(groupTitle, grid, status); gallery.append(group);
+    commonsVehicleImages(query, view.key).then(images => {
+      status.textContent = images.length ? `${images.length} Commons image${images.length === 1 ? '' : 's'} · open each file page to review attribution and license.` : `No close Commons match found. Search Commons for “${query} ${view.key}”.`;
+      images.forEach(item => {
+        const figure = document.createElement('figure'); figure.className = 'vehicle-gallery-image';
+        const anchor = document.createElement('a'); anchor.href = item.page; anchor.target = '_blank'; anchor.rel = 'noopener noreferrer'; anchor.setAttribute('aria-label', `Open Commons image ${item.title}`);
+        const image = document.createElement('img'); image.src = item.image; image.alt = `${item.title} · ${view.title}`; image.loading = 'lazy';
+        image.addEventListener('error', () => figure.remove(), { once: true }); anchor.append(image);
+        const caption = document.createElement('figcaption');
+        const name = document.createElement('strong'); name.textContent = item.title || `${query} ${view.title}`;
+        const credit = document.createElement('small'); credit.textContent = [item.artist ? `Photo: ${item.artist}` : 'Photographer details on file page', item.license].join(' · ');
+        const links = document.createElement('span'); links.className = 'gallery-credit-links';
+        links.append(makeLink('File source ↗', item.page, 'gallery-source-link'), makeLink('License ↗', item.licenseUrl, 'gallery-source-link'));
+        caption.append(name, credit, links); figure.append(anchor, caption); grid.append(figure);
+      });
+      if (!images.length) {
+        const searchLink = makeLink('Search Wikimedia Commons ↗', `https://commons.wikimedia.org/wiki/Special:MediaSearch?type=image&search=${encodeURIComponent(`${query} car ${view.key}`)}`, 'gallery-source-link');
+        status.append(' ', searchLink);
+      }
+    }).catch(() => {
+      status.textContent = 'Could not load this image group. Try again later or search Commons directly.';
+    });
+  });
+  target.append(gallery);
+}
+
+async function appendRichCarDetails(article, query, localImage) {
+  const panel = document.createElement('article'); panel.className = 'dynamic-detail-panel';
+  const top = document.createElement('div'); top.className = 'dynamic-detail-top';
+  const kicker = document.createElement('span'); kicker.className = 'result-kicker'; kicker.textContent = 'CAR REFERENCE PROFILE · LIVE PUBLIC SOURCES';
+  const h3 = document.createElement('h3'); h3.textContent = article?.title || query;
+  const attribution = document.createElement('p'); attribution.className = 'profile-attribution';
+  attribution.append('Article overview: '); attribution.append(makeLink('Wikipedia contributors ↗', article?.url || `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`, 'spec-source-link'));
+  attribution.append(' · Structured vehicle facts: Wikidata CC0 · Images: individual Wikimedia Commons file pages and licenses.');
+  top.append(kicker, h3, attribution); panel.append(top);
+
+  const narrative = document.createElement('section'); narrative.className = 'car-narrative';
+  const narrativeHeading = document.createElement('h4'); narrativeHeading.textContent = 'About this car';
+  const narrativeText = document.createElement('p');
+  const extract = (article?.extract || '').replace(/\s+/g, ' ').trim();
+  narrativeText.textContent = extract ? `${extract.slice(0, 1050)}${extract.length > 1050 ? '…' : ''}` : `We found no general encyclopedia overview for “${query}”. Search the manufacturer’s site for an official product page and exact model year.`;
+  narrative.append(narrativeHeading, narrativeText);
+  if (article?.url) narrative.append(makeLink('Read the full article ↗', article.url, 'spec-source-link'));
+  panel.append(narrative);
+
+  const loading = document.createElement('section'); loading.className = 'spec-table-section';
+  const loadingTitle = document.createElement('h4'); loadingTitle.textContent = 'Loading public specifications…';
+  loading.append(loadingTitle); panel.append(loading);
+  const galleryContainer = document.createElement('div');
+  panel.append(galleryContainer);
+  finderResult.append(panel);
+
+  const vehicle = article ? await wikidataVehicle(article, query).catch(() => null) : null;
+  loading.replaceChildren(); renderSpecTable(loading, vehicle);
+  renderImageGallery(galleryContainer, query, localImage);
 }
 
 function renderFallbackVideoLinks(query) {
@@ -264,19 +509,28 @@ function renderCaptionedVideos(videos) {
     card.className = 'video-card';
     const creator = document.createElement('span');
     creator.textContent = `${video.creator} · CAPTIONS AVAILABLE`;
-    const frame = document.createElement('iframe');
-    frame.src = video.embedUrl;
-    frame.title = `${video.title} — video captions enabled`;
-    frame.loading = 'lazy';
-    frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
-    frame.referrerPolicy = 'strict-origin-when-cross-origin';
-    frame.allowFullscreen = true;
+    const thumbLink = document.createElement('a');
+    thumbLink.className = 'video-thumbnail-link';
+    thumbLink.href = video.watchUrl;
+    thumbLink.target = '_blank';
+    thumbLink.rel = 'noopener noreferrer';
+    thumbLink.setAttribute('aria-label', `Watch ${video.title} on YouTube`);
+    const thumbnail = document.createElement('img');
+    thumbnail.className = 'video-thumbnail';
+    thumbnail.src = video.thumbnail || `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/hqdefault.jpg`;
+    thumbnail.alt = `Video thumbnail: ${video.title}`;
+    thumbnail.loading = 'lazy';
+    const play = document.createElement('span'); play.className = 'video-play-mark'; play.setAttribute('aria-hidden', 'true'); play.textContent = '▶';
+    thumbLink.append(thumbnail, play);
     const title = document.createElement('strong');
     title.textContent = video.title;
-    card.append(creator, frame, title, makeLink('Watch on YouTube ↗', video.watchUrl));
+    const meta = document.createElement('small');
+    meta.className = 'video-card-meta';
+    meta.textContent = `${video.channel || video.creator}${video.publishedAt ? ` · ${new Date(video.publishedAt).getFullYear()}` : ''}`;
+    card.append(creator, thumbLink, title, meta, makeLink('Open this video on YouTube ↗', video.watchUrl));
     videoResults.append(card);
   });
-  document.getElementById('video-caption-note').textContent = 'These videos were returned by YouTube search with its closed-caption filter. Captions are requested in the embedded player; choose a language with CC if needed.';
+  document.getElementById('video-caption-note').textContent = 'Each image is the video’s YouTube thumbnail and opens its direct watch page. YouTube videos marked as captioned are searched; turn on CC in the player when captions are available.';
   return true;
 }
 
@@ -304,13 +558,19 @@ async function searchCar(query) {
   const localIndex = knownProfileIndex(term);
   if (localIndex >= 0) {
     renderKnownProfile(localIndex);
+    const car = referenceProfiles[localIndex];
+    let article = null;
+    try { article = (await wikipediaOverview(car.title.replace(/^Possible\s+/i, '')))[0] || null; } catch { /* Keep the supplied photo profile and its source links available. */ }
+    await appendRichCarDetails(article, car.title.replace(/^Possible\s+/i, ''), { image: car.image, alt: car.alt });
   } else {
     try {
       const articles = await wikipediaOverview(term);
       renderWikipediaResult(articles, term);
+      if (articles.length) await appendRichCarDetails(articles[0], term);
       finderStatus.textContent = articles.length ? `${articles.length} public reference results found. Confirm exact model year and variant with the manufacturer.` : 'No matching article preview found; direct source searches are ready.';
     } catch {
       renderWikipediaResult(null, term);
+      await appendRichCarDetails(null, term);
       finderStatus.textContent = 'Online reference could not load. Direct source searches are ready below.';
     }
   }
