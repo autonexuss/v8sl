@@ -1,4 +1,4 @@
-Warning: truncated output (original token count: 10538)
+Warning: truncated output (original token count: 10541)
 Total output lines: 675
 
 const photos = ['assets/1.jpg', 'assets/2.jpg', 'assets/3.jpg'];
@@ -62,7 +62,7 @@ const referenceProfiles = [
   {
     image: 'assets/3.jpg', alt: 'User photo 3: Audi luxury sedan, possible A8 L', label: 'PHOTO 03 · VISUAL MATCH ONLY', overlayTitle: 'Audi<br>luxury sedan', caption: 'A8 L is a candidate · exact model unverified',
     title: 'Possible Audi A8 L',
-    summary: 'The third photo appears to show a large Audi sedan and may be an A8 L. The A8 is Audi’s full-size luxury sedan family; its engine, output, dimensions and equipment change by generation, year and market.',
+    summary: 'The third photo appears to show a large Audi sedan and may be an A8 L. The A8 is Audi’s full-size luxury sedan family; its engine, performance, dimensions and equipment change by generation, year and market.',
     facts: [['VEHICLE CLASS', 'Full-size luxury sedan'], ['BODY', 'Four-door; A8 L is long-wheelbase'], ['ENGINE', 'Varies by model year and market'], ['TRANSMISSION', 'Variant dependent'], ['DRIVE', 'Quattro available on select variants'], ['EXACT SPEC', 'Check VIN, RC or model documents']],
     note: 'The image does not establish the A8 generation or trim, so no engine or performance figures are guessed here.',
     aliases: ['audi a8', 'a8 l', 'a8l', 'audi a8 l'],
@@ -259,7 +259,7 @@ async function wikipediaOverview(query) {
 }
 
 const wikidataProperties = [
-  ['P2109', 'Power output'], ['P2230', 'Torque'], ['P8628', 'Engine displacement'],
+  ["P2109", "Nominal power"], ["P2230", "Torque"], ["P8628", "Engine displacement"],
   ['P2052', 'Speed'], ['P3039', 'Wheelbase'], ['P2043', 'Length'],
   ['P2049', 'Width'], ['P2048', 'Height'], ['P2073', 'Vehicle range'],
     ['P2067', 'Mass'], ['P176', 'Manufacturer'], ['P571', 'Inception']
@@ -320,7 +320,7 @@ async function wikidataVehicle(article, query) {
   const description = entity.descriptions?.en?.value || '';
   const rows = wikidataProperties.flatMap(([property, name]) => (values[property] || []).map(value => {
     let rendered = '';
-    if (value.type === 'item') rendered …538 tokens truncated…second')) return { name: 'Speed', value: amount * 3.6, unit: 'km/h', limit: 400 };
+    if (value.type === 'item') ren…541 tokens truncated…ond')) return { name: 'Speed', value: amount * 3.6, unit: 'km/h', limit: 400 };
   }
   return null;
 }
@@ -341,7 +341,7 @@ function renderSpecTable(target, vehicle) {
   if (metrics.length) {
     const chart = document.createElement('div'); chart.className = 'spec-graphic';
     const chartTitle = document.createElement('div'); chartTitle.className = 'spec-graphic-title';
-    chartTitle.innerHTML = '<span>OUTPUT AT A GLANCE</span><small>Reference scale · not a cross-model comparison</small>';
+    chartTitle.innerHTML = "<span>POWER, TORQUE & SPEED</span><small>Reference scale · not a cross-model comparison</small>";
     chart.append(chartTitle);
     metrics.forEach(metric => {
       const row = document.createElement('div'); row.className = 'spec-meter-row';
