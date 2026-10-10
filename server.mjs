@@ -59,7 +59,6 @@ async function videosForChannel(query, handle, displayName) {
   url.searchParams.set('channelId', channelId);
   url.searchParams.set('q', `${query} car review`);
   url.searchParams.set('videoCaption', 'closedCaption');
-  url.searchParams.set('videoEmbeddable', 'true');
   url.searchParams.set('maxResults', '3');
   url.searchParams.set('regionCode', 'IN');
   url.searchParams.set('safeSearch', 'moderate');
@@ -160,4 +159,3 @@ function listenOnAvailablePort(port, attemptsLeft = 25) {
 }
 
 listenOnAvailablePort(firstPort);
-
