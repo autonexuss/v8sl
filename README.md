@@ -4,9 +4,9 @@ Chassis is a responsive car-discovery and ownership prototype, published at http
 
 ## Start it on Windows
 
-1. Extract the ZIP to a normal folder.
+1. Create a normal folder named `chassis-site` and extract the ZIP contents into it. You should see `index.html`, `Start Chassis.cmd` and the `assets` folder directly inside it.
 2. Install Node.js 18 or newer if it is not already installed.
-3. Open the extracted `chassis-site` folder and double-click **Start Chassis.cmd**.
+3. Open the `chassis-site` folder and double-click **Start Chassis.cmd**.
 4. Leave the black window open. It prints the exact local address, for example `http://127.0.0.1:4173`.
 5. Open that printed address in Chrome or Edge. If a port is already in use, the launcher picks another one and prints it.
 6. To stop the local site, return to the black window and press **Ctrl+C**.
