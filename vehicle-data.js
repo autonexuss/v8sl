@@ -51,7 +51,10 @@
   const makeNames = make => [make.make, ...(make.aliases || [])];
   const findMake = value => directory.find(make => makeNames(make).some(name => norm(name) === norm(value))) || null;
   const matchCar = value => {
-    const query = norm(value);
+    // Let visitors include the year before the make/model (for example,
+    // "2024 Hyundai Creta") while keeping the original term for year-aware
+    // photo/specification matching elsewhere in the page.
+    const query = norm(value).replace(/^(?:19|20)\d{2}\s+/, '');
     if (!query) return null;
     for (const make of directory) for (const model of make.models) {
       const candidates = [model.name, ...(model.aliases || [])].map(name => norm(name));
@@ -97,4 +100,5 @@
   window.chassisBindPlanner = bindPlanner;
   window.chassisYearOptions = yearOptions;
 })();
+
 
