@@ -548,6 +548,11 @@ function infoboxPowerMetric(rows) {
 
 const curatedIndiaSpecProfiles = [{
   make: 'hyundai', model: 'creta', fromYear: 2024, toYear: 2026, excludes: ['creta n line', 'creta electric'],
+  sourceLabel: 'Hyundai India brochure',
+  performanceLabel: 'Hyundai India performance page ↗',
+  brochureLabel: 'Open the current Hyundai India brochure ↗',
+  provenance: 'Manufacturer brochure figures for the current Indian-market Hyundai Creta family (August 2026 edition). Engine output and equipment depend on the selected powertrain and trim; older years may differ.',
+  photoNote: 'The photographs show the current Indian-market Creta generation; equipment can differ by trim.',
   brochure: 'https://www.hyundai.com/content/dam/hyundai/in/en/data/brochure/creta.pdf',
   performance: 'https://www.hyundai.com/in/en/find-a-car/creta/performance',
   exterior: 'https://www.hyundai.com/in/en/find-a-car/creta/exterior',
