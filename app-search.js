@@ -728,7 +728,7 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
   const powerNote = document.createElement('small');
   if (powerMetric) {
     powerValue.textContent = powerMetric.display;
-    powerNote.textContent = curatedProfile ? 'Three current India-market engine choices. Select the exact engine and trim for your car.' : 'Model-family figure; generation, market and variant may differ.';
+    powerNote.textContent = curatedProfile ? curatedProfile.engines.length + ' current India-market engine choices. Select the exact engine and trim for your car.' : 'Model-family figure; generation, market and variant may differ.';
   } else {
     powerValue.textContent = 'Not verified in matched public data';
     powerNote.textContent = 'No power number is guessed. Open the official site or brochure for the exact year and variant.';
