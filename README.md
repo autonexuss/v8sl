@@ -26,7 +26,7 @@ The project remains in no-billing mode. No service account key or payment detail
 
 ## Run locally on Windows
 
-1. Open the `chassis-site` folder and double-click **Start Chassis.cmd**.
+1. Extract the ZIP, open the extracted folder, and double-click **Start Chassis.cmd**.
 2. Keep the terminal window open and use the local address it prints.
 3. If the address is busy, the launcher chooses an available port and prints it.
 4. Press **Ctrl+C** in the terminal window to stop the server.
