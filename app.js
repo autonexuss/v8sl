@@ -667,10 +667,10 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
 function cleanMetadata(value) { return String(value || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/\s+/g, ' ').trim(); }
 
 async function commonsVehicleImages(vehicle, view, requestedTerm) {
-  const query = vehicle.make.make + ' ' + vehicle.model.name + ' ' + (view.key === 'interior' ? 'interior dashboard cockpit' : 'exterior front side car');
+  const query = vehicle.make.make + ' ' + vehicle.model.name;
   const url = new URL('https://commons.wikimedia.org/w/api.php');
   url.search = new URLSearchParams({
-    action: 'query', generator: 'search', gsrsearch: query, gsrnamespace: '6', gsrlimit: '30',
+    action: 'query', generator: 'search', gsrsearch: query, gsrnamespace: '6', gsrlimit: '50',
     prop: 'imageinfo|categories', iiprop: 'url|extmetadata|mime|size', iiurlwidth: '1400',
     cllimit: '20', format: 'json', origin: '*'
   });
