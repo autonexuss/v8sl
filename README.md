@@ -4,7 +4,7 @@ Velocitrak is an independent car-discovery and ownership website: <https://v8sl-
 
 The homepage uses a compact Velocitrak header, an editorial sequence of paired feature copy and smaller photo/video compositions, and a compact 12-tile 3D vehicle showroom. The showroom tiles use a three-column desktop grid and two columns on phones, with a centered “Get started” shortcut immediately above them. That shortcut scrolls to and focuses the first tile. Hover or keyboard-focus a tile to turn its model; select it to open an accessible feature panel on the same page and URL. On touchscreens, tap a tile to open its feature.
 
-The editorial home uses supplied photos from `assets/1.jpg`–`assets/3.jpg`, eight optimized BMW and Mercedes-Benz photographs under `assets/editorial/`, and a small muted looping feature film at `assets/videos/defender-dakar-2026.mp4`. Feature copy describes Velocitrak tools and navigation rather than captioning the decorative editorial imagery. The opening hero slideshow’s videos, order, playback behavior, controls, size/cropping, ambient effects and styling remain unchanged.
+The editorial home uses supplied photos from `assets/2.jpg` and `assets/3.jpg`, eight optimized BMW and Mercedes-Benz photographs under `assets/editorial/`, and a small muted looping feature film at `assets/videos/defender-dakar-2026.mp4`. The sunset car image has been removed from the homepage and its sample profile. Feature copy describes Velocitrak tools and navigation rather than captioning the decorative editorial imagery. The opening hero slideshow’s videos, order, playback behavior, controls, size/cropping, ambient effects and styling remain unchanged.
 
 The 12 supplied vehicle models are optimized, self-contained GLB files under `assets/models/`. Previews load lazily through a locally hosted `<model-viewer>` component and local Draco decoder in `assets/vendor/`, so model rendering does not rely on a third-party CDN at runtime. Each feature card still opens its existing panel if WebGL or 3D rendering is unavailable. Third-party notices and licenses are included beside the bundled viewer.
 
@@ -30,12 +30,12 @@ The project remains in no-billing mode. No service account key or payment detail
 
 ## Run locally on Windows
 
-1. Extract the ZIP, open the extracted folder, and double-click **Start Chassis.cmd**.
+1. Extract the ZIP, open the extracted folder, and double-click **Start Velocitrak.cmd**. Do not open `index.html` directly; browsers block 3D module loading from `file://` pages.
 2. Keep the terminal window open and use the local address it prints.
 3. If the address is busy, the launcher chooses an available port and prints it.
 4. Press **Ctrl+C** in the terminal window to stop the server.
 
-Node.js 18 or later is required for the local static server. The website itself requires no package installation.
+Node.js 18 or later is required for the local static server. The website itself requires no package installation. The public GitHub Pages site already uses HTTPS and loads its bundled models and decoder from the site.
 
 ## Media and YouTube
 

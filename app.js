@@ -161,9 +161,8 @@ document.querySelectorAll('.topbar nav a').forEach(link => link.addEventListener
 
 const referenceProfiles = [
   {
-    image: 'assets/1.jpg', alt: 'User photo 1: possible Mercedes-AMG A-Class hatchback',
-    title: 'Possible Mercedes-AMG A 45 S',
-    summary: 'The first photo appears to show an AMG A-Class hatchback. The detailed figures and equipment below are a current Mercedes-Benz India A 45 S reference, not a confirmed identification of the photographed car.',
+    title: 'Mercedes-AMG A 45 S',
+    summary: 'This curated reference profile describes the Mercedes-AMG A 45 S. Figures and equipment vary by model year and trim; confirm the exact vehicle through the linked manufacturer source.',
     facts: [['ENGINE', '1,991 cc · 4-cylinder turbo petrol'], ['POWER', '310 kW / 421 HP'], ['TORQUE', '500 Nm'], ['TRANSMISSION', 'AMG SPEEDSHIFT DCT 8G automatic'], ['DRIVE', 'AMG 4MATIC+ all-wheel drive'], ['0–100 KM/H', '3.9 seconds'], ['DIMENSIONS', '4,453 × 1,850 × 1,414 mm*'], ['BOOT CAPACITY', '370 L'], ['FUEL TANK', '51 L'], ['SEATING', '5 seats · 5 doors'], ['CABIN', '10.25-inch media display · 64-colour ambient lighting'], ['AUDIO', 'Optional Burmester · 12 speakers · 710 W']],
     note: '* Width excludes mirrors. Equipment can be optional or vary by vehicle configuration. Reference specifications vary by model year and market; see the linked manufacturer page before relying on them.',
     aliases: ['a45 s', 'a45', 'mercedes a-class', 'mercedes amg a-class', 'amg a-class', 'a-class hatchback'],
@@ -270,15 +269,12 @@ function renderKnownProfile(index) {
   const car = referenceProfiles[index];
   finderResult.replaceChildren();
   const card = document.createElement('article');
-  card.className = 'finder-car-card';
-  const image = document.createElement('img');
-  image.src = car.image;
-  image.alt = car.alt;
+  card.className = `finder-car-card${car.image ? '' : ' profile-without-photo'}`;
   const body = document.createElement('div');
   body.className = 'finder-car-body';
   const eyebrow = document.createElement('span');
   eyebrow.className = 'result-kicker';
-  eyebrow.textContent = `PHOTO REFERENCE ${String(index + 1).padStart(2, '0')} · VISUAL MATCH ONLY`;
+  eyebrow.textContent = car.image ? `PHOTO REFERENCE ${String(index + 1).padStart(2, '0')} · VISUAL MATCH ONLY` : 'CURATED VEHICLE PROFILE · VERIFY EXACT VARIANT';
   const title = document.createElement('h3');
   title.textContent = car.title;
   const summary = document.createElement('p');
@@ -304,9 +300,15 @@ function renderKnownProfile(index) {
   compare.textContent = comparedProfiles.has(index) ? 'Remove from compare −' : 'Add to compare +';
   actions.append(compare);
   body.append(eyebrow, title, summary, facts, actions);
-  card.append(image, body);
+  if (car.image) {
+    const image = document.createElement('img');
+    image.src = car.image;
+    image.alt = car.alt || car.title;
+    card.append(image);
+  }
+  card.append(body);
   finderResult.append(card);
-  finderStatus.textContent = 'Reference profile found. Exact vehicle identity still needs confirmation.';
+  finderStatus.textContent = car.image ? 'Reference profile found. Exact vehicle identity still needs confirmation.' : 'Curated profile found. Confirm the exact model year and variant with the manufacturer.';
 }
 
 function renderWikipediaResult(article, query, vehicle) {

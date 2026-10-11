@@ -163,13 +163,13 @@ function listenOnAvailablePort(port, attemptsLeft = 25) {
       listenOnAvailablePort(port + 1, attemptsLeft - 1);
       return;
     }
-    console.error(`Could not start Chassis on ${host}:${port}: ${error.message}`);
+    console.error(`Could not start Velocitrak on ${host}:${port}: ${error.message}`);
     console.error('Close the other server window or try again.');
     process.exitCode = 1;
   };
   const onListening = () => {
     server.removeListener('error', onError);
-    console.log(`Chassis is ready at http://127.0.0.1:${port}`);
+    console.log(`Velocitrak is ready at http://127.0.0.1:${port}`);
     console.log(youtubeKey ? 'YouTube captioned-video search is enabled.' : 'YouTube search is in link-only mode.');
     console.log('Leave this window open while you use the website. Press Ctrl+C here to stop it.');
   };

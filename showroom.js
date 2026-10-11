@@ -1,9 +1,22 @@
 (() => {
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const loader = document.getElementById('model-viewer-runtime');
+  const openedAsFile = window.location.protocol === 'file:';
+
+  if (openedAsFile) {
+    document.body.classList.add('model-viewer-unavailable');
+    document.querySelectorAll('.showroom-model-fallback').forEach(fallback => {
+      fallback.textContent = '3D needs the local server · run Start Velocitrak.cmd';
+    });
+  }
 
   loader?.addEventListener('error', () => {
     document.body.classList.add('model-viewer-unavailable');
+    if (!openedAsFile) {
+      document.querySelectorAll('.showroom-model-fallback').forEach(fallback => {
+        fallback.textContent = '3D preview unavailable · open feature';
+      });
+    }
   }, { once: true });
 
   document.querySelectorAll('.showroom-feature-tile').forEach(tile => {
