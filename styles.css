@@ -52,3 +52,16 @@
 .spec-power-callout .spec-source-link{grid-column:1/-1;justify-self:start}
 .spec-year-note{padding:10px 12px;background:#f4f3e8;border-left:2px solid #b2a46f;color:#716b52;font-size:9px;line-height:1.6}
 @media(max-width:620px){.spec-power-callout{grid-template-columns:1fr;padding:16px}.spec-power-callout>span,.spec-power-callout>strong,.spec-power-callout>small,.spec-power-callout .spec-source-link{grid-column:1;grid-row:auto}}
+
+
+/* Manufacturer-sourced multi-engine profile cards */
+.spec-engine-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:15px 0 20px}
+.spec-engine-card{background:#f8f9f6;border:1px solid #e3e8e2;padding:16px 15px;min-width:0}
+.spec-engine-card h5{font:500 12px/1.4 Manrope, sans-serif;color:#25332e;margin:0 0 13px}
+.spec-engine-card p{display:flex;justify-content:space-between;gap:10px;margin:7px 0 0;font-size:8px;line-height:1.5;color:#718078}
+.spec-engine-card p span:first-child{flex:none;font-size:7px;letter-spacing:.45px;color:#89958f}
+.spec-engine-card p strong{font:600 11px Manrope,sans-serif;color:#34483d;text-align:right}
+.gallery-official-links{margin-top:10px}
+.gallery-official-links .finder-link{font-size:8px}
+@media(max-width:760px){.spec-engine-options{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.spec-engine-options{grid-template-columns:1fr}.spec-engine-card{padding:14px}}
