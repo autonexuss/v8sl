@@ -4,8 +4,9 @@ Chassis is an independent car-discovery and ownership website: <https://v8sl-grg
 
 ## Features available on the site
 
-- Search the curated India-market vehicle directory. Coverage is not exhaustive; confirm model year, variant and specifications with manufacturer sources.
-- Explore public vehicle references, sourced images and YouTube creator videos where available.
+- Search the curated India-market vehicle directory, including searches that start with a model year. Coverage is not exhaustive; confirm model year, variant and specifications with manufacturer sources.
+- Explore Wikipedia/Wikidata public vehicle references, with a direct Wikidata fallback when an exact Wikipedia model page is missing. Specs remain model-family facts unless a manufacturer source identifies the exact India variant.
+- View sourced Commons photographs only when the file matches the car make/model category and has camera metadata or an explicit photography category. Cabin matches must also identify an interior view in the file title. If a match does not pass those checks, the gallery stays empty rather than showing unrelated artwork or a nearby model.
 - Use the loan and mileage planners with values you provide.
 - Open resale-marketplace searches and compare asking prices you enter. Chassis does not scrape or verify marketplace listings.
 - Save garage details, service notes, reminders and private listing drafts in the current browser profile. Listing photos use that browser's IndexedDB. Data does not sync across devices and can be lost if browser site data is cleared.
@@ -45,3 +46,4 @@ GitHub Actions publishes `main` to GitHub Pages with relative asset paths. The s
 - [VAHAN vehicle services](https://vahan.parivahan.gov.in/vahanservice/)
 - [eChallan](https://echallan.parivahan.gov.in/index/accused-challan)
 - [IRDAI-listed general insurers](https://irdai.gov.in/list-of-general-insurers)
+
