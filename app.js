@@ -749,25 +749,32 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
 function cleanMetadata(value) { return String(value || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/\s+/g, ' ').trim(); }
 
 async function commonsVehicleImages(vehicle, view, requestedTerm) {
-  const query = vehicle.make.make + ' ' + vehicle.model.name;
-  const url = new URL('https://commons.wikimedia.org/w/api.php');
-  url.search = new URLSearchParams({
-    action: 'query', generator: 'search', gsrsearch: query, gsrnamespace: '6', gsrlimit: '50',
-    prop: 'imageinfo|categories', iiprop: 'url|extmetadata|mime|size', iiurlwidth: '1400',
-    cllimit: '20', format: 'json', origin: '*'
-  });
-  const response = await fetch(url);
-  if (!response.ok) throw new Error('Wikimedia Commons image search unavailable');
-  const data = await response.json();
   const requestedAlias = (vehicle.model.aliases || []).find(alias => normalized(requestedTerm).includes(normalized(alias)));
   const exactModelName = requestedAlias || vehicle.model.name;
+  const searchTerms = [vehicle.make.make + ' ' + exactModelName];
+  if (normalized(vehicle.make.make) === 'hyundai' && normalized(vehicle.model.name) === 'creta' && exactModelName === vehicle.model.name) {
+    searchTerms.push(view.key === 'interior' ? 'Hyundai Creta SU2 PE' : 'Hyundai Creta 2024');
+    if (view.key === 'interior') searchTerms.push('Hyundai Creta dashboard');
+  }
+  const searchResponses = await Promise.all(searchTerms.map(async term => {
+    const url = new URL('https://commons.wikimedia.org/w/api.php');
+    url.search = new URLSearchParams({
+      action: 'query', generator: 'search', gsrsearch: term, gsrnamespace: '6', gsrlimit: '50',
+      prop: 'imageinfo|categories', iiprop: 'url|extmetadata|mime|size', iiurlwidth: '1400',
+      cllimit: '20', format: 'json', origin: '*'
+    });
+    const response = await fetch(url);
+    return response.ok ? response.json() : null;
+  }));
+  if (searchResponses.every(data => !data)) throw new Error('Wikimedia Commons image search unavailable');
+  const pages = [...new Map(searchResponses.flatMap(data => Object.values(data?.query?.pages || [])).map(page => [page.pageid, page])).values()];
   const modelNames = [exactModelName].map(normalized).filter(name => name.length >= 2);
   const makeNames = [vehicle.make.make, ...(vehicle.make.aliases || [])].map(normalized).filter(name => name.length >= 2);
   const requestedYear = String(requestedTerm || '').match(/\b(?:19|20)\d{2}\b/)?.[0] || '';
-  const interiorTerms = ['interior', 'dashboard', 'dash board', 'cockpit', 'cabin', 'interieur', 'salon', 'instrument panel', 'seats'];
+  const interiorTerms = ['interior', 'dashboard', 'dashboards', 'dash board', 'cockpit', 'cabin', 'interieur', 'salon', 'instrument panel', 'seat', 'seats'];
   const excluded = /\b(diagram|drawing|illustration|sketch|render|rendering|vector|blueprint|line art|cutaway|infographic|logo|badge|emblem|toy|scale model|model car|paper model|concept art|brochure)\b/i;
   const containsPhrase = (haystack, phrase) => (' ' + haystack + ' ').includes(' ' + phrase + ' ');
-  const matches = Object.values(data.query?.pages || {}).map(page => {
+  const matches = pages.map(page => {
     const info = page.imageinfo?.[0];
     if (!info?.thumburl || !info?.descriptionurl) return null;
     const rawTitle = page.title?.replace(/^File:/i, '') || '';
@@ -851,7 +858,7 @@ function renderImageGallery(target, vehicle, requestedTerm) {
     commonsVehicleImages(vehicle, view, requestedTerm).then(images => {
       status.textContent = images.length
         ? images.length + ' exact-category photographs · open a file page to review the vehicle category and license.'
-        : 'No verified ' + view.title.toLowerCase() + ' photo matched this model generation. No drawing, rebadge or unrelated photo was substituted.';
+        : 'No verified ' + (view.key === 'interior' ? 'interior/cabin' : 'exterior') + ' photo matched this model generation. No drawing, rebadge or unrelated photo was substituted.';
       if (!images.length && officialPages) {
         status.append(document.createTextNode(' '), makeLink('Open Hyundai’s official gallery ↗', officialPages[view.key], 'spec-source-link'));
       }
