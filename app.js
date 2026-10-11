@@ -198,7 +198,7 @@ const videoResults = document.getElementById('video-results');
 const comparePanel = document.getElementById('compare-panel');
 const comparedProfiles = new Set();
 
-function normalized(value) { return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+function normalized(value) { return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
 function knownProfileIndex(query) {
   const term = normalized(query);
   return referenceProfiles.findIndex(car => car.aliases.some(alias => term.includes(normalized(alias)) || normalized(alias).includes(term) && term.length > 4));
@@ -309,55 +309,42 @@ function renderKnownProfile(index) {
   finderStatus.textContent = 'Reference profile found. Exact vehicle identity still needs confirmation.';
 }
 
-function renderWikipediaResult(car, query) {
+function renderWikipediaResult(article, query, vehicle) {
   finderResult.replaceChildren();
-  const articles = Array.isArray(car) ? car : car ? [car] : [];
-  if (!articles.length) {
-    const empty = document.createElement('article');
-    empty.className = 'wiki-result-card';
-    const title = document.createElement('h3'); title.textContent = `No reference preview found for “${query}”`;
-    const summary = document.createElement('p'); summary.textContent = 'Try a shorter make or model name, or use the direct searches below.';
-    empty.append(title, summary, makeLink('Search Wikipedia ↗', `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`));
-    finderResult.append(empty);
-  } else {
-    const article = articles[0];
-    const card = document.createElement('article'); card.className = 'wiki-result-card wiki-lead-card';
-    const media = document.createElement('div'); media.className = 'wiki-lead-media';
-    if (article.thumbnail) {
-      const image = document.createElement('img'); image.src = article.thumbnail; image.alt = `${article.title} reference image`; image.loading = 'lazy';
-      image.addEventListener('error', () => media.remove(), { once: true });
-      media.append(image);
-    }
-    const body = document.createElement('div'); body.className = 'wiki-lead-body';
-    const label = document.createElement('span'); label.className = 'result-kicker'; label.textContent = 'PUBLIC REFERENCE · VERIFY YEAR, MARKET & VARIANT';
-    const title = document.createElement('h3'); title.textContent = article.title;
-    const summary = document.createElement('p'); summary.textContent = shortExcerpt(article.extract || 'Open the article for more information.', 920);
-    const articleLink = makeLink('Read the Wikipedia overview ↗', article.url);
-    body.append(label, title, summary, articleLink);
-    card.append(media, body);
-    finderResult.append(card);
+  const card = document.createElement('article');
+  card.className = 'wiki-result-card source-result-card';
+  const body = document.createElement('div');
+  const label = document.createElement('span');
+  label.className = 'result-kicker';
+  label.textContent = article ? 'MATCHED CAR ARTICLE · VERIFY YEAR & VARIANT' : 'NO EXACT PUBLIC ARTICLE MATCH';
+  const title = document.createElement('h3');
+  title.textContent = article ? article.title : vehicle.fullName;
+  const summary = document.createElement('p');
+  summary.textContent = article
+    ? shortExcerpt(article.extract || 'Open the article for the available model overview.', 920)
+    : 'No article passed the make-and-model match. Chassis will not substitute a similar-looking car or an unrelated search result.';
+  body.append(label, title, summary);
+  if (article?.url) body.append(makeLink('Read the matched Wikipedia overview ↗', article.url));
+  card.append(body);
+  finderResult.append(card);
 
-    if (articles.length > 1) {
-      const related = document.createElement('section'); related.className = 'wiki-related-results';
-      const heading = document.createElement('h4'); heading.textContent = 'Related reference pages';
-      const grid = document.createElement('div'); grid.className = 'wiki-related-grid';
-      articles.slice(1, 5).forEach(article => {
-        const item = document.createElement('article'); item.className = 'wiki-related-card';
-        const name = document.createElement('h5'); name.textContent = article.title;
-        const extract = document.createElement('p'); extract.textContent = shortExcerpt(article.extract || 'Open this related reference page.', 260);
-        item.append(name, extract, makeLink('Open reference ↗', article.url)); grid.append(item);
-      });
-      related.append(heading, grid); finderResult.append(related);
-    }
-  }
-  const sources = document.createElement('article'); sources.className = 'wiki-result-card source-result-card';
-  const sourceTitle = document.createElement('h3'); sourceTitle.textContent = `More sources for ${query}`;
-  const note = document.createElement('p'); note.textContent = 'The profile below combines public reference text, structured Wikidata entries and Wikimedia Commons images when available. Specs may be missing, outdated or apply to a different generation or market; check the manufacturer for your exact variant.';
-  const links = document.createElement('div'); links.className = 'finder-actions';
+  const sources = document.createElement('article');
+  sources.className = 'wiki-result-card source-result-card';
+  const sourceTitle = document.createElement('h3');
+  sourceTitle.textContent = 'Specifications and original sources';
+  const note = document.createElement('p');
+  note.textContent = 'Power and vehicle facts below are shown only when a public source provides them. Model-family data can differ by year, engine and trim; confirm the exact manufacturer brochure before relying on a figure.';
+  const links = document.createElement('div');
+  links.className = 'finder-actions';
+  const makeUrl = vehicle.make.url;
+  let host = '';
+  try { host = new URL(makeUrl).hostname.replace(/^www\./i, ''); } catch { /* Keep the manufacturer link. */ }
+  const officialSearch = 'https://www.google.com/search?q=' + encodeURIComponent('site:' + host + ' "' + vehicle.fullName + '" specifications brochure');
   links.append(
-    makeLink('Search official manufacturer pages ↗', `https://www.google.com/search?q=${encodeURIComponent(`${query} official manufacturer`)}`),
-    makeLink('Search CarDekho ↗', `https://www.google.com/search?q=${encodeURIComponent(`site:cardekho.com ${query} car`)}`),
-    makeLink('Search used-car listings ↗', `https://www.google.com/search?q=${encodeURIComponent(`site:cardekho.com/used-cars ${query}`)}`)
+    makeLink(vehicle.make.make + ' official website ↗', makeUrl),
+    makeLink('Find the official brochure & specifications ↗', officialSearch),
+    makeLink('Search CarDekho model details ↗', 'https://www.google.com/search?q=' + encodeURIComponent('site:cardekho.com ' + vehicle.fullName + ' specifications')),
+    makeLink('Search used-car listings ↗', 'https://www.google.com/search?q=' + encodeURIComponent('site:cardekho.com/used-cars ' + vehicle.fullName))
   );
   sources.append(sourceTitle, note, links);
   finderResult.append(sources);
@@ -485,201 +472,356 @@ function wikidataMetric(property, value, labels) {
   const unit = (labels[value.unit] || '').toLowerCase();
   const amount = value.amount;
   if (property === 'P2109') {
-    if (unit.includes('kilowatt')) return { name: 'Power', value: amount, unit: 'kW', limit: 1000 };
-    if (unit === 'watt' || unit.endsWith(' watt')) return { name: 'Power', value: amount / 1000, unit: 'kW', limit: 1000 };
-    if (unit.includes('horsepower') && unit.includes('metric')) return { name: 'Power', value: amount * .7355, unit: 'kW', limit: 1000 };
-    if (unit.includes('horsepower')) return { name: 'Power', value: amount * .7457, unit: 'kW', limit: 1000 };
+    let kw = null;
+    if (unit.includes('kilowatt')) kw = amount;
+    else if (unit === 'watt' || unit.endsWith(' watt')) kw = amount / 1000;
+    else if (unit.includes('horsepower') && unit.includes('metric')) kw = amount * .7355;
+    else if (unit.includes('horsepower')) kw = amount * .7457;
+    if (kw !== null && kw > 0 && kw < 1500) {
+      const ps = kw * 1.35962;
+      return { name: 'Power', value: kw, unit: 'kW / PS', display: Number(kw.toFixed(1)).toLocaleString('en-IN') + ' kW / ' + Math.round(ps).toLocaleString('en-IN') + ' PS', limit: 1000 };
+    }
   }
   if (property === 'P2230') {
-    if (unit.includes('kilonewton')) return { name: 'Torque', value: amount * 1000, unit: 'Nm', limit: 2000 };
-    if (unit.includes('pound') || unit.includes('foot-pound')) return { name: 'Torque', value: amount * 1.3558, unit: 'Nm', limit: 2000 };
-    if (unit.includes('newton metre') || unit === 'newton-meter' || unit === 'newton metre') return { name: 'Torque', value: amount, unit: 'Nm', limit: 2000 };
+    let nm = null;
+    if (unit.includes('kilonewton')) nm = amount * 1000;
+    else if (unit.includes('pound') || unit.includes('foot-pound')) nm = amount * 1.3558;
+    else if (unit.includes('newton metre') || unit === 'newton-meter' || unit === 'newton metre') nm = amount;
+    if (nm !== null && nm > 0 && nm < 10000) return { name: 'Torque', value: nm, unit: 'Nm', display: Math.round(nm).toLocaleString('en-IN') + ' Nm', limit: 3000 };
   }
   if (property === 'P2052') {
-    if (unit.includes('kilometre per hour') || unit.includes('kilometer per hour')) return { name: 'Speed', value: amount, unit: 'km/h', limit: 400 };
-    if (unit.includes('mile per hour')) return { name: 'Speed', value: amount * 1.60934, unit: 'km/h', limit: 400 };
-    if (unit.includes('metre per second') || unit.includes('meter per second')) return { name: 'Speed', value: amount * 3.6, unit: 'km/h', limit: 400 };
+    let kmh = null;
+    if (unit.includes('kilometre per hour') || unit.includes('kilometer per hour')) kmh = amount;
+    else if (unit.includes('mile per hour')) kmh = amount * 1.60934;
+    else if (unit.includes('metre per second') || unit.includes('meter per second')) kmh = amount * 3.6;
+    if (kmh !== null && kmh > 0 && kmh < 800) return { name: 'Top speed', value: kmh, unit: 'km/h', display: Math.round(kmh).toLocaleString('en-IN') + ' km/h', limit: 400 };
   }
   return null;
 }
 
-function renderSpecTable(target, vehicle) {
-  const rows = vehicle?.rows || [];
-  const section = document.createElement('section'); section.className = 'spec-table-section';
-  const heading = document.createElement('div'); heading.className = 'detail-section-heading';
-  const title = document.createElement('h4'); title.textContent = 'Specifications found in public data';
-  const context = document.createElement('p'); context.textContent = vehicle ? `${vehicle.label}${vehicle.description ? ` · ${vehicle.description}` : ''}` : 'No matching structured vehicle record was found for this search.';
-  heading.append(title, context); section.append(heading);
+async function wikipediaInfoboxSpecs(article) {
+  if (!article?.title) return [];
+  const url = new URL('https://en.wikipedia.org/w/api.php');
+  url.search = new URLSearchParams({ action: 'parse', page: article.title, prop: 'text', format: 'json', formatversion: '2', origin: '*' });
+  const response = await fetch(url);
+  if (!response.ok) return [];
+  const data = await response.json();
+  const html = typeof data.parse?.text === 'string' ? data.parse.text : '';
+  if (!html) return [];
+  const parsed = new DOMParser().parseFromString(html, 'text/html');
+  const table = parsed.querySelector('table.infobox');
+  if (!table) return [];
+  const wanted = /engine|power|torque|transmission|gearbox|fuel|consumption|economy|range|acceleration|top speed|maximum speed|dimensions|length|width|height|wheelbase|curb weight|kerb weight|mass|battery|motor|seating|seats|drivetrain/i;
+  const rows = [];
+  for (const row of table.querySelectorAll('tr')) {
+    if (row.closest('table') !== table) continue;
+    const labelCell = row.querySelector(':scope > th');
+    const valueCell = row.querySelector(':scope > td');
+    if (!labelCell || !valueCell) continue;
+    const name = cleanMetadata(labelCell.textContent).replace(/\[\d+\]/g, '').trim();
+    const value = cleanMetadata(valueCell.textContent).replace(/\[\d+\]/g, '').trim();
+    if (!name || !value || !wanted.test(name)) continue;
+    if (rows.some(existing => existing.name.toLowerCase() === name.toLowerCase() && existing.value === value)) continue;
+    rows.push({ name, value: value.slice(0, 700), source: article.url, sourceLabel: 'Wikipedia infobox' });
+    if (rows.length >= 18) break;
+  }
+  return rows;
+}
+
+function infoboxPowerMetric(rows) {
+  const row = (rows || []).find(item => /power/i.test(item.name));
+  if (!row) return null;
+  const textValue = row.value;
+  const kw = textValue.match(/([\d,.]+)\s*kW\b/i);
+  let value = null;
+  if (kw) value = Number(kw[1].replace(/,/g, ''));
+  else {
+    const ps = textValue.match(/([\d,.]+)\s*(?:PS|CV)\b/i);
+    const hp = textValue.match(/([\d,.]+)\s*(?:bhp|hp)\b/i);
+    if (ps) value = Number(ps[1].replace(/,/g, '')) * .7355;
+    else if (hp) value = Number(hp[1].replace(/,/g, '')) * .7457;
+  }
+  if (!Number.isFinite(value) || value <= 0 || value >= 1500) return null;
+  const ps = value * 1.35962;
+  return { name: 'Power', value, unit: 'kW / PS', display: Number(value.toFixed(1)).toLocaleString('en-IN') + ' kW / ' + Math.round(ps).toLocaleString('en-IN') + ' PS', limit: 1000, source: row.source, sourceLabel: row.sourceLabel };
+}
+
+function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm) {
+  const rows = [...(vehicle?.rows || []), ...(infoboxRows || [])];
+  const section = document.createElement('section');
+  section.className = 'spec-table-section';
+  const heading = document.createElement('div');
+  heading.className = 'detail-section-heading';
+  const title = document.createElement('h4');
+  title.textContent = 'Specifications and performance';
+  const context = document.createElement('p');
+  context.textContent = vehicle ? vehicle.label + (vehicle.description ? ' · ' + vehicle.description : '') : 'No structured Wikidata vehicle record matched this exact model article.';
+  heading.append(title, context);
+  section.append(heading);
+
+  const requestedYear = String(requestedTerm || '').match(/\b(?:19|20)\d{2}\b/);
+  if (requestedYear) {
+    const yearNote = document.createElement('p');
+    yearNote.className = 'spec-year-note';
+    yearNote.textContent = 'Your search included model year ' + requestedYear[0] + '. The public model-family figures below are not confirmed against that year or trim.';
+    section.append(yearNote);
+  }
 
   const metrics = [];
-  for (const [property, values] of Object.entries(vehicle?.values || {})) {
-    const metric = wikidataMetric(property, values[0], vehicle.unitLabels);
-    if (metric && !metrics.some(item => item.name === metric.name)) metrics.push(metric);
+  let powerMetric = null;
+  if (vehicle) {
+    for (const property of ['P2109', 'P2230', 'P2052']) {
+      const metric = wikidataMetric(property, vehicle.values?.[property]?.[0], vehicle.unitLabels || {});
+      if (!metric) continue;
+      metrics.push(metric);
+      if (property === 'P2109') powerMetric = metric;
+    }
   }
+  if (!powerMetric) powerMetric = infoboxPowerMetric(infoboxRows);
+  if (powerMetric && !metrics.some(metric => metric.name === 'Power')) metrics.unshift(powerMetric);
+
+  const powerCallout = document.createElement('div');
+  powerCallout.className = 'spec-power-callout';
+  const powerLabel = document.createElement('span');
+  powerLabel.textContent = 'ENGINE POWER · PUBLIC REFERENCE';
+  const powerValue = document.createElement('strong');
+  const powerNote = document.createElement('small');
+  if (powerMetric) {
+    powerValue.textContent = powerMetric.display;
+    powerNote.textContent = 'Model-family figure; generation, market and variant may differ.';
+  } else {
+    powerValue.textContent = 'Not verified in matched public data';
+    powerNote.textContent = 'No power number is guessed. Open the official site or brochure for the exact year and variant.';
+  }
+  powerCallout.append(powerLabel, powerValue, powerNote);
+  if (powerMetric?.source) powerCallout.append(makeLink(powerMetric.sourceLabel + ' source ↗', powerMetric.source, 'spec-source-link'));
+  else if (vehicle?.source) powerCallout.append(makeLink('Wikidata power record ↗', vehicle.source + '#P2109', 'spec-source-link'));
+  if (!powerMetric && carRecord?.make?.url) powerCallout.append(makeLink(carRecord.make.make + ' official website ↗', carRecord.make.url, 'spec-source-link'));
+  section.append(powerCallout);
+
   if (metrics.length) {
-    const chart = document.createElement('div'); chart.className = 'spec-graphic';
-    const chartTitle = document.createElement('div'); chartTitle.className = 'spec-graphic-title';
-    chartTitle.innerHTML = "<span>POWER, TORQUE & SPEED</span><small>Reference scale · not a cross-model comparison</small>";
+    const chart = document.createElement('div');
+    chart.className = 'spec-graphic';
+    const chartTitle = document.createElement('div');
+    chartTitle.className = 'spec-graphic-title';
+    chartTitle.innerHTML = '<span>POWER, TORQUE & TOP SPEED</span><small>Source values · not a cross-model comparison</small>';
     chart.append(chartTitle);
     metrics.forEach(metric => {
-      const row = document.createElement('div'); row.className = 'spec-meter-row';
-      const label = document.createElement('div'); label.className = 'spec-meter-label';
-      const name = document.createElement('span'); name.textContent = metric.name;
-      const value = document.createElement('strong'); value.textContent = `${Number(metric.value.toFixed(1)).toLocaleString('en-IN')} ${metric.unit}`;
+      const row = document.createElement('div');
+      row.className = 'spec-meter-row';
+      const label = document.createElement('div');
+      label.className = 'spec-meter-label';
+      const name = document.createElement('span');
+      name.textContent = metric.name;
+      const value = document.createElement('strong');
+      value.textContent = metric.display;
       label.append(name, value);
-      const track = document.createElement('div'); track.className = 'spec-meter-track';
-      const fill = document.createElement('span'); fill.style.width = `${Math.max(2, Math.min(100, metric.value / metric.limit * 100))}%`; track.append(fill);
-      row.append(label, track); chart.append(row);
+      const track = document.createElement('div');
+      track.className = 'spec-meter-track';
+      const fill = document.createElement('span');
+      fill.style.width = Math.max(2, Math.min(100, metric.value / metric.limit * 100)) + '%';
+      track.append(fill);
+      row.append(label, track);
+      chart.append(row);
     });
     section.append(chart);
   }
 
   if (rows.length) {
-    const tableWrap = document.createElement('div'); tableWrap.className = 'spec-table-wrap';
-    const table = document.createElement('table'); table.className = 'spec-table';
-    const head = document.createElement('thead'); head.innerHTML = '<tr><th scope="col">Specification</th><th scope="col">Public data value</th><th scope="col">Source</th></tr>';
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'spec-table-wrap';
+    const table = document.createElement('table');
+    table.className = 'spec-table';
+    const head = document.createElement('thead');
+    head.innerHTML = '<tr><th scope="col">Specification</th><th scope="col">Public data value</th><th scope="col">Source</th></tr>';
     const body = document.createElement('tbody');
     rows.forEach(row => {
       const tr = document.createElement('tr');
-      const name = document.createElement('th'); name.scope = 'row'; name.textContent = row.name;
-      const value = document.createElement('td'); value.textContent = row.value;
-      const source = document.createElement('td'); source.append(makeLink('Wikidata ↗', row.source, 'spec-source-link'));
-      tr.append(name, value, source); body.append(tr);
+      const name = document.createElement('th');
+      name.scope = 'row';
+      name.textContent = row.name;
+      const value = document.createElement('td');
+      value.textContent = row.value;
+      const source = document.createElement('td');
+      source.append(makeLink(row.sourceLabel || 'Wikidata ↗', row.source || vehicle?.source || carRecord.make.url, 'spec-source-link'));
+      tr.append(name, value, source);
+      body.append(tr);
     });
-    table.append(head, body); tableWrap.append(table); section.append(tableWrap);
+    table.append(head, body);
+    tableWrap.append(table);
+    section.append(tableWrap);
   } else {
-    const empty = document.createElement('p'); empty.className = 'spec-empty'; empty.textContent = 'Wikidata has no usable engine or dimension values for this entry yet. Chassis leaves missing figures blank rather than estimating them.'; section.append(empty);
+    const empty = document.createElement('p');
+    empty.className = 'spec-empty';
+    empty.textContent = 'The matched public record does not publish usable power, engine or dimensions yet. Chassis leaves these values blank instead of inventing them.';
+    section.append(empty);
   }
-
-  const note = document.createElement('p'); note.className = 'spec-provenance';
-  note.textContent = vehicle ? 'Structured data is model-level and may cover another generation, trim, or market. Check the manufacturer’s brochure for the exact variant. Wikidata facts are published under CC0.' : 'Exact trim-level figures, price and availability are not claimed when public structured data does not provide them.';
-  if (vehicle) note.append(' '); section.append(note);
-  if (vehicle) section.append(makeLink('Open this Wikidata record ↗', vehicle.source, 'spec-source-link'));
+  const note = document.createElement('p');
+  note.className = 'spec-provenance';
+  note.textContent = 'These are model-family reference facts, not exact VIN/trim data. A model family can span different engines and generations; confirm the specific Indian model year and variant in the manufacturer brochure. Wikidata structured facts are released under CC0.';
+  section.append(note);
+  if (vehicle?.source) section.append(makeLink('Open the Wikidata vehicle record ↗', vehicle.source, 'spec-source-link'));
   target.append(section);
 }
 
 function cleanMetadata(value) { return String(value || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/\s+/g, ' ').trim(); }
 
-async function commonsVehicleImages(query, view) {
+async function commonsVehicleImages(vehicle, view, requestedTerm) {
+  const query = vehicle.make.make + ' ' + vehicle.model.name + ' ' + (view.key === 'interior' ? 'interior dashboard cockpit' : 'exterior front side car');
   const url = new URL('https://commons.wikimedia.org/w/api.php');
-  url.search = new URLSearchParams({ action: 'query', generator: 'search', gsrsearch: `${query} car ${view}`, gsrnamespace: '6', gsrlimit: '5', prop: 'imageinfo', iiprop: 'url|extmetadata', iiurlwidth: '1200', format: 'json', origin: '*' });
+  url.search = new URLSearchParams({
+    action: 'query', generator: 'search', gsrsearch: query, gsrnamespace: '6', gsrlimit: '30',
+    prop: 'imageinfo|categories', iiprop: 'url|extmetadata|mime|size', iiurlwidth: '1400',
+    cllimit: '20', format: 'json', origin: '*'
+  });
   const response = await fetch(url);
   if (!response.ok) throw new Error('Wikimedia Commons image search unavailable');
   const data = await response.json();
-  return Object.values(data.query?.pages || []).map(page => {
+  const modelNames = [vehicle.model.name, ...(vehicle.model.aliases || [])].map(normalized).filter(name => name.length >= 2);
+  const makeNames = [vehicle.make.make, ...(vehicle.make.aliases || [])].map(normalized).filter(name => name.length >= 2);
+  const requestedYear = String(requestedTerm || '').match(/\b(?:19|20)\d{2}\b/)?.[0] || '';
+  const interiorTerms = ['interior', 'dashboard', 'dash board', 'cockpit', 'cabin', 'interieur', 'salon', 'instrument panel', 'seats'];
+  const excluded = /\b(diagram|drawing|illustration|sketch|render|rendering|vector|blueprint|line art|cutaway|infographic|logo|badge|emblem|toy|scale model|model car|paper model|concept art|brochure)\b/i;
+  const containsPhrase = (haystack, phrase) => (' ' + haystack + ' ').includes(' ' + phrase + ' ');
+  const matches = Object.values(data.query?.pages || {}).map(page => {
     const info = page.imageinfo?.[0];
     if (!info?.thumburl || !info?.descriptionurl) return null;
+    const title = normalized(page.title?.replace(/^File:/i, '') || '');
+    if (!modelNames.some(name => containsPhrase(title, name))) return null;
+    if (!makeNames.some(name => containsPhrase(title, name))) return null;
+    if (requestedYear && !containsPhrase(title, requestedYear)) return null;
+    if (view.key === 'interior' && !interiorTerms.some(word => containsPhrase(title, normalized(word)))) return null;
+    if (view.key === 'exterior' && interiorTerms.some(word => containsPhrase(title, normalized(word)))) return null;
+    if (excluded.test(page.title || '')) return null;
+    if (!/^image\/(jpeg|png|webp)$/i.test(info.mime || '')) return null;
+    if (!Number.isFinite(info.width) || !Number.isFinite(info.height) || info.width < 500 || info.height < 300) return null;
     const meta = info.extmetadata || {};
-    const artist = cleanMetadata(meta.Artist?.value || meta.Credit?.value);
-    const license = cleanMetadata(meta.LicenseShortName?.value);
-    return { title: page.title?.replace(/^File:/, '') || '', image: info.thumburl, page: info.descriptionurl, licenseUrl: meta.LicenseUrl?.value || info.descriptionurl, license: license || 'See file page', artist };
+    return {
+      title: page.title?.replace(/^File:/i, '') || '',
+      image: info.thumburl,
+      page: info.descriptionurl,
+      licenseUrl: meta.LicenseUrl?.value || info.descriptionurl,
+      license: cleanMetadata(meta.LicenseShortName?.value) || 'See file page',
+      artist: cleanMetadata(meta.Artist?.value || meta.Credit?.value)
+    };
   }).filter(Boolean);
+  return [...new Map(matches.map(item => [item.page, item])).values()].slice(0, 3);
 }
 
-async function commonsFileImage(filename) {
-  if (!filename) return null;
-  const url = new URL('https://commons.wikimedia.org/w/api.php');
-  url.search = new URLSearchParams({ action: 'query', prop: 'imageinfo', titles: `File:${filename}`, iiprop: 'url|extmetadata', iiurlwidth: '1200', format: 'json', origin: '*' });
-  const response = await fetch(url);
-  if (!response.ok) return null;
-  const data = await response.json();
-  const page = Object.values(data.query?.pages || {})[0];
-  const info = page?.imageinfo?.[0];
-  if (!info?.thumburl || !info?.descriptionurl) return null;
-  const meta = info.extmetadata || {};
-  return {
-    title: page.title?.replace(/^File:/, '') || filename,
-    image: info.thumburl,
-    page: info.descriptionurl,
-    licenseUrl: meta.LicenseUrl?.value || info.descriptionurl,
-    license: cleanMetadata(meta.LicenseShortName?.value) || 'See file page',
-    artist: cleanMetadata(meta.Artist?.value || meta.Credit?.value)
-  };
-}
-
-function renderImageGallery(target, query, localImage, article, vehicle) {
-  const gallery = document.createElement('section'); gallery.className = 'vehicle-image-gallery';
-  const heading = document.createElement('div'); heading.className = 'detail-section-heading';
-  const title = document.createElement('h4'); title.textContent = 'Exterior & cabin gallery';
-  const intro = document.createElement('p'); intro.textContent = 'Community images from Wikimedia Commons. The result can be a different year or trim; check the file page and its reuse terms.';
-  heading.append(title, intro); gallery.append(heading);
-  if (localImage) {
-    const supplied = document.createElement('figure'); supplied.className = 'vehicle-gallery-image supplied-gallery-image';
-    const image = document.createElement('img'); image.src = localImage.image; image.alt = localImage.alt; image.loading = 'lazy';
-    const caption = document.createElement('figcaption'); caption.innerHTML = '<strong>Supplied photo</strong><small>Visual reference only · exact year and trim unverified</small>';
-    supplied.append(image, caption);
-    const localSection = document.createElement('div'); localSection.className = 'gallery-group';
-    const localTitle = document.createElement('h5'); localTitle.textContent = 'Your car photo'; localSection.append(localTitle, supplied); gallery.append(localSection);
-  }
+function renderImageGallery(target, vehicle, requestedTerm) {
+  const gallery = document.createElement('section');
+  gallery.className = 'vehicle-image-gallery';
+  const heading = document.createElement('div');
+  heading.className = 'detail-section-heading';
+  const title = document.createElement('h4');
+  title.textContent = vehicle.fullName + ' · exterior & cabin photos';
+  const intro = document.createElement('p');
+  intro.textContent = 'Only bitmap photo files whose titles name this manufacturer, model and view are shown. Drawings, logos, generic images and unmatched photos are excluded. Photos can still differ by year or trim; Chassis will show no fallback photo when a match is missing.';
+  heading.append(title, intro);
+  gallery.append(heading);
   const views = [
-    { key: 'exterior', title: 'Exterior references' },
-    { key: 'interior dashboard', title: 'Interior & dashboard references' }
+    { key: 'exterior', title: 'Exterior photographs' },
+    { key: 'interior', title: 'Interior & cabin photographs' }
   ];
   views.forEach(view => {
-    const group = document.createElement('div'); group.className = 'gallery-group';
-    const groupTitle = document.createElement('h5'); groupTitle.textContent = view.title;
-    const grid = document.createElement('div'); grid.className = 'vehicle-gallery-grid';
-    const status = document.createElement('p'); status.className = 'gallery-status'; status.textContent = 'Finding reusable reference images…';
-    group.append(groupTitle, grid, status); gallery.append(group);
-    commonsVehicleImages(query, view.key).then(async images => {
-      if (view.key === 'exterior' && !images.length) {
-        const sourceImage = vehicle?.imageTitle || article?.pageimage;
-        const sourced = await commonsFileImage(sourceImage).catch(() => null);
-        if (sourced) images = [sourced];
-      }
-      status.textContent = images.length ? `${images.length} Commons image${images.length === 1 ? '' : 's'} · open each file page to review attribution and license.` : `No close Commons match found. Search Commons for “${query} ${view.key}”.`;
+    const group = document.createElement('div');
+    group.className = 'gallery-group';
+    const groupTitle = document.createElement('h5');
+    groupTitle.textContent = view.title;
+    const grid = document.createElement('div');
+    grid.className = 'vehicle-gallery-grid';
+    const status = document.createElement('p');
+    status.className = 'gallery-status';
+    status.textContent = 'Searching for exact make-and-model photo files…';
+    group.append(groupTitle, grid, status);
+    gallery.append(group);
+    commonsVehicleImages(vehicle, view, requestedTerm).then(images => {
+      status.textContent = images.length
+        ? images.length + ' matching photo' + (images.length === 1 ? '' : 's') + ' · open a file page to review its details and license.'
+        : 'No exact ' + view.title.toLowerCase() + ' match was found. No unrelated or illustrated image was substituted.';
       images.forEach(item => {
-        const figure = document.createElement('figure'); figure.className = 'vehicle-gallery-image';
-        const anchor = document.createElement('a'); anchor.href = item.page; anchor.target = '_blank'; anchor.rel = 'noopener noreferrer'; anchor.setAttribute('aria-label', `Open Commons image ${item.title}`);
-        const image = document.createElement('img'); image.src = item.image; image.alt = `${item.title} · ${view.title}`; image.loading = 'lazy';
-        image.addEventListener('error', () => figure.remove(), { once: true }); anchor.append(image);
+        const figure = document.createElement('figure');
+        figure.className = 'vehicle-gallery-image';
+        const anchor = document.createElement('a');
+        anchor.href = item.page;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+        anchor.setAttribute('aria-label', 'Open Commons file ' + item.title);
+        const image = document.createElement('img');
+        image.src = item.image;
+        image.alt = vehicle.fullName + ' ' + view.title + ': ' + item.title;
+        image.loading = 'lazy';
+        image.addEventListener('error', () => figure.remove(), { once: true });
+        anchor.append(image);
         const caption = document.createElement('figcaption');
-        const name = document.createElement('strong'); name.textContent = item.title || `${query} ${view.title}`;
-        const credit = document.createElement('small'); credit.textContent = [item.artist ? `Photo: ${item.artist}` : 'Photographer details on file page', item.license].join(' · ');
-        const links = document.createElement('span'); links.className = 'gallery-credit-links';
+        const name = document.createElement('strong');
+        name.textContent = item.title;
+        const credit = document.createElement('small');
+        credit.textContent = [item.artist ? 'Photo: ' + item.artist : 'Photographer details on file page', item.license].join(' · ');
+        const links = document.createElement('span');
+        links.className = 'gallery-credit-links';
         links.append(makeLink('File source ↗', item.page, 'gallery-source-link'), makeLink('License ↗', item.licenseUrl, 'gallery-source-link'));
-        caption.append(name, credit, links); figure.append(anchor, caption); grid.append(figure);
+        caption.append(name, credit, links);
+        figure.append(anchor, caption);
+        grid.append(figure);
       });
-      if (!images.length) {
-        const searchLink = makeLink('Search Wikimedia Commons ↗', `https://commons.wikimedia.org/wiki/Special:MediaSearch?type=image&search=${encodeURIComponent(`${query} car ${view.key}`)}`, 'gallery-source-link');
-        status.append(' ', searchLink);
-      }
     }).catch(() => {
-      status.textContent = 'Could not load this image group. Try again later or search Commons directly.';
+      status.textContent = 'Could not load Commons right now. No substitute photo was shown.';
     });
   });
   target.append(gallery);
 }
 
-async function appendRichCarDetails(article, query, localImage) {
-  const panel = document.createElement('article'); panel.className = 'dynamic-detail-panel';
-  const top = document.createElement('div'); top.className = 'dynamic-detail-top';
-  const kicker = document.createElement('span'); kicker.className = 'result-kicker'; kicker.textContent = 'CAR REFERENCE PROFILE · LIVE PUBLIC SOURCES';
-  const h3 = document.createElement('h3'); h3.textContent = article?.title || query;
-  const attribution = document.createElement('p'); attribution.className = 'profile-attribution';
-  attribution.append('Article overview: '); attribution.append(makeLink('Wikipedia contributors ↗', article?.url || `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`, 'spec-source-link'));
-  attribution.append(' · Structured vehicle facts: Wikidata CC0 · Images: individual Wikimedia Commons file pages and licenses.');
-  top.append(kicker, h3, attribution); panel.append(top);
+async function appendRichCarDetails(article, query, carRecord, requestedTerm) {
+  const panel = document.createElement('article');
+  panel.className = 'dynamic-detail-panel';
+  const top = document.createElement('div');
+  top.className = 'dynamic-detail-top';
+  const kicker = document.createElement('span');
+  kicker.className = 'result-kicker';
+  kicker.textContent = 'CAR REFERENCE PROFILE · MATCHED PUBLIC SOURCES';
+  const h3 = document.createElement('h3');
+  h3.textContent = carRecord.fullName;
+  const attribution = document.createElement('p');
+  attribution.className = 'profile-attribution';
+  if (article?.url) attribution.append('Article overview: ', makeLink('matched Wikipedia article ↗', article.url, 'spec-source-link'));
+  else attribution.textContent = 'No exact Wikipedia model article matched. Manufacturer links remain available above.';
+  attribution.append(' · Structured facts: Wikidata CC0 · Technical rows may be model-family values.');
+  top.append(kicker, h3, attribution);
+  panel.append(top);
 
-  const narrative = document.createElement('section'); narrative.className = 'car-narrative';
-  const narrativeHeading = document.createElement('h4'); narrativeHeading.textContent = 'About this car';
+  const narrative = document.createElement('section');
+  narrative.className = 'car-narrative';
+  const narrativeHeading = document.createElement('h4');
+  narrativeHeading.textContent = 'About this car';
   const narrativeText = document.createElement('p');
   const extract = (article?.extract || '').replace(/\s+/g, ' ').trim();
-  narrativeText.textContent = extract ? `${extract.slice(0, 1050)}${extract.length > 1050 ? '…' : ''}` : `We found no general encyclopedia overview for “${query}”. Search the manufacturer’s site for an official product page and exact model year.`;
+  narrativeText.textContent = extract
+    ? shortExcerpt(extract, 1150)
+    : 'No matching model overview was found in the public reference. Use the official manufacturer site for the exact year, powertrain and variant. Chassis will not show a nearby model as a substitute.';
   narrative.append(narrativeHeading, narrativeText);
   if (article?.url) narrative.append(makeLink('Read the full article ↗', article.url, 'spec-source-link'));
   panel.append(narrative);
 
-  const loading = document.createElement('section'); loading.className = 'spec-table-section';
-  const loadingTitle = document.createElement('h4'); loadingTitle.textContent = 'Loading public specifications…';
-  loading.append(loadingTitle); panel.append(loading);
+  const loading = document.createElement('section');
+  loading.className = 'spec-table-section';
+  const loadingTitle = document.createElement('h4');
+  loadingTitle.textContent = 'Loading specifications from public records…';
+  loading.append(loadingTitle);
+  panel.append(loading);
   const galleryContainer = document.createElement('div');
   panel.append(galleryContainer);
   finderResult.append(panel);
 
-  const vehicle = article ? await wikidataVehicle(article, query).catch(() => null) : null;
-  loading.replaceChildren(); renderSpecTable(loading, vehicle);
-  renderImageGallery(galleryContainer, query, localImage, article, vehicle);
+  const [vehicleFacts, infoboxRows] = article
+    ? await Promise.all([
+        wikidataVehicle(article, carRecord.fullName).catch(() => null),
+        wikipediaInfoboxSpecs(article).catch(() => [])
+      ])
+    : [null, []];
+  loading.replaceChildren();
+  renderSpecTable(loading, vehicleFacts, infoboxRows, carRecord, requestedTerm);
+  renderImageGallery(galleryContainer, carRecord, requestedTerm);
 }
 
 function renderFallbackVideoLinks(query) {
@@ -831,14 +973,14 @@ async function loadVideos(query) {
 }
 
 async function searchCar(query) {
-  const term = query.trim();
+  const term = String(query || '').trim();
   if (!term) return;
   const requestId = ++searchRequestId;
   finderResult.hidden = false;
-  finderStatus.textContent = `Searching for ${term}…`;
+  finderStatus.textContent = 'Searching the India-market car directory for ' + term + '…';
   finderVideos.hidden = true;
-  const make = window.chassisResolveMake?.(term);
   const vehicle = window.chassisResolveCar?.(term);
+  const make = window.chassisResolveMake?.(term);
   if (!vehicle && make) {
     renderMakeDirectory(make);
     return;
@@ -847,38 +989,29 @@ async function searchCar(query) {
     renderNoCarResult(term);
     return;
   }
-  const carName = vehicle.fullName;
-  const localIndex = knownProfileIndex(carName) >= 0 ? knownProfileIndex(carName) : knownProfileIndex(term);
-  if (localIndex >= 0) {
-    renderKnownProfile(localIndex);
-    const car = referenceProfiles[localIndex];
-    let article = null;
-    try { article = (await wikipediaOverview(car.title.replace(/^Possible\s+/i, '')))[0] || null; } catch { /* Keep the supplied photo profile and its source links available. */ }
-    if (requestId !== searchRequestId) return;
-    await appendRichCarDetails(article, car.title.replace(/^Possible\s+/i, ''), { image: car.image, alt: car.alt });
-  } else {
-    try {
-      const articleResults = await wikipediaOverview(carName);
-      if (requestId !== searchRequestId) return;
-      const modelName = normalized(vehicle.model.name);
-      const makeName = normalized(vehicle.make.make);
-      const articles = articleResults.filter(article => {
-        const title = normalized(article.title);
-        return title.includes(modelName) || title.includes(makeName) && normalized(article.extract).includes(modelName);
-      });
-      renderWikipediaResult(articles, carName);
-      await appendRichCarDetails(articles[0] || null, carName);
-      if (requestId !== searchRequestId) return;
-      finderStatus.textContent = articles.length ? `${vehicle.fullName} found in the India-market directory. Confirm model year, variant and specifications with the manufacturer.` : `${vehicle.fullName} is in the India-market directory, but no matching Wikipedia article was found. Public specs and photos may be limited.`;
-    } catch {
-      if (requestId !== searchRequestId) return;
-      renderWikipediaResult(null, carName);
-      await appendRichCarDetails(null, carName);
-      if (requestId !== searchRequestId) return;
-      finderStatus.textContent = `${vehicle.fullName} is in the India-market directory. Online references could not load just now.`;
-    }
-  }
-  if (requestId === searchRequestId) loadVideos(carName);
+
+  let article = null;
+  try {
+    const articles = await wikipediaOverview(vehicle.fullName);
+    const titleOf = value => normalized(value);
+    const modelNames = [vehicle.model.name, ...(vehicle.model.aliases || [])].map(titleOf).filter(value => value.length >= 2);
+    const makeNames = [vehicle.make.make, ...(vehicle.make.aliases || [])].map(titleOf).filter(value => value.length >= 2);
+    article = articles.find(item => {
+      const title = titleOf(item.title);
+      const extract = titleOf(item.extract).slice(0, 1800);
+      const hasModel = modelNames.some(name => (' ' + title + ' ').includes(' ' + name + ' ') || (' ' + extract + ' ').includes(' ' + name + ' '));
+      const hasMake = makeNames.some(name => (' ' + title + ' ').includes(' ' + name + ' ') || (' ' + extract + ' ').includes(' ' + name + ' '));
+      return hasModel && hasMake;
+    }) || null;
+  } catch { /* Keep exact directory information and source links available. */ }
+  if (requestId !== searchRequestId) return;
+  renderWikipediaResult(article, vehicle.fullName, vehicle);
+  await appendRichCarDetails(article, vehicle.fullName, vehicle, term);
+  if (requestId !== searchRequestId) return;
+  finderStatus.textContent = article
+    ? vehicle.fullName + ' matched. Power and photos are shown only when their public records pass make/model checks; confirm the year and trim with the manufacturer.'
+    : vehicle.fullName + ' is in the India-market directory. No exact encyclopedia match was found, so Chassis did not substitute another car.';
+  loadVideos(vehicle.fullName);
 }
 
 searchForm.addEventListener('submit', event => {
