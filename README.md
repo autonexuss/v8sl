@@ -2,7 +2,7 @@
 
 Velocitrak is an independent car-discovery and ownership website: <https://v8sl-grg.github.io/v8sl/>. GitHub Actions publishes the repository's `main` branch to GitHub Pages.
 
-The landing page keeps the feature list in the glass **Explore** menu. Choosing an item opens its content in an accessible, same-page panel without changing the URL.
+The homepage shows all 12 feature links in a fixed liquid-glass navigation bar. Choosing a feature opens an accessible panel in the same page; the browser stays on the same URL.
 
 ## Features available on the site
 
@@ -33,12 +33,11 @@ The project remains in no-billing mode. No service account key or payment detail
 
 Node.js 18 or later is required for the local static server. The website itself requires no package installation.
 
-## Videos and YouTube
+## Media and YouTube
 
-The hero films use the relative paths `assets/videos/bmw-7-series.mp4`, `assets/videos/mercedes-s-class.mp4` and `assets/videos/chassis-film.mp4`. Keep the video folder beside `index.html`. Each film plays to its end unless the viewer chooses Prev or Next.
+The hero slideshow uses `assets/videos/bmw-7-series.mp4`, `assets/videos/mercedes-s-class.mp4` and `assets/videos/chassis-film.mp4`. A separate muted film loops in the decorative home gallery from `assets/videos/defender-dakar-2026.mp4`, beside `assets/velocitrak-decor-1.jpeg` and `assets/velocitrak-decor-2.jpeg`. Keep these relative paths beside `index.html`. Hero films play to their end unless the viewer chooses Prev or Next.
 
-YouTube results use the restricted browser API key supplied to the GitHub Pages build. Results are cached locally for quicker repeat searches. If the API key, quota, network or a thumbnail host is unavailable, branded search-preview cards and direct Faisal Khan/MotorOctane search links remain visible; these previews are clearly labeled and are not actual video thumbnails. Browser API keys are visible to visitors; restrict the key to the Velocitrak GitHub Pages referrer and YouTube Data API v3.
-
+YouTube search uses the restricted browser API key injected by the GitHub Pages workflow. The latest deployment confirmed that the key works for the Velocitrak site referrer. Results are cached in each browser for repeat searches. Because the key is used by a public website, it is visible to visitors and restricted to the GitHub Pages referrer and YouTube Data API v3. API quota, internet access, or a thumbnail host can still be temporarily unavailable; in that case, the site keeps clearly labeled search previews and direct Faisal Khan/MotorOctane search links instead of blank image boxes.
 ## Publish
 
 GitHub Actions publishes `main` to GitHub Pages with relative asset paths. The static site does not require a Firebase project or billing account.
