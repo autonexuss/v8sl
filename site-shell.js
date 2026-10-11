@@ -3,7 +3,7 @@
   const sections = [...(main?.children || [])].filter(element => element.tagName === 'SECTION');
   const nav = document.getElementById('site-nav');
   const menuButton = document.querySelector('.menu-toggle');
-  if (!main || !nav) return;
+  if (!main) return;
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const overlay = document.createElement('div');
@@ -26,7 +26,7 @@
   }
 
   function closeMenu() {
-    nav.classList.remove('open');
+    nav?.classList.remove('open');
     menuButton?.setAttribute('aria-expanded', 'false');
     menuButton?.setAttribute('aria-label', 'Explore all sections');
   }
@@ -43,7 +43,7 @@
     if (closeButton) closeButton.remove();
     closeButton = null;
     activeSection = null;
-    const returnFocus = lastTrigger && !owningSection(lastTrigger) && !nav.contains(lastTrigger) ? lastTrigger : (menuButton || nav.querySelector('a')); 
+    const returnFocus = lastTrigger && !closing.contains(lastTrigger) ? lastTrigger : (menuButton || nav?.querySelector('a') || document.querySelector('.brand'));
     document.body.classList.remove('section-panel-open');
     overlay.hidden = true;
     overlay.setAttribute('aria-hidden', 'true');
@@ -115,12 +115,12 @@
   if (menuButton) {
     menuButton.addEventListener('click', () => {
       queueMicrotask(() => {
-        const isOpen = nav.classList.contains('open');
+        const isOpen = nav?.classList.contains('open') || false;
         menuButton.setAttribute('aria-label', isOpen ? 'Close section menu' : 'Explore all sections');
       });
     });
     document.addEventListener('click', event => {
-      if (nav.classList.contains('open') && !nav.contains(event.target) && !menuButton.contains(event.target)) closeMenu();
+      if (nav?.classList.contains('open') && !nav.contains(event.target) && !menuButton.contains(event.target)) closeMenu();
     });
   }
 
