@@ -35,6 +35,31 @@ jobs:
           else
             echo "::warning::YOUTUBE_BROWSER_API_KEY is not configured; direct video results and thumbnails will fall back to creator search links."
           fi
+      - name: Verify the YouTube key against the allowed site referrer
+        env:
+          CHASSIS_YOUTUBE_BROWSER_KEY: ${{ secrets.YOUTUBE_BROWSER_API_KEY }}
+        run: |
+          node --input-type=module <<'NODE'
+          const key = process.env.CHASSIS_YOUTUBE_BROWSER_KEY || "";
+          if (!key) process.exit(0);
+          const url = new URL("https://www.googleapis.com/youtube/v3/channels");
+          url.searchParams.set("part", "id");
+          url.searchParams.set("forHandle", "FasBeam");
+          url.searchParams.set("maxResults", "1");
+          url.searchParams.set("key", key);
+          try {
+            const response = await fetch(url, { headers: { Referer: "https://v8sl-grg.github.io/" } });
+            const data = await response.json();
+            if (!response.ok || !data.items?.length) {
+              const reason = data.error?.errors?.[0]?.reason || "unknown";
+              console.log(`::warning::YouTube key check failed (HTTP ${response.status}, ${reason}). Check API enablement, key restrictions and quota.`);
+            } else {
+              console.log("YouTube Data API key check succeeded for the Chassis site referrer.");
+            }
+          } catch (error) {
+            console.log(`::warning::YouTube key check could not reach Google: ${error.message}`);
+          }
+          NODE
       - name: Upload the site
         uses: actions/upload-pages-artifact@v4
         with:
