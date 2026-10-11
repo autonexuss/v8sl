@@ -836,8 +836,9 @@ const youtubePublicKey = typeof window.CHASSIS_YOUTUBE_API_KEY === 'string' ? wi
 
 async function youtubeApiRequest(endpoint, params, apiKey) {
   const url = new URL(`https://www.googleapis.com/youtube/v3/${endpoint}`);
+  url.searchParams.set('key', apiKey);
   Object.entries(params).forEach(([name, value]) => url.searchParams.set(name, value));
-  const response = await fetch(url, { headers: { 'X-Goog-Api-Key': apiKey } });
+  const response = await fetch(url);
   const data = await response.json();
   if (!response.ok) throw new Error(data.error?.message || `YouTube returned ${response.status}.`);
   return data;
