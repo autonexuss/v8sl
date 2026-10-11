@@ -546,8 +546,68 @@ function infoboxPowerMetric(rows) {
   return { name: 'Power', value, unit: 'kW / PS', display: Number(value.toFixed(1)).toLocaleString('en-IN') + ' kW / ' + Math.round(ps).toLocaleString('en-IN') + ' PS', limit: 1000, source: row.source, sourceLabel: row.sourceLabel };
 }
 
+const curatedIndiaSpecProfiles = [{
+  make: 'hyundai', model: 'creta', fromYear: 2024, toYear: 2026, excludes: ['creta n line', 'creta electric'],
+  brochure: 'https://www.hyundai.com/content/dam/hyundai/in/en/data/brochure/creta.pdf',
+  performance: 'https://www.hyundai.com/in/en/find-a-car/creta/performance',
+  exterior: 'https://www.hyundai.com/in/en/find-a-car/creta/exterior',
+  interior: 'https://www.hyundai.com/in/en/find-a-car/creta/interior',
+  engines: [
+    { name: '1.5L MPi petrol', fuel: 'Petrol', displacement: '1,497 cc', powerKW: 84.4, powerPS: 115, powerRpm: '6,300 rpm', torque: '143.8 Nm', torqueRpm: '4,500 rpm', transmission: '6-speed manual / iVT' },
+    { name: '1.5L U2 CRDi diesel', fuel: 'Diesel', displacement: '1,493 cc', powerKW: 85, powerPS: 116, powerRpm: '4,000 rpm', torque: '250 Nm', torqueRpm: '1,500–2,750 rpm', transmission: '6-speed manual / 6-speed automatic' },
+    { name: '1.5L Turbo GDi petrol', fuel: 'Petrol', displacement: '1,482 cc', powerKW: 117.5, powerPS: 160, powerRpm: '5,500 rpm', torque: '253 Nm', torqueRpm: '1,500–3,500 rpm', transmission: '7-speed DCT' }
+  ],
+  rows: [
+    { name: 'Body style', value: 'SUV · 5 doors · 5 seats', source: 'https://www.hyundai.com/in/en/find-a-car/creta/highlights', sourceLabel: 'Hyundai India' },
+    { name: 'Overall dimensions', value: '4,330 × 1,790 × 1,635 mm (height with roof rails)', source: 'https://www.hyundai.com/content/dam/hyundai/in/en/data/brochure/creta.pdf', sourceLabel: 'Hyundai India brochure' },
+    { name: 'Wheelbase', value: '2,610 mm', source: 'https://www.hyundai.com/content/dam/hyundai/in/en/data/brochure/creta.pdf', sourceLabel: 'Hyundai India brochure' },
+    { name: 'Fuel tank', value: '50 L', source: 'https://www.hyundai.com/content/dam/hyundai/in/en/data/brochure/creta.pdf', sourceLabel: 'Hyundai India brochure' },
+    { name: 'Engine construction', value: '4 cylinders · 16 valves · DOHC', source: 'https://www.hyundai.com/content/dam/hyundai/in/en/data/brochure/creta.pdf', sourceLabel: 'Hyundai India brochure' },
+    { name: 'Front suspension', value: 'McPherson strut with coil spring', source: 'https://www.hyundai.com/content/dam/hyundai/in/en/data/brochure/creta.pdf', sourceLabel: 'Hyundai India brochure' },
+    { name: 'Rear suspension', value: 'Coupled torsion beam axle', source: 'https://www.hyundai.com/content/dam/hyundai/in/en/data/brochure/creta.pdf', sourceLabel: 'Hyundai India brochure' },
+    { name: 'Brakes', value: 'Disc brakes front and rear', source: 'https://www.hyundai.com/content/dam/hyundai/in/en/data/brochure/creta.pdf', sourceLabel: 'Hyundai India brochure' },
+    { name: 'Drive', value: 'Front-wheel drive', source: 'https://www.hyundai.com/in/en/find-a-car/creta/highlights', sourceLabel: 'Hyundai India' }
+  ]
+}];
+
+function curatedSpecProfileFor(carRecord, requestedTerm) {
+  const make = normalized(carRecord?.make?.make);
+  const model = normalized(carRecord?.model?.name);
+  const query = normalized(requestedTerm);
+  const year = Number(String(requestedTerm || '').match(/\b(?:19|20)\d{2}\b/)?.[0] || 0);
+  return curatedIndiaSpecProfiles.find(profile => {
+    if (make !== profile.make || model !== profile.model) return false;
+    if (profile.excludes.some(term => query.includes(normalized(term)))) return false;
+    return !year || (year >= profile.fromYear && year <= profile.toYear);
+  }) || null;
+}
+
+function officialPhotoSources(vehicle, requestedTerm) {
+  const profile = curatedSpecProfileFor(vehicle, requestedTerm);
+  return profile ? { exterior: profile.exterior, interior: profile.interior } : null;
+}
+
+function renderEngineOptions(profile) {
+  const grid = document.createElement('div');
+  grid.className = 'spec-engine-options';
+  profile.engines.forEach(engine => {
+    const card = document.createElement('article');
+    card.className = 'spec-engine-card';
+    const heading = document.createElement('h5'); heading.textContent = engine.name;
+    const line = (label, value, prominent = false) => {
+      const row = document.createElement('p');
+      const name = document.createElement('span'); name.textContent = label;
+      const detail = document.createElement(prominent ? 'strong' : 'span'); detail.textContent = value;
+      row.append(name, detail); return row;
+    };
+    card.append(heading, line('MAX POWER', engine.powerPS + ' PS · ' + engine.powerKW + ' kW', true), line('MAX TORQUE', engine.torque + ' · ' + engine.torqueRpm), line('ENGINE', engine.displacement + ' · ' + engine.fuel), line('TRANSMISSION', engine.transmission));
+    grid.append(card);
+  });
+  return grid;
+}
 function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm) {
-  const rows = [...(vehicle?.rows || []), ...(infoboxRows || [])];
+  const curatedProfile = curatedSpecProfileFor(carRecord, requestedTerm);
+  const rows = curatedProfile ? curatedProfile.rows : [...(vehicle?.rows || []), ...(infoboxRows || [])];
   const section = document.createElement('section');
   section.className = 'spec-table-section';
   const heading = document.createElement('div');
@@ -569,32 +629,48 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
 
   const metrics = [];
   let powerMetric = null;
-  if (vehicle) {
-    for (const property of ['P2109', 'P2230', 'P2052']) {
-      const metric = wikidataMetric(property, vehicle.values?.[property]?.[0], vehicle.unitLabels || {});
-      if (!metric) continue;
-      metrics.push(metric);
-      if (property === 'P2109') powerMetric = metric;
+  if (curatedProfile) {
+    powerMetric = {
+      display: 'Up to ' + Math.max(...curatedProfile.engines.map(engine => engine.powerPS)) + ' PS / ' + Math.max(...curatedProfile.engines.map(engine => engine.powerKW)) + ' kW',
+      source: curatedProfile.brochure,
+      sourceLabel: 'Hyundai India brochure'
+    };
+    curatedProfile.engines.forEach(engine => metrics.push({
+      name: engine.name,
+      value: engine.powerKW,
+      unit: 'kW',
+      display: engine.powerPS + ' PS / ' + engine.powerKW + ' kW',
+      limit: 125
+    }));
+  } else {
+    if (vehicle) {
+      for (const property of ['P2109', 'P2230', 'P2052']) {
+        const metric = wikidataMetric(property, vehicle.values?.[property]?.[0], vehicle.unitLabels || {});
+        if (!metric) continue;
+        metrics.push(metric);
+        if (property === 'P2109') powerMetric = metric;
+      }
     }
+    if (!powerMetric) powerMetric = infoboxPowerMetric(infoboxRows);
+    if (powerMetric && !metrics.some(metric => metric.name === 'Power')) metrics.unshift(powerMetric);
   }
-  if (!powerMetric) powerMetric = infoboxPowerMetric(infoboxRows);
-  if (powerMetric && !metrics.some(metric => metric.name === 'Power')) metrics.unshift(powerMetric);
 
   const powerCallout = document.createElement('div');
   powerCallout.className = 'spec-power-callout';
   const powerLabel = document.createElement('span');
-  powerLabel.textContent = 'ENGINE POWER · PUBLIC REFERENCE';
+  powerLabel.textContent = curatedProfile ? 'ENGINE POWER · CURRENT INDIA SPEC' : 'ENGINE POWER · PUBLIC REFERENCE';
   const powerValue = document.createElement('strong');
   const powerNote = document.createElement('small');
   if (powerMetric) {
     powerValue.textContent = powerMetric.display;
-    powerNote.textContent = 'Model-family figure; generation, market and variant may differ.';
+    powerNote.textContent = curatedProfile ? 'Three current India-market engine choices. Select the exact engine and trim for your car.' : 'Model-family figure; generation, market and variant may differ.';
   } else {
     powerValue.textContent = 'Not verified in matched public data';
     powerNote.textContent = 'No power number is guessed. Open the official site or brochure for the exact year and variant.';
   }
   powerCallout.append(powerLabel, powerValue, powerNote);
   if (powerMetric?.source) powerCallout.append(makeLink(powerMetric.sourceLabel + ' source ↗', powerMetric.source, 'spec-source-link'));
+  if (curatedProfile) powerCallout.append(makeLink('Hyundai India performance page ↗', curatedProfile.performance, 'spec-source-link'));
   else if (vehicle?.source) powerCallout.append(makeLink('Wikidata power record ↗', vehicle.source + '#P2109', 'spec-source-link'));
   if (!powerMetric && carRecord?.make?.url) powerCallout.append(makeLink(carRecord.make.make + ' official website ↗', carRecord.make.url, 'spec-source-link'));
   section.append(powerCallout);
@@ -604,7 +680,9 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
     chart.className = 'spec-graphic';
     const chartTitle = document.createElement('div');
     chartTitle.className = 'spec-graphic-title';
-    chartTitle.innerHTML = '<span>POWER, TORQUE & TOP SPEED</span><small>Source values · not a cross-model comparison</small>';
+    chartTitle.innerHTML = curatedProfile
+      ? '<span>POWER BY ENGINE OPTION</span><small>Official India figures · alternatives within this model</small>'
+      : '<span>POWER, TORQUE & TOP SPEED</span><small>Source values · not a cross-model comparison</small>';
     chart.append(chartTitle);
     metrics.forEach(metric => {
       const row = document.createElement('div');
@@ -626,6 +704,7 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
     });
     section.append(chart);
   }
+  if (curatedProfile) section.append(renderEngineOptions(curatedProfile));
 
   if (rows.length) {
     const tableWrap = document.createElement('div');
@@ -658,9 +737,12 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
   }
   const note = document.createElement('p');
   note.className = 'spec-provenance';
-  note.textContent = 'These are model-family reference facts, not exact VIN/trim data. A model family can span different engines and generations; confirm the specific Indian model year and variant in the manufacturer brochure. Wikidata structured facts are released under CC0.';
+  note.textContent = curatedProfile
+    ? 'Manufacturer brochure figures for the current Indian-market model family (brochure dated August 2026). Engine output and equipment depend on the selected powertrain and trim; older years may differ.'
+    : 'These are model-family reference facts, not exact VIN/trim data. A model family can span different engines and generations; confirm the specific Indian model year and variant in the manufacturer brochure. Wikidata structured facts are released under CC0.';
   section.append(note);
-  if (vehicle?.source) section.append(makeLink('Open the Wikidata vehicle record ↗', vehicle.source, 'spec-source-link'));
+  if (curatedProfile) section.append(makeLink('Open the current Hyundai India brochure ↗', curatedProfile.brochure, 'spec-source-link'));
+  else if (vehicle?.source) section.append(makeLink('Open the Wikidata vehicle record ↗', vehicle.source, 'spec-source-link'));
   target.append(section);
 }
 
@@ -677,7 +759,9 @@ async function commonsVehicleImages(vehicle, view, requestedTerm) {
   const response = await fetch(url);
   if (!response.ok) throw new Error('Wikimedia Commons image search unavailable');
   const data = await response.json();
-  const modelNames = [vehicle.model.name, ...(vehicle.model.aliases || [])].map(normalized).filter(name => name.length >= 2);
+  const requestedAlias = (vehicle.model.aliases || []).find(alias => normalized(requestedTerm).includes(normalized(alias)));
+  const exactModelName = requestedAlias || vehicle.model.name;
+  const modelNames = [exactModelName].map(normalized).filter(name => name.length >= 2);
   const makeNames = [vehicle.make.make, ...(vehicle.make.aliases || [])].map(normalized).filter(name => name.length >= 2);
   const requestedYear = String(requestedTerm || '').match(/\b(?:19|20)\d{2}\b/)?.[0] || '';
   const interiorTerms = ['interior', 'dashboard', 'dash board', 'cockpit', 'cabin', 'interieur', 'salon', 'instrument panel', 'seats'];
@@ -686,12 +770,31 @@ async function commonsVehicleImages(vehicle, view, requestedTerm) {
   const matches = Object.values(data.query?.pages || {}).map(page => {
     const info = page.imageinfo?.[0];
     if (!info?.thumburl || !info?.descriptionurl) return null;
-    const title = normalized(page.title?.replace(/^File:/i, '') || '');
+    const rawTitle = page.title?.replace(/^File:/i, '') || '';
+    const title = normalized(rawTitle);
+    const categoryTitles = (page.categories || []).map(category => normalized((category.title || '').replace(/^Category:/i, '')));
+    const categoryMatch = categoryTitles.some(category =>
+      makeNames.some(name => containsPhrase(category, name)) &&
+      modelNames.some(name => containsPhrase(category, name))
+    );
+    if (!categoryMatch) return null;
+    const categoriesAndTitle = [rawTitle, ...categoryTitles].join(' ');
+    if (excluded.test(categoriesAndTitle)) return null;
+    const hasCameraMetadata = ['DateTimeOriginal', 'CameraModel', 'Model', 'Make', 'FileSource'].some(key => cleanMetadata(info.extmetadata?.[key]?.value));
+    const hasPhotographicCategory = categoryTitles.some(category => /\bphotographs?\b/.test(category));
+    if (!hasCameraMetadata && !hasPhotographicCategory) return null;
+    if (normalized(vehicle.make.make) === 'hyundai' && normalized(vehicle.model.name) === 'creta') {
+      if (/\b(ix25|china|russia|su2r)\b/i.test(rawTitle + ' ' + categoryTitles.join(' '))) return null;
+      const year = Number(requestedYear || 0);
+      const expectedGeneration = year && year < 2019 ? 'hyundai creta gs' : 'hyundai creta su2';
+      if (!categoryTitles.some(category => containsPhrase(category, expectedGeneration))) return null;
+      if (!year && !/(2024|2025|2026|su2 pe|facelift)/i.test(rawTitle)) return null;
+    }
     if (!modelNames.some(name => containsPhrase(title, name))) return null;
     if (!makeNames.some(name => containsPhrase(title, name))) return null;
     if (requestedYear && !containsPhrase(title, requestedYear)) return null;
-    if (view.key === 'interior' && !interiorTerms.some(word => containsPhrase(title, normalized(word)))) return null;
-    if (view.key === 'exterior' && interiorTerms.some(word => containsPhrase(title, normalized(word)))) return null;
+    if (view.key === 'interior' && !interiorTerms.some(word => containsPhrase(title, normalized(word)) || categoryTitles.some(category => containsPhrase(category, normalized(word))))) return null;
+    if (view.key === 'exterior' && interiorTerms.some(word => containsPhrase(title, normalized(word)) || categoryTitles.some(category => containsPhrase(category, normalized(word))))) return null;
     if (excluded.test(page.title || '')) return null;
     if (!/^image\/(jpeg|png|webp)$/i.test(info.mime || '')) return null;
     if (!Number.isFinite(info.width) || !Number.isFinite(info.height) || info.width < 500 || info.height < 300) return null;
@@ -716,8 +819,18 @@ function renderImageGallery(target, vehicle, requestedTerm) {
   const title = document.createElement('h4');
   title.textContent = vehicle.fullName + ' · exterior & cabin photos';
   const intro = document.createElement('p');
-  intro.textContent = 'Only bitmap photo files whose titles name this manufacturer, model and view are shown. Drawings, logos, generic images and unmatched photos are excluded. Photos can still differ by year or trim; Chassis will show no fallback photo when a match is missing.';
+  intro.textContent = 'Photos must name the exact make and model and carry a matching Commons model category plus photographic file metadata. Drawings, alternate-market rebadges and unmatched images are excluded; a missing match stays empty instead of showing a random image.';
   heading.append(title, intro);
+  const officialPages = officialPhotoSources(vehicle, requestedTerm);
+  if (officialPages) {
+    const officialLinks = document.createElement('div');
+    officialLinks.className = 'finder-actions gallery-official-links';
+    officialLinks.append(
+      makeLink('Official Hyundai exterior gallery ↗', officialPages.exterior),
+      makeLink('Official Hyundai cabin gallery ↗', officialPages.interior)
+    );
+    heading.append(officialLinks);
+  }
   gallery.append(heading);
   const views = [
     { key: 'exterior', title: 'Exterior photographs' },
@@ -737,8 +850,11 @@ function renderImageGallery(target, vehicle, requestedTerm) {
     gallery.append(group);
     commonsVehicleImages(vehicle, view, requestedTerm).then(images => {
       status.textContent = images.length
-        ? images.length + ' matching photo' + (images.length === 1 ? '' : 's') + ' · open a file page to review its details and license.'
-        : 'No exact ' + view.title.toLowerCase() + ' match was found. No unrelated or illustrated image was substituted.';
+        ? images.length + ' exact-category photographs · open a file page to review the vehicle category and license.'
+        : 'No verified ' + view.title.toLowerCase() + ' photo matched this model generation. No drawing, rebadge or unrelated photo was substituted.';
+      if (!images.length && officialPages) {
+        status.append(document.createTextNode(' '), makeLink('Open Hyundai’s official gallery ↗', officialPages[view.key], 'spec-source-link'));
+      }
       images.forEach(item => {
         const figure = document.createElement('figure');
         figure.className = 'vehicle-gallery-image';
