@@ -147,17 +147,19 @@ document.querySelectorAll('[data-toast]').forEach(button => button.addEventListe
   toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
 }));
 const menuButton = document.querySelector('.menu-toggle');
-menuButton.addEventListener('click', () => {
-  const nav = document.querySelector('.topbar nav');
-  const open = nav.classList.toggle('open');
-  menuButton.setAttribute('aria-expanded', String(open));
-  menuButton.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-});
-document.querySelectorAll('.topbar nav a').forEach(link => link.addEventListener('click', () => {
-  document.querySelector('.topbar nav').classList.remove('open');
-  menuButton.setAttribute('aria-expanded', 'false');
-  menuButton.setAttribute('aria-label', 'Open menu');
-}));
+if (menuButton) {
+  menuButton.addEventListener('click', () => {
+    const nav = document.querySelector('.topbar nav');
+    const open = nav.classList.toggle('open');
+    menuButton.setAttribute('aria-expanded', String(open));
+    menuButton.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  });
+  document.querySelectorAll('.topbar nav a').forEach(link => link.addEventListener('click', () => {
+    document.querySelector('.topbar nav').classList.remove('open');
+    menuButton.setAttribute('aria-expanded', 'false');
+    menuButton.setAttribute('aria-label', 'Open menu');
+  }));
+}
 
 const referenceProfiles = [
   {
