@@ -1,14 +1,11 @@
-name: Deploy Chassis Firebase services
+name: Deploy Chassis Firestore rules (no-billing)
 
 on:
   push:
     branches: [main]
     paths:
-      - 'functions/**'
       - 'firebase.json'
       - 'firestore.rules'
-      - 'storage.rules'
-      - '.github/workflows/deploy-firebase.yml'
   workflow_dispatch:
 
 permissions:
@@ -55,13 +52,12 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install Firebase CLI and function dependencies
+      - name: Install Firebase CLI
         run: |
           npm install --global firebase-tools
           firebase --version
-          npm install --prefix functions --omit=dev
 
-      - name: Deploy Firebase rules and functions
+      - name: Deploy Firestore security rules
         env:
           FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
-        run: firebase deploy --only functions,firestore:rules,storage --non-interactive --project "$FIREBASE_PROJECT_ID"
+        run: firebase deploy --only firestore:rules --non-interactive --project "$FIREBASE_PROJECT_ID"
