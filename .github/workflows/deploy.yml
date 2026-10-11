@@ -1,4 +1,4 @@
-name: Publish Chassis to GitHub Pages
+name: Publish Velocitrak to GitHub Pages
 
 on:
   push:
