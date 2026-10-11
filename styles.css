@@ -41,3 +41,14 @@
 @media(max-width:850px){.wiki-lead-card{grid-template-columns:220px 1fr}.wiki-related-grid{grid-template-columns:1fr 1fr}.vehicle-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.wiki-lead-card{grid-template-columns:1fr}.wiki-lead-media,.wiki-lead-media img{min-height:0;height:220px}.wiki-lead-body{padding:19px}.wiki-related-grid{grid-template-columns:1fr}.dynamic-detail-panel{padding:20px 18px}.spec-graphic{padding:15px 13px}.spec-graphic-title{display:grid;gap:5px}.vehicle-gallery-grid{grid-template-columns:1fr 1fr}.vehicle-gallery-image figcaption{padding:8px}.supplied-gallery-image{max-width:none}}
 @media(max-width:620px){.youtube-key-control{align-items:stretch;flex-wrap:wrap}.youtube-key-control input{flex-basis:100%}.youtube-key-control .button,.youtube-key-clear{flex:1}}
+
+
+/* High-visibility power reference and exact-match car article cards. */
+.finder-result .matched-article-card{grid-column:1/-1}
+.spec-power-callout{display:grid;grid-template-columns:minmax(150px,.55fr) minmax(220px,1fr);align-items:center;gap:8px 20px;margin:16px 0;padding:18px 20px;background:linear-gradient(115deg,#eaf0eb,#f5f6f2);border-left:3px solid #718a7b}
+.spec-power-callout>span{grid-column:1;font-size:8px;letter-spacing:1.15px;color:#728179;font-weight:700}
+.spec-power-callout>strong{grid-column:2;grid-row:1 / span 2;font:500 clamp(19px,2.4vw,29px)/1.2 Manrope;color:#25332e}
+.spec-power-callout>small{grid-column:1;font-size:8px;line-height:1.55;color:#78857e}
+.spec-power-callout .spec-source-link{grid-column:1/-1;justify-self:start}
+.spec-year-note{padding:10px 12px;background:#f4f3e8;border-left:2px solid #b2a46f;color:#716b52;font-size:9px;line-height:1.6}
+@media(max-width:620px){.spec-power-callout{grid-template-columns:1fr;padding:16px}.spec-power-callout>span,.spec-power-callout>strong,.spec-power-callout>small,.spec-power-callout .spec-source-link{grid-column:1;grid-row:auto}}
