@@ -399,14 +399,14 @@ const wikidataProperties = [
     ['P2067', 'Mass'], ['P176', 'Manufacturer'], ['P571', 'Inception']
 ];
 
-async function wikidataVehicle(article, query) {
-  let qid = article.wikidataId;
+async function wikidataVehicle(article = {}, query) {
+  let qid = article?.wikidataId || '';
   if (!qid) {
     const search = new URL('https://www.wikidata.org/w/api.php');
     search.search = new URLSearchParams({ action: 'wbsearchentities', search: query, language: 'en', limit: '5', format: 'json', origin: '*' });
     const results = await fetch(search).then(response => response.ok ? response.json() : null);
     const candidates = results?.search || [];
-    const matched = candidates.find(item => /car|automobile|vehicle|motor car|sports car/i.test(item.description || '') && (normalized(item.label || '').includes(normalized(query)) || normalized(query).includes(normalized(item.label || ''))));
+    const matched = candidates.find(item => /car|automobile|vehicle|motor car|sports car|suv|crossover|sedan|hatchback|coupe|roadster|pickup truck|van/i.test(item.description || '') && (normalized(item.label || '').includes(normalized(query)) || normalized(query).includes(normalized(item.label || ''))));
     qid = matched?.id || '';
   }
   if (!/^Q\d+$/.test(qid || '')) return null;
@@ -451,7 +451,7 @@ async function wikidataVehicle(article, query) {
   }
 
   const labelMap = labelsById;
-  const label = entity.labels?.en?.value || article.title;
+  const label = entity.labels?.en?.value || article?.title || query;
   const description = entity.descriptions?.en?.value || '';
   const rows = wikidataProperties.flatMap(([property, name]) => (values[property] || []).map(value => {
     let rendered = '';
@@ -551,8 +551,8 @@ const curatedIndiaSpecProfiles = [{
   sourceLabel: 'Hyundai India brochure',
   performanceLabel: 'Hyundai India performance page ↗',
   brochureLabel: 'Open the current Hyundai India brochure ↗',
-  provenance: 'Manufacturer brochure figures for the current Indian-market Hyundai Creta family (August 2026 edition). Engine output and equipment depend on the selected powertrain and trim; older years may differ.',
-  photoNote: 'The photographs show the current Indian-market Creta generation; equipment can differ by trim.',
+  provenance: 'Manufacturer brochure figures for the current Indian-market Hyundai Creta family. Engine output and equipment depend on the selected powertrain and trim; older years may differ.',
+  photoNote: 'The exterior file identifies an Indian-version 2024 Creta. The cabin photo is the same SU2 facelift generation, photographed in the Philippines; market and trim details can differ.',
   brochure: 'https://www.hyundai.com/content/dam/hyundai/in/en/data/brochure/creta.pdf',
   performance: 'https://www.hyundai.com/in/en/find-a-car/creta/performance',
   exterior: 'https://www.hyundai.com/in/en/find-a-car/creta/exterior',
@@ -685,7 +685,9 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
   const title = document.createElement('h4');
   title.textContent = 'Specifications and performance';
   const context = document.createElement('p');
-  context.textContent = vehicle ? vehicle.label + (vehicle.description ? ' · ' + vehicle.description : '') : 'No structured Wikidata vehicle record matched this exact model article.';
+  context.textContent = vehicle
+    ? vehicle.label + (vehicle.description ? ' · ' + vehicle.description : ' · structured public vehicle record')
+    : 'No structured Wikidata vehicle record matched this model. Use the official manufacturer and brochure links below for verified specifications.';
   heading.append(title, context);
   section.append(heading);
 
@@ -715,7 +717,9 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
   } else {
     if (vehicle) {
       for (const property of ['P2109', 'P2230', 'P2052']) {
-        const metric = wikidataMetric(property, vehicle.values?.[property]?.[0], vehicle.unitLabels || {});
+        const metric = (vehicle.values?.[property] || [])
+          .map(value => wikidataMetric(property, value, vehicle.unitLabels || {}))
+          .find(Boolean);
         if (!metric) continue;
         metrics.push(metric);
         if (property === 'P2109') powerMetric = metric;
@@ -742,7 +746,7 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
   if (powerMetric?.source) powerCallout.append(makeLink(powerMetric.sourceLabel + ' source ↗', powerMetric.source, 'spec-source-link'));
   if (curatedProfile) powerCallout.append(makeLink(curatedProfile.performanceLabel, curatedProfile.performance, 'spec-source-link'));
   else if (vehicle?.source) powerCallout.append(makeLink('Wikidata power record ↗', vehicle.source + '#P2109', 'spec-source-link'));
-  if (!powerMetric && carRecord?.make?.url) powerCallout.append(makeLink(carRecord.make.make + ' official website ↗', carRecord.make.url, 'spec-source-link'));
+  if (!curatedProfile && carRecord?.make?.url) powerCallout.append(makeLink(carRecord.make.make + ' official website ↗', carRecord.make.url, 'spec-source-link'));
   section.append(powerCallout);
 
   if (metrics.length) {
@@ -809,7 +813,7 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
   note.className = 'spec-provenance';
   note.textContent = curatedProfile
     ? curatedProfile.provenance
-    : 'These are model-family reference facts, not exact VIN/trim data. A model family can span different engines and generations; confirm the specific Indian model year and variant in the manufacturer brochure. Wikidata structured facts are released under CC0.';
+    : 'These are model-family reference facts, not exact VIN/trim data. A model family can span different engines and generations; the public record may describe another market. Confirm the specific Indian model year and variant in the manufacturer brochure. Wikidata structured facts are released under CC0.';
   section.append(note);
   if (curatedProfile) section.append(makeLink(curatedProfile.brochureLabel, curatedProfile.brochure, 'spec-source-link'));
   else if (vehicle?.source) section.append(makeLink('Open the Wikidata vehicle record ↗', vehicle.source, 'spec-source-link'));
@@ -859,7 +863,10 @@ async function commonsVehicleImages(vehicle, view, requestedTerm) {
     if (!categoryMatch) return null;
     const categoriesAndTitle = [rawTitle, ...categoryTitles].join(' ');
     if (excluded.test(categoriesAndTitle)) return null;
-    const hasCameraMetadata = ['DateTimeOriginal', 'CameraModel', 'Model', 'Make', 'FileSource'].some(key => cleanMetadata(info.extmetadata?.[key]?.value));
+    // FileSource alone is not proof that a file is a photograph (illustrations
+    // and brochure artwork can also carry it). Require EXIF/camera evidence or
+    // an explicit photography category before showing a Commons result.
+    const hasCameraMetadata = ['DateTimeOriginal', 'CameraModel', 'Model', 'Make'].some(key => cleanMetadata(info.extmetadata?.[key]?.value));
     const hasPhotographicCategory = categoryTitles.some(category => /\bphotographs?\b/.test(category));
     if (!hasCameraMetadata && !hasPhotographicCategory) return null;
     if (normalized(vehicle.make.make) === 'hyundai' && normalized(vehicle.model.name) === 'creta') {
@@ -872,7 +879,7 @@ async function commonsVehicleImages(vehicle, view, requestedTerm) {
     if (!modelNames.some(name => containsPhrase(title, name))) return null;
     if (!makeNames.some(name => containsPhrase(title, name))) return null;
     if (requestedYear && !containsPhrase(title, requestedYear)) return null;
-    if (view.key === 'interior' && !interiorTerms.some(word => containsPhrase(title, normalized(word)) || categoryTitles.some(category => containsPhrase(category, normalized(word))))) return null;
+    if (view.key === 'interior' && !interiorTerms.some(word => containsPhrase(title, normalized(word)))) return null;
     if (view.key === 'exterior' && interiorTerms.some(word => containsPhrase(title, normalized(word)) || categoryTitles.some(category => containsPhrase(category, normalized(word))))) return null;
     if (excluded.test(page.title || '')) return null;
     if (!/^image\/(jpeg|png|webp)$/i.test(info.mime || '')) return null;
@@ -930,7 +937,7 @@ function renderImageGallery(target, vehicle, requestedTerm) {
     gallery.append(group);
     commonsVehicleImages(vehicle, view, requestedTerm).then(images => {
       status.textContent = images.length
-        ? images.length + ' exact-category photographs · open a file page to review the vehicle category and license.'
+        ? images.length + ' model-category photographs · review the file page to confirm generation, market and license.'
         : 'No verified ' + (view.key === 'interior' ? 'interior/cabin' : 'exterior') + ' photo matched this model generation. No drawing, rebadge or unrelated photo was substituted.';
       if (!images.length && officialPages) {
         status.append(document.createTextNode(' '), makeLink('Open ' + vehicle.make.make + ' official gallery ↗', officialPages[view.key], 'spec-source-link'));
@@ -1010,12 +1017,12 @@ async function appendRichCarDetails(article, query, carRecord, requestedTerm) {
   panel.append(galleryContainer);
   finderResult.append(panel);
 
-  const [vehicleFacts, infoboxRows] = article
-    ? await Promise.all([
-        wikidataVehicle(article, carRecord.fullName).catch(() => null),
-        wikipediaInfoboxSpecs(article).catch(() => [])
-      ])
-    : [null, []];
+  const [vehicleFacts, infoboxRows] = await Promise.all([
+    // Query Wikidata directly if Wikipedia has no article or no Wikidata
+    // sitelink. This recovers public power/torque facts for more catalogue cars.
+    wikidataVehicle(article || {}, carRecord.fullName).catch(() => null),
+    article ? wikipediaInfoboxSpecs(article).catch(() => []) : Promise.resolve([])
+  ]);
   loading.replaceChildren();
   renderSpecTable(loading, vehicleFacts, infoboxRows, carRecord, requestedTerm);
   renderImageGallery(galleryContainer, carRecord, requestedTerm);
@@ -1285,3 +1292,4 @@ function renderComparison() {
   table.append(tbody);
   comparePanel.append(table);
 }
+
