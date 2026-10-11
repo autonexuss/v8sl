@@ -1061,7 +1061,8 @@ function renderFallbackVideoLinks(query) {
     artwork.className = 'video-thumbnail video-search-artwork';
     artwork.src = makeVideoSearchArtwork(query, creator.name);
     artwork.alt = `Illustrated search preview for ${query} videos from ${creator.name}; this is not a video thumbnail.`;
-    artwork.loading = 'lazy';
+    artwork.loading = 'eager';
+    artwork.decoding = 'async';
     const play = document.createElement('span');
     play.className = 'video-play-mark';
     play.setAttribute('aria-hidden', 'true');
@@ -1096,10 +1097,11 @@ function renderCaptionedVideos(videos) {
     const thumbnail = document.createElement('img');
     thumbnail.className = 'video-thumbnail';
     thumbnail.alt = `Video thumbnail: ${video.title}`;
-    thumbnail.loading = 'lazy';
+    thumbnail.loading = 'eager';
+    thumbnail.fetchPriority = 'high';
     thumbnail.referrerPolicy = 'strict-origin-when-cross-origin';
     thumbnail.decoding = 'async';
-    const thumbnailCandidates = [...new Set([video.thumbnail, `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`, `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`, `https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`, `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`, `https://i.ytimg.com/vi/${video.id}/sddefault.jpg`, `https://i.ytimg.com/vi/${video.id}/0.jpg`].filter(Boolean))];
+    const thumbnailCandidates = [...new Set([`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`, `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`, video.thumbnail, `https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`, `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`, `https://i.ytimg.com/vi/${video.id}/sddefault.jpg`, `https://i.ytimg.com/vi/${video.id}/0.jpg`].filter(Boolean))];
     let thumbnailAttempt = 0;
     thumbnail.addEventListener('error', () => {
       thumbnailAttempt += 1;

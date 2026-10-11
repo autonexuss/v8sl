@@ -3,7 +3,7 @@
   const sections = [...(main?.children || [])].filter(element => element.tagName === 'SECTION');
   const nav = document.getElementById('site-nav');
   const menuButton = document.querySelector('.menu-toggle');
-  if (!main || !nav || !menuButton) return;
+  if (!main || !nav) return;
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const overlay = document.createElement('div');
@@ -18,7 +18,7 @@
 
   document.body.classList.add('velocitrak-shell-ready');
   sections.forEach(section => {
-    if (!section.classList.contains('hero') && !section.classList.contains('intro')) section.classList.add('shell-section-closed');
+    if (!section.classList.contains('hero') && !section.classList.contains('intro') && !section.classList.contains('home-visible')) section.classList.add('shell-section-closed');
   });
 
   function owningSection(target) {
@@ -27,8 +27,8 @@
 
   function closeMenu() {
     nav.classList.remove('open');
-    menuButton.setAttribute('aria-expanded', 'false');
-    menuButton.setAttribute('aria-label', 'Explore all sections');
+    menuButton?.setAttribute('aria-expanded', 'false');
+    menuButton?.setAttribute('aria-label', 'Explore all sections');
   }
 
   function closePanel(restoreFocus = true) {
@@ -43,7 +43,7 @@
     if (closeButton) closeButton.remove();
     closeButton = null;
     activeSection = null;
-    const returnFocus = lastTrigger && !owningSection(lastTrigger) && !nav.contains(lastTrigger) ? lastTrigger : menuButton;
+    const returnFocus = lastTrigger && !owningSection(lastTrigger) && !nav.contains(lastTrigger) ? lastTrigger : (menuButton || nav.querySelector('a')); 
     document.body.classList.remove('section-panel-open');
     overlay.hidden = true;
     overlay.setAttribute('aria-hidden', 'true');
@@ -112,16 +112,17 @@
   });
 
   overlay.addEventListener('click', () => closePanel());
-  menuButton.addEventListener('click', () => {
-    queueMicrotask(() => {
-      const isOpen = nav.classList.contains('open');
-      menuButton.setAttribute('aria-label', isOpen ? 'Close section menu' : 'Explore all sections');
+  if (menuButton) {
+    menuButton.addEventListener('click', () => {
+      queueMicrotask(() => {
+        const isOpen = nav.classList.contains('open');
+        menuButton.setAttribute('aria-label', isOpen ? 'Close section menu' : 'Explore all sections');
+      });
     });
-  });
-
-  document.addEventListener('click', event => {
-    if (nav.classList.contains('open') && !nav.contains(event.target) && !menuButton.contains(event.target)) closeMenu();
-  });
+    document.addEventListener('click', event => {
+      if (nav.classList.contains('open') && !nav.contains(event.target) && !menuButton.contains(event.target)) closeMenu();
+    });
+  }
 
   document.addEventListener('keydown', event => {
     if (!activeSection) return;
@@ -148,6 +149,20 @@
       first.focus();
     }
   });
+
+  const revealItems = [...document.querySelectorAll('.scroll-reveal, .home-feature-card')];
+  if (reducedMotion || !('IntersectionObserver' in window)) {
+    revealItems.forEach(item => item.classList.add('is-visible'));
+  } else {
+    const revealObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        revealObserver.unobserve(entry.target);
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -5% 0px' });
+    revealItems.forEach(item => revealObserver.observe(item));
+  }
 
   if (location.hash.length > 1) {
     const initialTarget = document.getElementById(decodeURIComponent(location.hash.slice(1)));
