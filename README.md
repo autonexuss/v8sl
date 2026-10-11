@@ -1,6 +1,8 @@
-# Chassis car explorer
+# Velocitrak car explorer
 
-Chassis is an independent car-discovery and ownership website: <https://v8sl-grg.github.io/v8sl/>. GitHub Actions publishes the repository's `main` branch to GitHub Pages.
+Velocitrak is an independent car-discovery and ownership website: <https://v8sl-grg.github.io/v8sl/>. GitHub Actions publishes the repository's `main` branch to GitHub Pages.
+
+The landing page keeps the feature list in the glass **Explore** menu. Choosing an item opens its content in an accessible, same-page panel without changing the URL.
 
 ## Features available on the site
 
@@ -8,9 +10,9 @@ Chassis is an independent car-discovery and ownership website: <https://v8sl-grg
 - Explore Wikipedia/Wikidata public vehicle references, with a direct Wikidata fallback when an exact Wikipedia model page is missing. Specs remain model-family facts unless a manufacturer source identifies the exact India variant.
 - View sourced Commons photographs only when the file matches the car make/model category and has camera metadata or an explicit photography category. Cabin matches must also identify an interior view in the file title. If a match does not pass those checks, the gallery stays empty rather than showing unrelated artwork or a nearby model.
 - Use the loan and mileage planners with values you provide.
-- Open resale-marketplace searches and compare asking prices you enter. Chassis does not scrape or verify marketplace listings.
+- Open direct Spinny model pages and model-specific searches on other used-car marketplaces; compare asking prices you enter. Velocitrak does not scrape or verify marketplace listings.
 - Save garage details, service notes, reminders and private listing drafts in the current browser profile. Listing photos use that browser's IndexedDB. Data does not sync across devices and can be lost if browser site data is cleared.
-- Open official eChallan, VAHAN and IRDAI-listed insurer pages for manual checks. Chassis does not retrieve challan, RTO or insurance records.
+- Open official eChallan, VAHAN and IRDAI-listed insurer pages for manual checks. Velocitrak does not retrieve challan, RTO or insurance records.
 - Review the service-history revenue model: ₹250 is an illustrative sample fee only. There is no report provider, checkout, payment gateway or transaction connected; no money is charged or collected.
 
 ## Features intentionally removed or inactive
@@ -35,7 +37,7 @@ Node.js 18 or later is required for the local static server. The website itself 
 
 The hero films use the relative paths `assets/videos/bmw-7-series.mp4`, `assets/videos/mercedes-s-class.mp4` and `assets/videos/chassis-film.mp4`. Keep the video folder beside `index.html`. Each film plays to its end unless the viewer chooses Prev or Next.
 
-YouTube results use the restricted browser API key supplied to the GitHub Pages build, with creator-search links as a fallback. Browser API keys are visible to visitors; restrict the key to the Chassis site referrer and YouTube Data API v3.
+YouTube results use the restricted browser API key supplied to the GitHub Pages build. Results are cached locally for quicker repeat searches. If the API key, quota, network or a thumbnail host is unavailable, branded search-preview cards and direct Faisal Khan/MotorOctane search links remain visible; these previews are clearly labeled and are not actual video thumbnails. Browser API keys are visible to visitors; restrict the key to the Velocitrak GitHub Pages referrer and YouTube Data API v3.
 
 ## Publish
 

@@ -33,7 +33,7 @@ jobs:
           if [ -n "$CHASSIS_YOUTUBE_BROWSER_KEY" ]; then
             echo "A site-wide YouTube browser key was supplied to the build."
           else
-            echo "::warning::YOUTUBE_BROWSER_API_KEY is not configured; direct video results and thumbnails will fall back to creator search links."
+            echo "::warning::YOUTUBE_BROWSER_API_KEY is not configured; the site will show branded search-preview cards and creator search links."
           fi
       - name: Verify the YouTube key against the allowed site referrer
         env:
@@ -54,7 +54,7 @@ jobs:
               const reason = data.error?.errors?.[0]?.reason || "unknown";
               console.log(`::warning::YouTube key check failed (HTTP ${response.status}, ${reason}). Check API enablement, key restrictions and quota.`);
             } else {
-              console.log("YouTube Data API key check succeeded for the Chassis site referrer.");
+              console.log("YouTube Data API key check succeeded for the Velocitrak site referrer.");
             }
           } catch (error) {
             console.log(`::warning::YouTube key check could not reach Google: ${error.message}`);
