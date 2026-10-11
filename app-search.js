@@ -586,7 +586,54 @@ const curatedIndiaSpecProfiles = [{
     { name: 'Brakes', value: 'Disc brakes front and rear', source: 'https://www.hyundai.com/content/dam/hyundai/in/en/data/brochure/creta.pdf', sourceLabel: 'Hyundai India brochure' },
     { name: 'Drive', value: 'Front-wheel drive', source: 'https://www.hyundai.com/in/en/find-a-car/creta/highlights', sourceLabel: 'Hyundai India' }
   ]
-}];
+  },
+  {
+    make: 'maruti suzuki', model: 'swift', fromYear: 2024, toYear: 2026, excludes: ['swift dzire'],
+    brochure: 'https://www.marutisuzuki.com/content/dam/msil/arena/in/en/assets/cars/swift/document/Swift_SCNG_VerticalBrochure.pdf',
+    performance: 'https://www.marutisuzuki.com/arena/swift',
+    exterior: 'https://www.marutisuzuki.com/arena/swift',
+    interior: 'https://www.marutisuzuki.com/arena/swift',
+    sourceLabel: 'Maruti Suzuki India brochure',
+    performanceLabel: 'Maruti Suzuki India performance page ↗',
+    brochureLabel: 'Open the current Maruti Suzuki Swift brochure ↗',
+    provenance: 'Official Maruti Suzuki India figures for the 2024-on Swift. Power, fuel economy and equipment depend on variant; older years differ.',
+    photoNote: 'These are photographs of the 2024 Swift generation from international-market vehicles; India-market equipment and trim can differ.',
+    images: {
+      exterior: [{
+        title: '2024 Suzuki Swift · current-generation exterior (UK-market photo)',
+        image: 'https://commons.wikimedia.org/wiki/Special:FilePath/2024_Suzuki_Swift.jpg?width=1400',
+        page: 'https://commons.wikimedia.org/wiki/File:2024_Suzuki_Swift.jpg',
+        licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+        license: 'CC BY-SA 4.0',
+        artist: 'Calreyn88'
+      }],
+      interior: [{
+        title: '2024 Suzuki Swift · cabin and center console (Japan-market hybrid photo)',
+        image: 'https://commons.wikimedia.org/wiki/Special:FilePath/Suzuki_Swift_%2724_%283%29.jpg?width=1400',
+        page: 'https://commons.wikimedia.org/wiki/File:Suzuki_Swift_%2724_%283%29.jpg',
+        licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
+        license: 'CC0 1.0',
+        artist: 'Oq10pass'
+      }]
+    },
+    engines: [
+      { name: '1.2L Z12E petrol', fuel: 'Petrol', displacement: '1,197 cc', powerKW: 60, powerPS: 81.58, powerRpm: '5,700 rpm', torque: '111.7 Nm', torqueRpm: '4,300 rpm', transmission: '5-speed manual / 5-speed AMT' },
+      { name: '1.2L Z12E S-CNG', fuel: 'Petrol + CNG', displacement: '1,197 cc', powerKW: 51.3, powerPS: 69.75, powerRpm: '5,700 rpm', torque: '101.8 Nm', torqueRpm: '2,900 rpm', transmission: '5-speed manual' }
+    ],
+    rows: [
+      { name: 'Body style', value: 'Hatchback · 5 doors · 5 seats', source: 'https://www.marutisuzuki.com/arena/swift', sourceLabel: 'Maruti Suzuki India' },
+      { name: 'Dimensions', value: '3,860 × 1,735 × 1,520 mm', source: 'https://www.marutisuzuki.com/content/dam/msil/arena/in/en/assets/cars/swift/document/Swift_SCNG_VerticalBrochure.pdf', sourceLabel: 'Maruti Suzuki India brochure' },
+      { name: 'Wheelbase', value: '2,450 mm', source: 'https://www.marutisuzuki.com/content/dam/msil/arena/in/en/assets/cars/swift/document/Swift_SCNG_VerticalBrochure.pdf', sourceLabel: 'Maruti Suzuki India brochure' },
+      { name: 'Engine', value: '1,197 cc · 3-cylinder Z12E', source: 'https://www.marutisuzuki.com/content/dam/msil/arena/in/en/assets/cars/swift/document/Swift_SCNG_VerticalBrochure.pdf', sourceLabel: 'Maruti Suzuki India brochure' },
+      { name: 'Fuel economy', value: 'Petrol: 24.8 km/L (MT), 25.75 km/L (AMT); CNG: 32.85 km/kg', source: 'https://www.marutisuzuki.com/arena/swift', sourceLabel: 'Maruti Suzuki India' },
+      { name: 'Fuel tank', value: '37 L petrol tank; CNG cylinder water capacity 55 L', source: 'https://www.marutisuzuki.com/content/dam/msil/arena/in/en/assets/cars/swift/document/Swift_SCNG_VerticalBrochure.pdf', sourceLabel: 'Maruti Suzuki India brochure' },
+      { name: 'Boot capacity', value: '265 L (petrol)', source: 'https://www.marutisuzuki.com/content/dam/msil/arena/in/en/assets/cars/swift/document/Swift_SCNG_VerticalBrochure.pdf', sourceLabel: 'Maruti Suzuki India brochure' },
+      { name: 'Front suspension', value: 'MacPherson strut', source: 'https://www.marutisuzuki.com/content/dam/msil/arena/in/en/assets/cars/swift/document/Swift_SCNG_VerticalBrochure.pdf', sourceLabel: 'Maruti Suzuki India brochure' },
+      { name: 'Rear suspension', value: 'Torsion beam', source: 'https://www.marutisuzuki.com/content/dam/msil/arena/in/en/assets/cars/swift/document/Swift_SCNG_VerticalBrochure.pdf', sourceLabel: 'Maruti Suzuki India brochure' },
+      { name: 'Brakes', value: 'Ventilated front disc · rear drum', source: 'https://www.marutisuzuki.com/content/dam/msil/arena/in/en/assets/cars/swift/document/Swift_SCNG_VerticalBrochure.pdf', sourceLabel: 'Maruti Suzuki India brochure' }
+    ]
+  }
+];
 
 function curatedSpecProfileFor(carRecord, requestedTerm) {
   const make = normalized(carRecord?.make?.make);
@@ -651,7 +698,7 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
     powerMetric = {
       display: 'Up to ' + Math.max(...curatedProfile.engines.map(engine => engine.powerPS)) + ' PS / ' + Math.max(...curatedProfile.engines.map(engine => engine.powerKW)) + ' kW',
       source: curatedProfile.brochure,
-      sourceLabel: 'Hyundai India brochure'
+      sourceLabel: curatedProfile.sourceLabel
     };
     curatedProfile.engines.forEach(engine => metrics.push({
       name: engine.name,
@@ -688,7 +735,7 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
   }
   powerCallout.append(powerLabel, powerValue, powerNote);
   if (powerMetric?.source) powerCallout.append(makeLink(powerMetric.sourceLabel + ' source ↗', powerMetric.source, 'spec-source-link'));
-  if (curatedProfile) powerCallout.append(makeLink('Hyundai India performance page ↗', curatedProfile.performance, 'spec-source-link'));
+  if (curatedProfile) powerCallout.append(makeLink(curatedProfile.performanceLabel, curatedProfile.performance, 'spec-source-link'));
   else if (vehicle?.source) powerCallout.append(makeLink('Wikidata power record ↗', vehicle.source + '#P2109', 'spec-source-link'));
   if (!powerMetric && carRecord?.make?.url) powerCallout.append(makeLink(carRecord.make.make + ' official website ↗', carRecord.make.url, 'spec-source-link'));
   section.append(powerCallout);
@@ -756,10 +803,10 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
   const note = document.createElement('p');
   note.className = 'spec-provenance';
   note.textContent = curatedProfile
-    ? 'Manufacturer brochure figures for the current Indian-market model family (brochure dated August 2026). Engine output and equipment depend on the selected powertrain and trim; older years may differ.'
+    ? curatedProfile.provenance
     : 'These are model-family reference facts, not exact VIN/trim data. A model family can span different engines and generations; confirm the specific Indian model year and variant in the manufacturer brochure. Wikidata structured facts are released under CC0.';
   section.append(note);
-  if (curatedProfile) section.append(makeLink('Open the current Hyundai India brochure ↗', curatedProfile.brochure, 'spec-source-link'));
+  if (curatedProfile) section.append(makeLink(curatedProfile.brochureLabel, curatedProfile.brochure, 'spec-source-link'));
   else if (vehicle?.source) section.append(makeLink('Open the Wikidata vehicle record ↗', vehicle.source, 'spec-source-link'));
   target.append(section);
 }
@@ -846,15 +893,16 @@ function renderImageGallery(target, vehicle, requestedTerm) {
   const title = document.createElement('h4');
   title.textContent = vehicle.fullName + ' · exterior & cabin photos';
   const intro = document.createElement('p');
-  intro.textContent = 'Photos must name the exact make and model and carry a matching Commons model category plus photographic file metadata. Drawings, alternate-market rebadges and unmatched images are excluded; a missing match stays empty instead of showing a random image.';
+  const curatedProfile = curatedSpecProfileFor(vehicle, requestedTerm);
+  intro.textContent = 'Photos are selected from exact model and generation categories. Drawings, rebadges and unmatched images are excluded; market or trim differences are labeled when relevant, and missing matches stay empty.' + (curatedProfile?.photoNote ? ' ' + curatedProfile.photoNote : '');
   heading.append(title, intro);
   const officialPages = officialPhotoSources(vehicle, requestedTerm);
   if (officialPages) {
     const officialLinks = document.createElement('div');
     officialLinks.className = 'finder-actions gallery-official-links';
     officialLinks.append(
-      makeLink('Official Hyundai exterior gallery ↗', officialPages.exterior),
-      makeLink('Official Hyundai cabin gallery ↗', officialPages.interior)
+      makeLink('Official ' + vehicle.make.make + ' exterior gallery ↗', officialPages.exterior),
+      makeLink('Official ' + vehicle.make.make + ' cabin gallery ↗', officialPages.interior)
     );
     heading.append(officialLinks);
   }
@@ -880,7 +928,7 @@ function renderImageGallery(target, vehicle, requestedTerm) {
         ? images.length + ' exact-category photographs · open a file page to review the vehicle category and license.'
         : 'No verified ' + (view.key === 'interior' ? 'interior/cabin' : 'exterior') + ' photo matched this model generation. No drawing, rebadge or unrelated photo was substituted.';
       if (!images.length && officialPages) {
-        status.append(document.createTextNode(' '), makeLink('Open Hyundai’s official gallery ↗', officialPages[view.key], 'spec-source-link'));
+        status.append(document.createTextNode(' '), makeLink('Open ' + vehicle.make.make + ' official gallery ↗', officialPages[view.key], 'spec-source-link'));
       }
       images.forEach(item => {
         const figure = document.createElement('figure');
