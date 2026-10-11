@@ -1,0 +1,20 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{uid}/listings/{listingId}/{fileName} {
+      function isOwner() { return request.auth != null && request.auth.token.email_verified == true && request.auth.uid == uid; }
+      function isPublished() {
+        return firestore.get(/databases/(default)/documents/publicListings/$(listingId)).data.ownerUid == uid
+          && firestore.get(/databases/(default)/documents/publicListings/$(listingId)).data.status == 'published';
+      }
+      allow read: if isOwner() || isPublished();
+      allow create, update: if isOwner()
+        && request.resource.size < 12 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isOwner();
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

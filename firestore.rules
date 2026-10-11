@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+
+    match /users/{uid}/privateData/{collectionId} {
+      allow read: if verified() && request.auth.uid == uid
+        && collectionId in ['garage', 'serviceNotes', 'reminders'];
+      allow create, update: if verified() && request.auth.uid == uid
+        && collectionId in ['garage', 'serviceNotes', 'reminders']
+        && request.resource.data.items is list
+        && request.resource.data.items.size() <= 100;
+      allow delete: if verified() && request.auth.uid == uid
+        && collectionId in ['garage', 'serviceNotes', 'reminders'];
+    }
+
+    match /users/{uid}/listings/{listingId} {
+      allow read, write: if verified() && request.auth.uid == uid;
+    }
+
+    match /users/{uid}/deviceTokens/{tokenId} {
+      allow read, write: if verified() && request.auth.uid == uid;
+    }
+
+    match /publicListings/{listingId} {
+      allow read: if resource.data.status == 'published';
+      allow create: if verified()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.status == 'published'
+        && request.resource.data.keys().hasOnly([
+          'id', 'ownerUid', 'status', 'make', 'model', 'year', 'fuel', 'km',
+          'price', 'transmission', 'city', 'description', 'photos', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.photos is list
+        && request.resource.data.photos.size() <= 18;
+      allow update: if verified() && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'id', 'ownerUid', 'status', 'make', 'model', 'year', 'fuel', 'km',
+          'price', 'transmission', 'city', 'description', 'photos', 'createdAt', 'updatedAt'
+        ]);
+      allow delete: if verified() && resource.data.ownerUid == request.auth.uid;
+
+      match /interest/{buyerUid} {
+        function listing() {
+          return get(/databases/$(database)/documents/publicListings/$(listingId)).data;
+        }
+        allow create: if verified()
+          && request.auth.uid == buyerUid
+          && request.auth.uid != listing().ownerUid
+          && request.resource.data.keys().hasOnly(['fromUid', 'fromEmail', 'createdAt'])
+          && request.resource.data.fromUid == request.auth.uid
+          && request.resource.data.fromEmail == request.auth.token.email;
+        allow read: if verified()
+          && (request.auth.uid == listing().ownerUid || request.auth.uid == buyerUid);
+        allow update: if false;
+        allow delete: if verified() && listing().ownerUid == request.auth.uid;
+      }
+    }
+
+    match /visionUsage/{document=**} {
+      allow read, write: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

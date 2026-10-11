@@ -189,6 +189,84 @@ document.getElementById('scan-open-profile').addEventListener('click', () => {
   document.getElementById('find-cars').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
+function resizeScanImage(file) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const url = URL.createObjectURL(file);
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, 1400 / Math.max(image.naturalWidth, image.naturalHeight));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const context = canvas.getContext('2d', { alpha: false });
+      if (!context) { reject(new Error('This browser could not prepare the photo.')); return; }
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        if (!blob) { reject(new Error('This photo could not be compressed.')); return; }
+        if (blob.size > 8 * 1024 * 1024) { reject(new Error('This photo is still too large to send securely.')); return; }
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+        reader.onerror = () => reject(new Error('This photo could not be read.'));
+        reader.readAsDataURL(blob);
+      }, 'image/jpeg', 0.82);
+    };
+    image.onerror = () => { URL.revokeObjectURL(url); reject(new Error('This image could not be opened.')); };
+    image.src = url;
+  });
+}
+
+function suggestDirectoryVehicle(result) {
+  const clues = [
+    ...(result.logos || []).map(item => ({ text: item.text, score: Number(item.score || 0) + 0.05 })),
+    ...(result.webEntities || []).map(item => ({ text: item.text, score: Number(item.score || 0) })),
+    ...(result.bestGuesses || []).map(text => ({ text, score: 0.35 }))
+  ].filter(item => item.text).sort((a, b) => b.score - a.score);
+  const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  for (const clue of clues) {
+    const normalizedClue = normalize(clue.text);
+    for (const make of indiaDirectory) {
+      const makeName = normalize(make.make);
+      const makeAliases = [make.make, ...(make.aliases || [])].map(normalize).filter(Boolean);
+      const matchedMake = makeAliases.find(alias => alias.length > 2 && normalizedClue.includes(alias));
+      if (!matchedMake) continue;
+      const model = (make.models || []).find(item => {
+        const candidate = normalize(item.name);
+        return candidate.length > 1 && normalizedClue.includes(candidate);
+      });
+      return { make: make.make, model: model?.name || '', clue: clue.text, score: clue.score };
+    }
+  }
+  return null;
+}
+
+function renderScanEvidence(result, suggestion) {
+  const target = document.getElementById('scan-evidence');
+  target.replaceChildren();
+  const labels = [...(result.labels || []).map(item => item.text), ...(result.logos || []).map(item => item.text), ...(result.bestGuesses || [])].filter(Boolean).slice(0, 8);
+  if (suggestion) {
+    const title = document.createElement('strong');
+    title.textContent = `Possible match: ${suggestion.make}${suggestion.model ? ` ${suggestion.model}` : ''}`;
+    const note = document.createElement('small');
+    note.textContent = `Google Vision visual clue: “${suggestion.clue}”. This suggestion can be wrong; confirm it below.`;
+    target.append(title, note);
+  } else if (labels.length) {
+    const note = document.createElement('small');
+    note.textContent = `Visual clues: ${[...new Set(labels)].join(' · ')}. No exact India-market make and model match was found.`;
+    target.append(note);
+  }
+  const links = document.createElement('div');
+  links.className = 'scan-web-links';
+  (result.webMatches || []).slice(0, 3).forEach(match => {
+    const link = document.createElement('a');
+    link.href = match.url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+    link.textContent = `${match.title || 'View a similar-image result'} ↗`;
+    links.append(link);
+  });
+  if (links.childElementCount) target.append(links);
+  target.hidden = target.childElementCount === 0;
+}
+
 let vehicleDetector;
 scanButton.addEventListener('click', async () => {
   if (!preview.src || scanButton.disabled) return;
@@ -196,21 +274,50 @@ scanButton.addEventListener('click', async () => {
   scanMatch.hidden = true;
   document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · RUNNING';
   document.getElementById('result-title').textContent = 'Checking for a car…';
-  document.getElementById('scan-disclaimer').textContent = 'The image stays on this device. The first scan downloads the detector model into this browser.';
+  document.getElementById('scan-evidence').hidden = true;
+  document.getElementById('scan-disclaimer').textContent = 'Preparing the selected photo…';
   try {
-    if (!window.cocoSsd) throw new Error('The on-device detector did not load. Check your connection and try again.');
-    vehicleDetector ||= await window.cocoSsd.load({ base: 'mobilenet_v2' });
-    const detections = await vehicleDetector.detect(preview);
-    const detected = detections.filter(item => item.class === 'car' && item.score >= 0.4).sort((a, b) => b.score - a.score)[0];
-    if (!detected) {
-      document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · COMPLETE';
-      document.getElementById('result-title').textContent = 'invalid input';
-      document.getElementById('scan-disclaimer').textContent = 'No car was detected in this photo. Try a clear image where the whole car is visible.';
-      return;
+    const cloud = window.chassisCloud;
+    if (cloud?.configured && cloud.user?.emailVerified) {
+      document.getElementById('scan-disclaimer').textContent = 'Sending a compressed, temporary copy to Google Cloud Vision for vehicle, logo and public web-match analysis…';
+      const result = await cloud.identifyCar(await resizeScanImage(input.files[0]));
+      if (!result?.isCar) {
+        document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · COMPLETE';
+        document.getElementById('result-title').textContent = 'invalid input';
+        document.getElementById('scan-disclaimer').textContent = 'Google Cloud Vision did not find enough evidence that this image contains a car. Try a clear photo with the car fully visible.';
+        renderScanEvidence(result || {}, null);
+        return;
+      }
+      const suggestion = suggestDirectoryVehicle(result);
+      document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · POSSIBLE VEHICLE MATCH';
+      document.getElementById('result-title').textContent = suggestion?.model
+        ? `Possible match · ${suggestion.make} ${suggestion.model}`
+        : suggestion?.make ? `Possible make · ${suggestion.make}` : 'Car detected · confirm the model';
+      document.getElementById('scan-disclaimer').textContent = result.note || 'Cloud Vision can suggest labels, logos and visually related web results. It does not certify vehicle identity. Verify the exact year, variant and specification with the manufacturer.';
+      renderScanEvidence(result, suggestion);
+      if (suggestion) {
+        scanMake.value = suggestion.make;
+        scanMake.dispatchEvent(new Event('change'));
+        if (suggestion.model && [...scanModel.options].some(option => option.value === suggestion.model)) {
+          scanModel.value = suggestion.model;
+          scanModel.dispatchEvent(new Event('change'));
+        }
+      }
+    } else {
+      if (!window.cocoSsd) throw new Error('The on-device detector did not load. Check your connection and try again.');
+      vehicleDetector ||= await window.cocoSsd.load({ base: 'mobilenet_v2' });
+      const detections = await vehicleDetector.detect(preview);
+      const detected = detections.filter(item => item.class === 'car' && item.score >= 0.4).sort((a, b) => b.score - a.score)[0];
+      if (!detected) {
+        document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · COMPLETE';
+        document.getElementById('result-title').textContent = 'invalid input';
+        document.getElementById('scan-disclaimer').textContent = 'No car was detected in this photo. Sign in after cloud setup for Vision labels and possible public-image matches.';
+        return;
+      }
+      document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · CAR DETECTED';
+      document.getElementById('result-title').textContent = `Car detected · ${Math.round(detected.score * 100)}% detector confidence`;
+      document.getElementById('scan-disclaimer').textContent = 'This on-device model detects the category “car”. It cannot distinguish make, model, trim or year. Choose the car below to open the site’s reference profile.';
     }
-    document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · CAR DETECTED';
-    document.getElementById('result-title').textContent = `Car detected · ${Math.round(detected.score * 100)}% detector confidence`;
-    document.getElementById('scan-disclaimer').textContent = 'This on-device model detects the object category “car”. It cannot reliably distinguish make, model, trim or year. Choose the car below to open the site’s reference profile.';
     scanMatch.hidden = false;
   } catch (error) {
     document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · UNAVAILABLE';
@@ -1038,4 +1145,3 @@ function renderComparison() {
   table.append(tbody);
   comparePanel.append(table);
 }
-
