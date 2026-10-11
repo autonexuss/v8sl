@@ -552,6 +552,24 @@ const curatedIndiaSpecProfiles = [{
   performance: 'https://www.hyundai.com/in/en/find-a-car/creta/performance',
   exterior: 'https://www.hyundai.com/in/en/find-a-car/creta/exterior',
   interior: 'https://www.hyundai.com/in/en/find-a-car/creta/interior',
+  images: {
+    exterior: [{
+      title: '2024 Hyundai Creta · current SU2 generation (India-version model)',
+      image: 'https://commons.wikimedia.org/wiki/Special:FilePath/Hyundai_Creta_1.5_Design_2024_%2854596985099%29.jpg?width=1400',
+      page: 'https://commons.wikimedia.org/wiki/File:Hyundai_Creta_1.5_Design_2024_(54596985099).jpg',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.0/',
+      license: 'CC BY-SA 2.0',
+      artist: 'RL GNZLZ'
+    }],
+    interior: [{
+      title: '2025 Hyundai Creta SU2 PE · cabin interior',
+      image: 'https://commons.wikimedia.org/wiki/Special:FilePath/Hyundai_Creta_SU2_PE_1.5_Premium_Black.jpg?width=1400',
+      page: 'https://commons.wikimedia.org/wiki/File:Hyundai_Creta_SU2_PE_1.5_Premium_Black.jpg',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+      license: 'CC BY-SA 4.0',
+      artist: 'Ethan Llamas'
+    }]
+  },
   engines: [
     { name: '1.5L MPi petrol', fuel: 'Petrol', displacement: '1,497 cc', powerKW: 84.4, powerPS: 115, powerRpm: '6,300 rpm', torque: '143.8 Nm', torqueRpm: '4,500 rpm', transmission: '6-speed manual / iVT' },
     { name: '1.5L U2 CRDi diesel', fuel: 'Diesel', displacement: '1,493 cc', powerKW: 85, powerPS: 116, powerRpm: '4,000 rpm', torque: '250 Nm', torqueRpm: '1,500–2,750 rpm', transmission: '6-speed manual / 6-speed automatic' },
@@ -749,6 +767,8 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
 function cleanMetadata(value) { return String(value || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/\s+/g, ' ').trim(); }
 
 async function commonsVehicleImages(vehicle, view, requestedTerm) {
+  const curatedProfile = curatedSpecProfileFor(vehicle, requestedTerm);
+  if (curatedProfile?.images?.[view.key]) return curatedProfile.images[view.key];
   const requestedAlias = (vehicle.model.aliases || []).find(alias => normalized(requestedTerm).includes(normalized(alias)));
   const exactModelName = requestedAlias || vehicle.model.name;
   const searchTerms = [vehicle.make.make + ' ' + exactModelName];
