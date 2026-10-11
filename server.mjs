@@ -7,9 +7,15 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const firstPort = Number(process.env.PORT || 4173);
 const host = process.env.HOST || '127.0.0.1';
 const youtubeKey = process.env.YOUTUBE_API_KEY || '';
-const mimeTypes = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml', '.md': 'text/markdown; charset=utf-8' };
+const mimeTypes = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.md': 'text/markdown; charset=utf-8' };
 const channelCache = new Map();
 const videoCache = new Map();
+const youtubeMakeWords = new Set(['maruti','suzuki','hyundai','kia','honda','mahindra','toyota','tata','mg','audi','bmw','mercedes','benz','volkswagen','vw','skoda','renault','nissan','citroen','jeep','volvo','jaguar','land','rover','porsche','ferrari','lamborghini','ford','faisal','khan','moto','octane','car','cars','review','reviews','india','new','launch','test','drive','variant','facelift']);
+
+function youtubeResultMatches(query, title) {
+  const terms = String(query).toLowerCase().match(/[a-z0-9]+/g)?.filter(word => word.length >= 2 && !youtubeMakeWords.has(word) && !/^20\d{2}$/.test(word)) || [];
+  return !terms.length || terms.some(term => String(title || '').toLowerCase().includes(term));
+}
 
 function sendJson(res, status, value) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -58,15 +64,14 @@ async function videosForChannel(query, handle, displayName) {
   url.searchParams.set('type', 'video');
   url.searchParams.set('channelId', channelId);
   url.searchParams.set('q', `${query} car review`);
-  url.searchParams.set('videoCaption', 'closedCaption');
-  url.searchParams.set('maxResults', '3');
+  url.searchParams.set('maxResults', '10');
   url.searchParams.set('regionCode', 'IN');
   url.searchParams.set('safeSearch', 'moderate');
   url.searchParams.set('key', youtubeKey);
   const response = await fetch(url);
   const data = await response.json();
   if (!response.ok) throw new Error(data.error?.message || `Could not search ${displayName}.`);
-  return (data.items || []).filter(item => item.id?.videoId).map(item => ({
+  return (data.items || []).filter(item => item.id?.videoId && youtubeResultMatches(query, item.snippet?.title)).slice(0, 3).map(item => ({
     id: item.id.videoId,
     title: item.snippet?.title || `${query} review`,
     channel: item.snippet?.channelTitle || displayName,
@@ -127,7 +132,22 @@ const server = http.createServer(async (req, res) => {
   if (filePath !== root && !filePath.startsWith(`${root}${path.sep}`)) return sendJson(res, 403, { error: 'Forbidden.' });
   try {
     const data = await readFile(filePath);
-    res.writeHead(200, { 'Content-Type': mimeTypes[path.extname(filePath).toLowerCase()] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff' });
+    const contentType = mimeTypes[path.extname(filePath).toLowerCase()] || 'application/octet-stream';
+    const range = req.headers.range?.match(/^bytes=(\d*)-(\d*)$/);
+    if (contentType === 'video/mp4' && range) {
+      const start = range[1] ? Number(range[1]) : Math.max(0, data.length - Number(range[2] || 0));
+      const end = range[1] ? (range[2] ? Number(range[2]) : data.length - 1) : data.length - 1;
+      if (start >= data.length || end < start) {
+        res.writeHead(416, { 'Content-Range': `bytes */${data.length}`, 'Accept-Ranges': 'bytes' });
+        return res.end();
+      }
+      const last = Math.min(end, data.length - 1);
+      res.writeHead(206, { 'Content-Type': contentType, 'Content-Range': `bytes ${start}-${last}/${data.length}`, 'Content-Length': last - start + 1, 'Accept-Ranges': 'bytes', 'X-Content-Type-Options': 'nosniff' });
+      return res.end(data.subarray(start, last + 1));
+    }
+    const headers = { 'Content-Type': contentType, 'Content-Length': data.length, 'X-Content-Type-Options': 'nosniff' };
+    if (contentType === 'video/mp4') headers['Accept-Ranges'] = 'bytes';
+    res.writeHead(200, headers);
     res.end(data);
   } catch {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -159,3 +179,4 @@ function listenOnAvailablePort(port, attemptsLeft = 25) {
 }
 
 listenOnAvailablePort(firstPort);
+

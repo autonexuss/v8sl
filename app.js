@@ -140,16 +140,85 @@ reportForm?.addEventListener('submit', event => {
 
 const input = document.getElementById('car-photo');
 const preview = document.getElementById('preview-image');
+const scanButton = document.getElementById('scan-car');
+const scanMatch = document.getElementById('scan-match');
 let localUrl;
 input.addEventListener('change', () => {
   const file = input.files && input.files[0];
   if (!file) return;
+  scanMatch.hidden = true;
+  document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · READY';
+  document.getElementById('result-title').textContent = 'Ready to check this photo';
+  document.getElementById('scan-disclaimer').textContent = 'A positive result means a car-shaped object was detected. It is not an exact make/model identification.';
+  scanButton.disabled = true;
+  if (!file.type.startsWith('image/')) {
+    document.getElementById('result-title').textContent = 'invalid input';
+    document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · INVALID FILE';
+    return;
+  }
+  if (file.size > 15 * 1024 * 1024) {
+    document.getElementById('result-title').textContent = 'Image is too large';
+    document.getElementById('scan-disclaimer').textContent = 'Choose an image smaller than 15 MB and try again.';
+    return;
+  }
   if (localUrl) URL.revokeObjectURL(localUrl);
   localUrl = URL.createObjectURL(file);
+  preview.onload = () => { scanButton.disabled = false; };
   preview.src = localUrl;
   preview.hidden = false;
   document.querySelector('.preview-empty').hidden = true;
-  document.getElementById('result-title').textContent = 'Preview ready · no scan performed';
+  document.getElementById('result-title').textContent = 'Ready to check this photo';
+});
+
+const scanMake = document.getElementById('scan-make');
+const scanModel = document.getElementById('scan-model');
+const indiaDirectory = window.CHASSIS_INDIA_DIRECTORY || [];
+indiaDirectory.forEach(make => scanMake.add(new Option(make.make, make.make)));
+scanMake.addEventListener('change', () => {
+  scanModel.replaceChildren(new Option(scanMake.value ? 'Choose a model' : 'Choose manufacturer first', ''));
+  const make = window.chassisResolveMake?.(scanMake.value);
+  (make?.models || []).forEach(model => scanModel.add(new Option(model.name, model.name)));
+  scanModel.disabled = !make;
+  document.getElementById('scan-open-profile').disabled = true;
+});
+scanModel.addEventListener('change', () => { document.getElementById('scan-open-profile').disabled = !scanModel.value; });
+document.getElementById('scan-open-profile').addEventListener('click', () => {
+  if (!scanMake.value || !scanModel.value) return;
+  document.getElementById('car-search-input').value = `${scanMake.value} ${scanModel.value}`;
+  document.getElementById('car-search-form').requestSubmit();
+  document.getElementById('find-cars').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+let vehicleDetector;
+scanButton.addEventListener('click', async () => {
+  if (!preview.src || scanButton.disabled) return;
+  scanButton.disabled = true;
+  scanMatch.hidden = true;
+  document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · RUNNING';
+  document.getElementById('result-title').textContent = 'Checking for a car…';
+  document.getElementById('scan-disclaimer').textContent = 'The image stays on this device. The first scan downloads the detector model into this browser.';
+  try {
+    if (!window.cocoSsd) throw new Error('The on-device detector did not load. Check your connection and try again.');
+    vehicleDetector ||= await window.cocoSsd.load({ base: 'mobilenet_v2' });
+    const detections = await vehicleDetector.detect(preview);
+    const detected = detections.filter(item => item.class === 'car' && item.score >= 0.4).sort((a, b) => b.score - a.score)[0];
+    if (!detected) {
+      document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · COMPLETE';
+      document.getElementById('result-title').textContent = 'invalid input';
+      document.getElementById('scan-disclaimer').textContent = 'No car was detected in this photo. Try a clear image where the whole car is visible.';
+      return;
+    }
+    document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · CAR DETECTED';
+    document.getElementById('result-title').textContent = `Car detected · ${Math.round(detected.score * 100)}% detector confidence`;
+    document.getElementById('scan-disclaimer').textContent = 'This on-device model detects the object category “car”. It cannot reliably distinguish make, model, trim or year. Choose the car below to open the site’s reference profile.';
+    scanMatch.hidden = false;
+  } catch (error) {
+    document.getElementById('scan-kicker').textContent = 'PHOTO CHECK · UNAVAILABLE';
+    document.getElementById('result-title').textContent = 'Could not scan this image';
+    document.getElementById('scan-disclaimer').textContent = error.message || 'The browser could not load the on-device car detector. Try again when connected to the internet.';
+  } finally {
+    scanButton.disabled = false;
+  }
 });
 
 const toast = document.getElementById('toast');
@@ -715,7 +784,7 @@ function renderFallbackVideoLinks(query) {
     card.append(kicker, heading, description, makeLink('Search videos ↗', searchUrl));
     videoResults.append(card);
   });
-  document.getElementById('video-caption-note').textContent = 'These links open YouTube search results. Connect a YouTube Data API key below to load actual videos, thumbnails and direct watch links. Turn on CC in YouTube when captions are available.';
+  document.getElementById('video-caption-note').textContent = 'The site-wide YouTube connection is unavailable right now. These creator-focused searches still open YouTube; direct video cards and thumbnails return when the site key is active.';
 }
 
 function renderCaptionedVideos(videos) {
@@ -726,7 +795,7 @@ function renderCaptionedVideos(videos) {
     const card = document.createElement('article');
     card.className = 'video-card';
     const creator = document.createElement('span');
-    creator.textContent = `${video.creator} · CAPTIONS AVAILABLE`;
+    creator.textContent = `${video.creator} · VIDEO REVIEW`;
     const thumbLink = document.createElement('a');
     thumbLink.className = 'video-thumbnail-link';
     thumbLink.href = video.watchUrl;
@@ -735,9 +804,17 @@ function renderCaptionedVideos(videos) {
     thumbLink.setAttribute('aria-label', `Watch ${video.title} on YouTube`);
     const thumbnail = document.createElement('img');
     thumbnail.className = 'video-thumbnail';
-    thumbnail.src = video.thumbnail || `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/hqdefault.jpg`;
     thumbnail.alt = `Video thumbnail: ${video.title}`;
     thumbnail.loading = 'lazy';
+    thumbnail.referrerPolicy = 'no-referrer';
+    const thumbnailCandidates = [...new Set([video.thumbnail, `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`, `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`, `https://i.ytimg.com/vi/${video.id}/sddefault.jpg`, `https://i.ytimg.com/vi/${video.id}/0.jpg`].filter(Boolean))];
+    let thumbnailAttempt = 0;
+    thumbnail.addEventListener('error', () => {
+      thumbnailAttempt += 1;
+      if (thumbnailAttempt < thumbnailCandidates.length) thumbnail.src = thumbnailCandidates[thumbnailAttempt];
+      else { thumbnail.removeAttribute('src'); thumbLink.classList.add('thumbnail-unavailable'); }
+    });
+    thumbnail.src = thumbnailCandidates[0];
     const play = document.createElement('span'); play.className = 'video-play-mark'; play.setAttribute('aria-hidden', 'true'); play.textContent = '▶';
     thumbLink.append(thumbnail, play);
     const title = document.createElement('strong');
@@ -749,27 +826,13 @@ function renderCaptionedVideos(videos) {
     videoResults.append(card);
   });
   if (!videoResults.children.length) return false;
-  document.getElementById('video-caption-note').textContent = 'Each image is the video’s YouTube thumbnail and opens its direct watch page. YouTube videos marked as captioned are searched; turn on CC in the player when captions are available.';
+  document.getElementById('video-caption-note').textContent = 'Each image is the video’s YouTube thumbnail and opens its direct watch page. Captions depend on the creator; turn on CC in YouTube when available.';
   return true;
 }
 
-const youtubeKeyStorage = 'chassisYoutubeBrowserKey';
-const youtubeKeyInput = document.getElementById('youtube-api-key');
-const youtubeKeyForm = document.getElementById('youtube-key-form');
-const youtubeKeyStatus = document.getElementById('youtube-key-status');
-const youtubeKeyClear = document.getElementById('youtube-key-clear');
 let activeVideoQuery = '';
 const youtubeChannelCache = new Map();
 const youtubePublicKey = typeof window.CHASSIS_YOUTUBE_API_KEY === 'string' ? window.CHASSIS_YOUTUBE_API_KEY.trim() : '';
-
-function savedYoutubeKey() {
-  try { return localStorage.getItem(youtubeKeyStorage) || youtubePublicKey; } catch { return youtubePublicKey; }
-}
-
-function updateYoutubeKeyStatus(message) {
-  if (youtubeKeyStatus) youtubeKeyStatus.textContent = message;
-  if (youtubeKeyClear) youtubeKeyClear.hidden = !savedYoutubeKey();
-}
 
 async function youtubeApiRequest(endpoint, params, apiKey) {
   const url = new URL(`https://www.googleapis.com/youtube/v3/${endpoint}`);
@@ -806,7 +869,7 @@ async function browserYoutubeVideos(query, apiKey) {
   const groups = await Promise.all(channels.map(async channel => {
     const channelId = await youtubeChannelId(channel.handle, apiKey);
     const data = await youtubeApiRequest('search', {
-      part: 'snippet', type: 'video', channelId, q: `${query} car review`, videoCaption: 'closedCaption',
+      part: 'snippet', type: 'video', channelId, q: `${query} car review`,
       maxResults: '10', regionCode: 'IN', safeSearch: 'moderate'
     }, apiKey);
     return (data.items || []).filter(item => item.id?.videoId && youtubeResultMatches(query, item.snippet?.title)).slice(0, 3).map(item => ({
@@ -822,23 +885,21 @@ async function browserYoutubeVideos(query, apiKey) {
 async function loadVideos(query) {
   activeVideoQuery = query;
   finderVideos.hidden = false;
-  const browserKey = savedYoutubeKey();
+  const browserKey = youtubePublicKey;
   if (browserKey) {
-    updateYoutubeKeyStatus(youtubePublicKey && browserKey === youtubePublicKey ? 'YouTube is connected for all visitors using this restricted site key.' : 'YouTube is connected in this browser only.');
     try {
       const videos = await browserYoutubeVideos(query, browserKey);
       if (renderCaptionedVideos(videos)) return;
       renderFallbackVideoLinks(query);
-      document.getElementById('video-caption-note').textContent = 'No captioned videos from these channels matched this search. Try another car name; YouTube captions are controlled by each creator.';
+      document.getElementById('video-caption-note').textContent = 'No matching videos from these channels were returned. Try the full model name or use the creator search links.';
       return;
     } catch (error) {
       renderFallbackVideoLinks(query);
-      updateYoutubeKeyStatus(`YouTube could not use this key: ${error.message} Check that YouTube Data API v3 is enabled and the key is restricted to this website.`);
+      document.getElementById('video-caption-note').textContent = `YouTube is temporarily unavailable (${error.message}). Use the creator searches below; the site key is managed by Chassis.`;
       return;
     }
   }
   renderFallbackVideoLinks(query);
-  updateYoutubeKeyStatus('To show direct videos and thumbnails, connect a YouTube Data API key. It is saved only in this browser unless the site owner adds a restricted key for everyone.');
   try {
     const response = await fetch(`/api/videos?q=${encodeURIComponent(query)}`);
     if (!response.ok) return;
@@ -850,30 +911,6 @@ async function loadVideos(query) {
     }
   } catch { /* Static-file mode keeps the channel search links available. */ }
 }
-
-youtubeKeyForm?.addEventListener('submit', async event => {
-  event.preventDefault();
-  const key = youtubeKeyInput.value.trim();
-  if (!key) { updateYoutubeKeyStatus('Paste a YouTube Data API key first.'); return; }
-  try {
-    localStorage.setItem(youtubeKeyStorage, key);
-    youtubeKeyInput.value = '';
-    updateYoutubeKeyStatus('Key saved on this browser. Loading direct videos and thumbnails…');
-    if (activeVideoQuery) await loadVideos(activeVideoQuery);
-    else updateYoutubeKeyStatus('Key saved on this browser. Search for a car to load its videos.');
-  } catch {
-    updateYoutubeKeyStatus('This browser could not save the key. Check its local storage settings and try again.');
-  }
-});
-
-youtubeKeyClear?.addEventListener('click', () => {
-  try { localStorage.removeItem(youtubeKeyStorage); } catch { /* Storage may be unavailable. */ }
-  youtubeKeyInput.value = '';
-  updateYoutubeKeyStatus('Disconnected. Search links still work; direct videos need a YouTube API key.');
-  if (activeVideoQuery) loadVideos(activeVideoQuery);
-});
-
-if (savedYoutubeKey()) updateYoutubeKeyStatus(youtubePublicKey && savedYoutubeKey() === youtubePublicKey ? 'A site-wide YouTube key is connected.' : 'A YouTube key is saved on this browser.');
 
 async function searchCar(query) {
   const term = query.trim();

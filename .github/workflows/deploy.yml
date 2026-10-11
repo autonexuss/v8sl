@@ -30,6 +30,11 @@ jobs:
           CHASSIS_YOUTUBE_BROWSER_KEY: ${{ secrets.YOUTUBE_BROWSER_API_KEY }}
         run: |
           node --input-type=module -e 'import { writeFile } from "node:fs/promises"; const key = process.env.CHASSIS_YOUTUBE_BROWSER_KEY || ""; await writeFile("youtube-config.js", `window.CHASSIS_YOUTUBE_API_KEY = ${JSON.stringify(key)};\n`);'
+          if [ -n "$CHASSIS_YOUTUBE_BROWSER_KEY" ]; then
+            echo "A site-wide YouTube browser key was supplied to the build."
+          else
+            echo "::warning::YOUTUBE_BROWSER_API_KEY is not configured; direct video results and thumbnails will fall back to creator search links."
+          fi
       - name: Upload the site
         uses: actions/upload-pages-artifact@v4
         with:
@@ -37,3 +42,4 @@ jobs:
       - name: Publish the site
         id: deployment
         uses: actions/deploy-pages@v4
+

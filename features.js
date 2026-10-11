@@ -1,6 +1,9 @@
 const inr = value => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Math.max(0, value));
 window.chassisBindPlanner?.('emi');
 window.chassisBindPlanner?.('mileage');
+window.chassisBindPlanner?.('value');
+window.chassisBindPlanner?.('listing');
+window.chassisBindPlanner?.('garage');
 const emiForm = document.getElementById('emi-form');
 function calculateEmi() {
   const price = Number(document.getElementById('emi-price').value);
@@ -85,62 +88,144 @@ updateMileageUnits();
 calculateMileage();
 
 const valueForm = document.getElementById('value-form');
-function calculateIllustrativeValue() {
-  const paid = Number(document.getElementById('value-price').value);
-  const year = Number(document.getElementById('value-year').value);
+const resaleResult = document.getElementById('value-result');
+const resaleLinks = document.getElementById('resale-links');
+valueForm.addEventListener('submit', event => {
+  event.preventDefault();
+  const make = document.getElementById('value-make').value;
+  const model = document.getElementById('value-model').value;
+  const year = document.getElementById('value-year').value;
+  const city = document.getElementById('value-city').value.trim();
   const km = Number(document.getElementById('value-km').value);
-  const condition = Number(document.getElementById('value-condition').value);
-  const result = document.getElementById('value-result');
-  const age = new Date().getFullYear() - year;
-  if (!(paid > 0) || year < 1990 || year > new Date().getFullYear() || km < 0) {
-    result.textContent = `Enter a purchase price, a year from 1990 to ${new Date().getFullYear()}, and a valid odometer reading.`;
-    return;
+  if (!make || !model || !year || !city || !Number.isFinite(km) || km < 0) return;
+  const search = `${year} ${make} ${model} used car ${city} ${km} km`;
+  const sources = [
+    ['CarDekho used cars', `site:cardekho.com/used-cars ${search}`],
+    ['CarWale used cars', `site:carwale.com/used-cars ${search}`],
+    ['CARS24 listings', `site:cars24.com/buy-used-cars ${search}`],
+    ['Spinny listings', `site:spinny.com ${search}`]
+  ];
+  resaleLinks.replaceChildren();
+  sources.forEach(([label, query]) => {
+    const link = document.createElement('a'); link.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = `${label} ↗`; resaleLinks.append(link);
+  });
+  resaleLinks.hidden = false;
+  const low = Number(document.getElementById('value-low').value);
+  const high = Number(document.getElementById('value-high').value);
+  resaleResult.replaceChildren();
+  if (low > 0 && high >= low) {
+    const strong = document.createElement('strong'); strong.textContent = `${inr(low)} – ${inr(high)}`;
+    const note = document.createElement('span'); note.textContent = `Your comparable listing prices · ${year} ${make} ${model} · ${city} · ${new Intl.NumberFormat('en-IN').format(km)} km. This is based on the prices you entered.`;
+    resaleResult.append(strong, note);
+  } else {
+    const strong = document.createElement('strong'); strong.textContent = 'Live marketplace searches are ready';
+    const note = document.createElement('span'); note.textContent = 'Review matching ads and photos, then enter the lowest and highest comparable asking prices to calculate a reference range.';
+    resaleResult.append(strong, note);
   }
-  const annualRetention = age <= 1 ? 0.82 : Math.max(0.20, 0.82 * (0.90 ** (age - 1)));
-  const kmAdjustment = Math.min(1.12, Math.max(0.88, 1 - ((km - age * 12000) / 10000) * 0.012));
-  const center = paid * annualRetention * kmAdjustment * condition;
-  result.replaceChildren();
-  const strong = document.createElement('strong'); strong.textContent = `${inr(center * 0.92)} – ${inr(center * 1.08)}`;
-  const note = document.createElement('span'); note.textContent = 'Broad formula illustration based on age, kilometres and selected condition.';
-  result.append(strong, note);
-}
-valueForm.addEventListener('submit', event => { event.preventDefault(); calculateIllustrativeValue(); });
-valueForm.addEventListener('input', calculateIllustrativeValue);
-calculateIllustrativeValue();
+});
 
 const listingForm = document.getElementById('listing-form');
-listingForm.addEventListener('submit', event => {
-  event.preventDefault();
-  const model = document.getElementById('listing-model').value.trim();
-  const year = Number(document.getElementById('listing-year').value);
-  const km = Number(document.getElementById('listing-km').value);
-  const price = Number(document.getElementById('listing-price').value);
-  if (!model || year < 1990 || year > new Date().getFullYear() || km < 0 || price <= 0) return;
-  const draft = [
-    `${year} ${model}`,
-    `Asking price: ${inr(price)}`,
-    `Odometer: ${new Intl.NumberFormat('en-IN').format(km)} km`,
-    '',
-    'Please contact me for an inspection and verified vehicle documents.'
-  ].join('\n');
-  document.getElementById('listing-text').textContent = draft;
-  document.getElementById('listing-preview').hidden = false;
-  document.getElementById('listing-copy-status').textContent = 'Draft prepared in this page; it has not been posted.';
+const listingPhotoGroups = [
+  ['exterior', document.getElementById('listing-exterior')],
+  ['interior', document.getElementById('listing-interior')],
+  ['odometer', document.getElementById('listing-odometer')]
+];
+const photoPreview = document.getElementById('listing-photo-preview');
+const listingObjectUrls = [];
+listingPhotoGroups.forEach(([group, input]) => input.addEventListener('change', () => {
+  listingObjectUrls.forEach(url => URL.revokeObjectURL(url)); listingObjectUrls.length = 0;
+  photoPreview.replaceChildren();
+  listingPhotoGroups.forEach(([category, photoInput]) => [...photoInput.files].forEach(file => {
+    const figure = document.createElement('figure'); figure.className = 'listing-photo-thumb';
+    const image = document.createElement('img'); const url = URL.createObjectURL(file); listingObjectUrls.push(url); image.src = url; image.alt = `${category} listing photo preview`; image.loading = 'lazy';
+    const caption = document.createElement('figcaption'); caption.textContent = `${category} · ${file.name}`;
+    figure.append(image, caption); photoPreview.append(figure);
+  }));
+}));
+
+const listingDbReady = new Promise((resolve, reject) => {
+  if (!('indexedDB' in window)) { reject(new Error('This browser does not support persistent photo storage.')); return; }
+  const request = indexedDB.open('chassis-private-vault-v1', 1);
+  request.onupgradeneeded = () => {
+    const db = request.result;
+    if (!db.objectStoreNames.contains('listingDrafts')) db.createObjectStore('listingDrafts', { keyPath: 'id' });
+  };
+  request.onsuccess = () => resolve(request.result);
+  request.onerror = () => reject(request.error || new Error('Could not open private browser storage.'));
 });
-document.getElementById('copy-listing').addEventListener('click', async () => {
-  const value = document.getElementById('listing-text').textContent;
-  const status = document.getElementById('listing-copy-status');
+async function saveListingRecord(record) {
+  const db = await listingDbReady;
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction('listingDrafts', 'readwrite');
+    transaction.objectStore('listingDrafts').put(record);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error || new Error('Could not save this listing draft.'));
+  });
+}
+async function readListingRecords() {
+  const db = await listingDbReady;
+  return new Promise((resolve, reject) => {
+    const request = db.transaction('listingDrafts').objectStore('listingDrafts').getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error || new Error('Could not read saved listing drafts.'));
+  });
+}
+async function deleteListingRecord(id) {
+  const db = await listingDbReady;
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction('listingDrafts', 'readwrite'); transaction.objectStore('listingDrafts').delete(id);
+    transaction.oncomplete = () => resolve(); transaction.onerror = () => reject(transaction.error);
+  });
+}
+const savedListings = document.getElementById('saved-listings');
+async function renderSavedListings() {
+  savedListings.replaceChildren();
   try {
-    await navigator.clipboard.writeText(value);
-    status.textContent = 'Copied to clipboard.';
-  } catch {
-    const field = document.createElement('textarea');
-    field.value = value; field.style.position = 'fixed'; field.style.opacity = '0';
-    document.body.append(field); field.select();
-    const copied = document.execCommand('copy'); field.remove();
-    status.textContent = copied ? 'Copied to clipboard.' : 'Select and copy the draft text above.';
+    const records = (await readListingRecords()).sort((a, b) => b.createdAt - a.createdAt);
+    if (!records.length) { const empty = document.createElement('p'); empty.className = 'saved-listing-empty'; empty.textContent = 'Your saved private drafts will appear here.'; savedListings.append(empty); return; }
+    records.forEach(record => {
+      const card = document.createElement('article'); card.className = 'saved-listing-card';
+      const heading = document.createElement('div'); heading.className = 'saved-listing-heading';
+      const title = document.createElement('strong'); title.textContent = `${record.year} ${record.make} ${record.model}`;
+      const price = document.createElement('b'); price.textContent = inr(record.price);
+      heading.append(title, price);
+      const details = document.createElement('p'); details.textContent = `${record.city} · ${new Intl.NumberFormat('en-IN').format(record.km)} km · ${record.fuel} · ${record.transmission} · ${record.photos.length} photos`;
+      const description = document.createElement('p'); description.textContent = record.description;
+      const gallery = document.createElement('div'); gallery.className = 'saved-listing-gallery';
+      record.photos.slice(0, 9).forEach(photo => {
+        const image = document.createElement('img'); const url = URL.createObjectURL(photo.blob); image.src = url; image.alt = `${photo.group} photo for ${record.make} ${record.model}`; image.loading = 'lazy'; image.addEventListener('load', () => URL.revokeObjectURL(url), { once: true }); gallery.append(image);
+      });
+      const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'filter-reset'; remove.textContent = 'Delete private draft'; remove.addEventListener('click', async () => { await deleteListingRecord(record.id); renderSavedListings(); });
+      card.append(heading, details, description, gallery, remove); savedListings.append(card);
+    });
+  } catch (error) { const msg = document.createElement('p'); msg.className = 'saved-listing-empty'; msg.textContent = `Private photo storage is unavailable: ${error.message}`; savedListings.append(msg); }
+}
+listingForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const photoFiles = listingPhotoGroups.flatMap(([group, input]) => [...input.files].map(file => ({ group, name: file.name, type: file.type, blob: file })));
+  if (!listingPhotoGroups.every(([, input]) => input.files.length) || photoFiles.length > 18 || photoFiles.some(photo => !photo.type.startsWith('image/') || photo.blob.size > 12 * 1024 * 1024)) {
+    window.alert('Add at least one image for exterior, interior and odometer. Use no more than 18 photos total, each under 12 MB.'); return;
   }
+  const record = {
+    id: crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    createdAt: Date.now(), make: document.getElementById('listing-make').value, model: document.getElementById('listing-model').value,
+    year: Number(document.getElementById('listing-year').value), fuel: document.getElementById('listing-fuel').value,
+    km: Number(document.getElementById('listing-km').value), price: Number(document.getElementById('listing-price').value),
+    transmission: document.getElementById('listing-transmission').value, city: document.getElementById('listing-city').value.trim(),
+    description: document.getElementById('listing-description').value.trim(), photos: photoFiles
+  };
+  if (!record.make || !record.model || !record.year || !record.city || !record.description || !(record.price > 0) || record.km < 0) return;
+  try {
+    await saveListingRecord(record);
+    await renderSavedListings();
+    listingForm.reset(); photoPreview.replaceChildren();
+    document.getElementById('listing-model').disabled = true; document.getElementById('listing-year').disabled = true;
+    const status = document.createElement('p'); status.className = 'listing-saved-status'; status.textContent = 'Listing draft and photos saved privately on this device. It is not published and buyers cannot view it.';
+    savedListings.prepend(status);
+  } catch (error) { window.alert(`The draft was not saved. Check available browser storage and try again. ${error.message}`); }
 });
+renderSavedListings();
 
 document.getElementById('nearby-form').addEventListener('submit', event => {
   event.preventDefault();
@@ -172,7 +257,6 @@ function renderPrivateList(key, targetId, fields) {
   if (!entries.length) { const empty = document.createElement('small'); empty.textContent = 'Nothing saved yet.'; target.append(empty); }
 }
 const serviceKey = 'chassis-private-service-notes-v1';
-const reminderKey = 'chassis-private-reminders-v1';
 const serviceDate = document.getElementById('service-date');
 const localToday = () => { const date = new Date(); date.setMinutes(date.getMinutes() - date.getTimezoneOffset()); return date.toISOString().slice(0, 10); };
 serviceDate.value = localToday();
@@ -184,14 +268,84 @@ document.getElementById('service-form').addEventListener('submit', event => {
   event.currentTarget.reset(); serviceDate.value = localToday();
   renderPrivateList(serviceKey, 'service-list', ['date', 'odometer', 'note']);
 });
-document.getElementById('reminder-form').addEventListener('submit', event => {
+const reminderKey = 'chassis-private-reminders-v2';
+const reminderForm = document.getElementById('reminder-form');
+const reminderList = document.getElementById('reminder-list');
+const reminderNotifyButton = document.getElementById('enable-reminder-notifications');
+function renderReminders() {
+  const entries = readLocalList(reminderKey);
+  reminderList.replaceChildren();
+  entries.forEach((entry, index) => {
+    const row = document.createElement('div'); row.className = `private-item reminder-item${entry.date <= localToday() ? ' is-due' : ''}`;
+    const text = document.createElement('span'); text.textContent = `${entry.date} · ${entry.type}${entry.title ? ` · ${entry.title}` : ''}${entry.date <= localToday() ? ' · DUE' : ''}`;
+    const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = 'Remove'; remove.setAttribute('aria-label', 'Remove saved reminder');
+    remove.addEventListener('click', () => { const next = readLocalList(reminderKey); next.splice(index, 1); writeLocalList(reminderKey, next); renderReminders(); });
+    row.append(text, remove); reminderList.append(row);
+  });
+  if (!entries.length) { const empty = document.createElement('small'); empty.textContent = 'Nothing saved yet.'; reminderList.append(empty); }
+}
+function checkDueReminders() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const entries = readLocalList(reminderKey);
+  let changed = false;
+  entries.forEach(entry => {
+    if (entry.date <= localToday() && !entry.notified) {
+      try {
+        new Notification('Chassis reminder', { body: `${entry.type}${entry.title ? ` · ${entry.title}` : ''}`, tag: `chassis-${entry.id}` });
+        entry.notified = true; changed = true;
+      } catch { /* Browser notification service can be unavailable. */ }
+    }
+  });
+  if (changed) writeLocalList(reminderKey, entries);
+}
+reminderForm.addEventListener('submit', event => {
   event.preventDefault();
   const entries = readLocalList(reminderKey);
-  entries.unshift({ title: document.getElementById('reminder-title').value.trim(), date: document.getElementById('reminder-date').value });
+  entries.unshift({ id: crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`, type: document.getElementById('reminder-type').value, title: document.getElementById('reminder-title').value.trim(), date: document.getElementById('reminder-date').value, notified: false });
   if (!writeLocalList(reminderKey, entries)) { window.alert('Browser storage is unavailable. Your reminder was not saved.'); return; }
   event.currentTarget.reset();
-  renderPrivateList(reminderKey, 'reminder-list', ['date', 'title']);
+  renderReminders(); checkDueReminders();
+});
+reminderNotifyButton.addEventListener('click', async () => {
+  if (!('Notification' in window)) { reminderNotifyButton.textContent = 'Browser alerts unavailable'; return; }
+  const permission = await Notification.requestPermission();
+  reminderNotifyButton.textContent = permission === 'granted' ? 'Browser alerts enabled ✓' : 'Browser alerts not allowed';
+  checkDueReminders();
+});
+checkDueReminders(); window.setInterval(checkDueReminders, 60_000);
+
+const garageKey = 'chassis-personal-garage-v1';
+const garageForm = document.getElementById('garage-form');
+const garageList = document.getElementById('garage-list');
+function renderGarage() {
+  const entries = readLocalList(garageKey);
+  garageList.replaceChildren();
+  if (!entries.length) { const empty = document.createElement('p'); empty.className = 'garage-empty'; empty.textContent = 'Add a car to create your private garage.'; garageList.append(empty); return; }
+  entries.forEach((entry, index) => {
+    const card = document.createElement('article'); card.className = 'garage-car';
+    const name = document.createElement('div'); name.className = 'garage-car-name';
+    const title = document.createElement('strong'); title.textContent = `${entry.year} ${entry.make} ${entry.model}`;
+    const registration = document.createElement('span'); registration.textContent = entry.registration;
+    name.append(title, registration);
+    const check = document.createElement('a'); check.href = 'https://echallan.parivahan.gov.in/index/accused-challan'; check.target = '_blank'; check.rel = 'noopener noreferrer'; check.className = 'button button-light'; check.textContent = 'Check eChallan ↗';
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'filter-reset'; remove.textContent = 'Remove';
+    remove.addEventListener('click', () => { const next = readLocalList(garageKey); next.splice(index, 1); writeLocalList(garageKey, next); renderGarage(); });
+    card.append(name, check, remove); garageList.append(card);
+  });
+}
+garageForm.addEventListener('submit', event => {
+  event.preventDefault();
+  const make = document.getElementById('garage-make').value;
+  const model = document.getElementById('garage-model').value;
+  const year = document.getElementById('garage-year').value;
+  const registration = document.getElementById('garage-registration').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!make || !model || !year || registration.length < 6 || registration.length > 13) { window.alert('Choose a make, model and year, then enter a valid registration number.'); return; }
+  const entries = readLocalList(garageKey);
+  if (entries.some(entry => entry.registration === registration)) { window.alert('This vehicle is already in your garage.'); return; }
+  entries.unshift({ make, model, year, registration });
+  if (!writeLocalList(garageKey, entries)) { window.alert('Browser storage is unavailable. Your vehicle was not saved.'); return; }
+  garageForm.reset(); document.getElementById('garage-model').disabled = true; document.getElementById('garage-year').disabled = true; renderGarage();
 });
 renderPrivateList(serviceKey, 'service-list', ['date', 'odometer', 'note']);
-renderPrivateList(reminderKey, 'reminder-list', ['date', 'title']);
+renderReminders(); renderGarage();
 
