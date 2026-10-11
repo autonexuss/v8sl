@@ -99,6 +99,7 @@ valueForm.addEventListener('submit', event => {
   const km = Number(document.getElementById('value-km').value);
   if (!make || !model || !year || !city || !Number.isFinite(km) || km < 0) return;
   const search = `${year} ${make} ${model} used car ${city} ${km} km`;
+  const spinnySlug = [make, model].map(value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')).filter(Boolean).join('-');
   const sources = [
     ['CarDekho used cars', `site:cardekho.com/used-cars ${search}`],
     ['CarWale used cars', `site:carwale.com/used-cars ${search}`],
@@ -108,6 +109,7 @@ valueForm.addEventListener('submit', event => {
   resaleLinks.replaceChildren();
   sources.forEach(([label, query]) => {
     const link = document.createElement('a'); link.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    if (label.startsWith('Spinny')) link.href = 'https://www.spinny.com/used-' + spinnySlug + '-cars/s/';
     link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = `${label} ↗`; resaleLinks.append(link);
   });
   resaleLinks.hidden = false;
@@ -120,7 +122,7 @@ valueForm.addEventListener('submit', event => {
     resaleResult.append(strong, note);
   } else {
     const strong = document.createElement('strong'); strong.textContent = 'Live marketplace searches are ready';
-    const note = document.createElement('span'); note.textContent = 'Review matching ads and photos, then enter the lowest and highest comparable asking prices to calculate a reference range.';
+    const note = document.createElement('span'); note.textContent = 'Spinny opens the ' + make + ' ' + model + ' used-car listings directly. Other links search for ' + search + '; compare actual model year, trim, condition and photos.';
     resaleResult.append(strong, note);
   }
 });
@@ -311,7 +313,7 @@ function checkDueReminders() {
   entries.forEach(entry => {
     if (entry.date <= localToday() && !entry.notified) {
       try {
-        new Notification('Chassis reminder', { body: `${entry.type}${entry.title ? ` · ${entry.title}` : ''}`, tag: `chassis-${entry.id}` });
+        new Notification('Velocitrak reminder', { body: `${entry.type}${entry.title ? ` · ${entry.title}` : ''}`, tag: `chassis-${entry.id}` });
         entry.notified = true; changed = true;
       } catch { /* Browser notification service can be unavailable. */ }
     }

@@ -133,7 +133,7 @@ reportForm?.addEventListener('submit', event => {
   const heading = document.createElement('strong');
   heading.textContent = 'Your number stayed on this page.';
   const detail = document.createElement('span');
-  detail.textContent = 'Chassis has no live challan or insurance connection, so it did not check or store the registration. Enter it again only after opening the official service.';
+  detail.textContent = 'Velocitrak has no live challan or insurance connection, so it did not check or store the registration. Enter it again only after opening the official service.';
   reportResult.append(heading, detail);
   document.getElementById('record-action-grid').hidden = false;
 });
@@ -322,7 +322,7 @@ function renderWikipediaResult(article, query, vehicle) {
   const summary = document.createElement('p');
   summary.textContent = article
     ? shortExcerpt(article.extract || 'Open the article for the available model overview.', 920)
-    : 'No article passed the make-and-model match. Chassis will not substitute a similar-looking car or an unrelated search result.';
+    : 'No article passed the make-and-model match. Velocitrak will not substitute a similar-looking car or an unrelated search result.';
   body.append(label, title, summary);
   if (article?.url) body.append(makeLink('Read the matched Wikipedia overview ↗', article.url));
   card.append(body);
@@ -806,7 +806,7 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
   } else {
     const empty = document.createElement('p');
     empty.className = 'spec-empty';
-    empty.textContent = 'The matched public record does not publish usable power, engine or dimensions yet. Chassis leaves these values blank instead of inventing them.';
+    empty.textContent = 'The matched public record does not publish usable power, engine or dimensions yet. Velocitrak leaves these values blank instead of inventing them.';
     section.append(empty);
   }
   const note = document.createElement('p');
@@ -1002,7 +1002,7 @@ async function appendRichCarDetails(article, query, carRecord, requestedTerm) {
   const extract = (article?.extract || '').replace(/\s+/g, ' ').trim();
   narrativeText.textContent = extract
     ? shortExcerpt(extract, 1150)
-    : 'No matching model overview was found in the public reference. Use the official manufacturer site for the exact year, powertrain and variant. Chassis will not show a nearby model as a substitute.';
+    : 'No matching model overview was found in the public reference. Use the official manufacturer site for the exact year, powertrain and variant. Velocitrak will not show a nearby model as a substitute.';
   narrative.append(narrativeHeading, narrativeText);
   if (article?.url) narrative.append(makeLink('Read the full article ↗', article.url, 'spec-source-link'));
   panel.append(narrative);
@@ -1028,6 +1028,17 @@ async function appendRichCarDetails(article, query, carRecord, requestedTerm) {
   renderImageGallery(galleryContainer, carRecord, requestedTerm);
 }
 
+function escapeSvgText(value) {
+  return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[char]);
+}
+
+function makeVideoSearchArtwork(query, creator) {
+  const model = escapeSvgText(query).slice(0, 34);
+  const channel = escapeSvgText(creator).toUpperCase();
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#152324"/><stop offset=".55" stop-color="#26322f"/><stop offset="1" stop-color="#101214"/></linearGradient><radialGradient id="l"><stop stop-color="#d4bf97" stop-opacity=".38"/><stop offset="1" stop-color="#d4bf97" stop-opacity="0"/></radialGradient></defs><rect width="800" height="450" fill="url(#g)"/><ellipse cx="610" cy="60" rx="330" ry="220" fill="url(#l)"/><path d="M80 278h77l64-69c17-18 35-27 61-27h174c24 0 41 7 57 23l71 73h74c22 0 39 18 39 40v19H80z" fill="none" stroke="#d8d0be" stroke-opacity=".75" stroke-width="5"/><circle cx="235" cy="331" r="31" fill="#121718" stroke="#d8d0be" stroke-width="5"/><circle cx="604" cy="331" r="31" fill="#121718" stroke="#d8d0be" stroke-width="5"/><path d="M246 197l-56 70h432l-68-67a46 46 0 0 0-33-14H272a38 38 0 0 0-26 11Z" fill="#d8d0be" fill-opacity=".08" stroke="#d8d0be" stroke-opacity=".45" stroke-width="3"/><text x="54" y="68" fill="#d8c49d" font-family="Arial,sans-serif" font-size="20" letter-spacing="5">YOUTUBE SEARCH PREVIEW</text><text x="54" y="139" fill="#f5f2eb" font-family="Arial,sans-serif" font-size="46" font-weight="700">${model}</text><text x="54" y="410" fill="#c6c7c1" font-family="Arial,sans-serif" font-size="18" letter-spacing="3">${channel} · OPEN RESULTS FOR REAL VIDEO THUMBNAILS</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 function renderFallbackVideoLinks(query) {
   videoResults.replaceChildren();
   const creators = [
@@ -1036,18 +1047,35 @@ function renderFallbackVideoLinks(query) {
   ];
   creators.forEach(creator => {
     const card = document.createElement('article');
-    card.className = 'video-link-card';
+    card.className = 'video-card video-search-card';
     const kicker = document.createElement('span');
-    kicker.textContent = 'SEARCH THIS CREATOR';
-    const heading = document.createElement('h4');
-    heading.textContent = creator.name;
-    const description = document.createElement('p');
-    description.textContent = `Find ${query} reviews and drive videos on YouTube.`;
+    kicker.textContent = `YOUTUBE SEARCH · ${creator.name.toUpperCase()}`;
     const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${query} ${creator.name} car review`)}`;
-    card.append(kicker, heading, description, makeLink('Search videos ↗', searchUrl));
+    const thumbLink = document.createElement('a');
+    thumbLink.className = 'video-thumbnail-link';
+    thumbLink.href = searchUrl;
+    thumbLink.target = '_blank';
+    thumbLink.rel = 'noopener noreferrer';
+    thumbLink.setAttribute('aria-label', `Search YouTube for ${query} reviews from ${creator.name}`);
+    const artwork = document.createElement('img');
+    artwork.className = 'video-thumbnail video-search-artwork';
+    artwork.src = makeVideoSearchArtwork(query, creator.name);
+    artwork.alt = `Illustrated search preview for ${query} videos from ${creator.name}; this is not a video thumbnail.`;
+    artwork.loading = 'lazy';
+    const play = document.createElement('span');
+    play.className = 'video-play-mark';
+    play.setAttribute('aria-hidden', 'true');
+    play.textContent = '▶';
+    thumbLink.append(artwork, play);
+    const title = document.createElement('strong');
+    title.textContent = `Find ${query} videos`;
+    const meta = document.createElement('small');
+    meta.className = 'video-card-meta';
+    meta.textContent = `Search preview · ${creator.name} · opens YouTube results`;
+    card.append(kicker, thumbLink, title, meta, makeLink('Search this creator on YouTube ↗', searchUrl));
     videoResults.append(card);
   });
-  document.getElementById('video-caption-note').textContent = 'The site-wide YouTube connection is unavailable right now. These creator-focused searches still open YouTube; direct video cards and thumbnails return when the site key is active.';
+  document.getElementById('video-caption-note').textContent = 'These always-visible fallback cards are search artwork, not video thumbnails. When YouTube returns video IDs, real video thumbnails and direct watch links replace them.';
 }
 
 function renderCaptionedVideos(videos) {
@@ -1069,13 +1097,19 @@ function renderCaptionedVideos(videos) {
     thumbnail.className = 'video-thumbnail';
     thumbnail.alt = `Video thumbnail: ${video.title}`;
     thumbnail.loading = 'lazy';
-    thumbnail.referrerPolicy = 'no-referrer';
-    const thumbnailCandidates = [...new Set([video.thumbnail, `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`, `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`, `https://i.ytimg.com/vi/${video.id}/sddefault.jpg`, `https://i.ytimg.com/vi/${video.id}/0.jpg`].filter(Boolean))];
+    thumbnail.referrerPolicy = 'strict-origin-when-cross-origin';
+    thumbnail.decoding = 'async';
+    const thumbnailCandidates = [...new Set([video.thumbnail, `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`, `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`, `https://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`, `https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`, `https://i.ytimg.com/vi/${video.id}/sddefault.jpg`, `https://i.ytimg.com/vi/${video.id}/0.jpg`].filter(Boolean))];
     let thumbnailAttempt = 0;
     thumbnail.addEventListener('error', () => {
       thumbnailAttempt += 1;
       if (thumbnailAttempt < thumbnailCandidates.length) thumbnail.src = thumbnailCandidates[thumbnailAttempt];
-      else { thumbnail.removeAttribute('src'); thumbLink.classList.add('thumbnail-unavailable'); }
+      else if (!thumbnail.dataset.localFallback) {
+        thumbnail.dataset.localFallback = 'true';
+        thumbnail.alt = `Velocitrak preview artwork for ${video.title}; the original YouTube thumbnail could not be loaded.`;
+        thumbnail.src = makeVideoSearchArtwork(video.title, video.creator);
+        thumbLink.classList.add('thumbnail-unavailable');
+      } else thumbnail.removeAttribute('src');
     });
     thumbnail.src = thumbnailCandidates[0];
     const play = document.createElement('span'); play.className = 'video-play-mark'; play.setAttribute('aria-hidden', 'true'); play.textContent = '▶';
@@ -1130,50 +1164,66 @@ async function browserYoutubeVideos(query, apiKey) {
     { handle: 'FasBeam', name: 'Faisal Khan' },
     { handle: 'motoroctane', name: 'MotorOctane' }
   ];
-  const groups = await Promise.all(channels.map(async channel => {
-    const channelId = await youtubeChannelId(channel.handle, apiKey);
-    const data = await youtubeApiRequest('search', {
-      part: 'snippet', type: 'video', channelId, q: `${query} car review`,
-      maxResults: '10', regionCode: 'IN', safeSearch: 'moderate'
-    }, apiKey);
-    return (data.items || []).filter(item => item.id?.videoId && youtubeResultMatches(query, item.snippet?.title)).slice(0, 3).map(item => ({
-      id: item.id.videoId, title: item.snippet?.title || `${query} review`, creator: channel.name,
-      channel: item.snippet?.channelTitle || channel.name, publishedAt: item.snippet?.publishedAt || '',
-      thumbnail: item.snippet?.thumbnails?.maxres?.url || item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url,
-      watchUrl: `https://www.youtube.com/watch?v=${encodeURIComponent(item.id.videoId)}`
-    }));
+  const channelIndex = [...String(query).toLowerCase()].reduce((total, char) => total + char.charCodeAt(0), 0) % channels.length;
+  const channel = channels[channelIndex];
+  const channelId = await youtubeChannelId(channel.handle, apiKey);
+  const data = await youtubeApiRequest('search', {
+    part: 'snippet', type: 'video', channelId, q: `${query} car review`,
+    maxResults: '10', regionCode: 'IN', safeSearch: 'moderate'
+  }, apiKey);
+  return (data.items || []).filter(item => item.id?.videoId && youtubeResultMatches(query, item.snippet?.title)).slice(0, 4).map(item => ({
+    id: item.id.videoId, title: item.snippet?.title || `${query} review`, creator: channel.name,
+    channel: item.snippet?.channelTitle || channel.name, publishedAt: item.snippet?.publishedAt || '',
+    thumbnail: item.snippet?.thumbnails?.maxres?.url || item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url,
+    watchUrl: `https://www.youtube.com/watch?v=${encodeURIComponent(item.id.videoId)}`
   }));
-  return groups.flat();
+}
+
+const youtubeCachePrefix = 'velocitrak:youtube:v1:';
+let youtubeApiCooldownUntil = 0;
+
+function readCachedYoutubeVideos(query) {
+  try {
+    const entry = JSON.parse(localStorage.getItem(youtubeCachePrefix + query.trim().toLowerCase()) || 'null');
+    if (entry && Number.isFinite(entry.savedAt) && Array.isArray(entry.videos) && Date.now() - entry.savedAt < 7 * 24 * 60 * 60 * 1000) return entry;
+  } catch { /* Storage may be disabled or contain an older format. */ }
+  return null;
+}
+
+function saveCachedYoutubeVideos(query, videos) {
+  try {
+    localStorage.setItem(youtubeCachePrefix + query.trim().toLowerCase(), JSON.stringify({ savedAt: Date.now(), videos }));
+  } catch { /* The visible search fallback does not depend on browser storage. */ }
 }
 
 async function loadVideos(query) {
   activeVideoQuery = query;
   finderVideos.hidden = false;
-  const browserKey = youtubePublicKey;
-  if (browserKey) {
-    try {
-      const videos = await browserYoutubeVideos(query, browserKey);
-      if (renderCaptionedVideos(videos)) return;
-      renderFallbackVideoLinks(query);
-      document.getElementById('video-caption-note').textContent = 'No matching videos from these channels were returned. Try the full model name or use the creator search links.';
-      return;
-    } catch (error) {
-      renderFallbackVideoLinks(query);
-      document.getElementById('video-caption-note').textContent = `YouTube is temporarily unavailable (${error.message}). Use the creator searches below; the site key is managed by Chassis.`;
-      return;
-    }
+  const cachedEntry = readCachedYoutubeVideos(query);
+  const cachedVideos = cachedEntry?.videos || [];
+  if (cachedVideos.length && renderCaptionedVideos(cachedVideos)) {
+    document.getElementById('video-caption-note').textContent = 'Showing saved YouTube results while Velocitrak checks for fresh videos.';
+  } else {
+    renderFallbackVideoLinks(query);
   }
-  renderFallbackVideoLinks(query);
+  const cacheAge = cachedEntry ? Date.now() - cachedEntry.savedAt : Infinity;
+  const refreshAfter = cachedVideos.length ? 6 * 60 * 60 * 1000 : 15 * 60 * 1000;
+  if (!youtubePublicKey || cacheAge < refreshAfter || Date.now() < youtubeApiCooldownUntil) return;
   try {
-    const response = await fetch(`/api/videos?q=${encodeURIComponent(query)}`);
-    if (!response.ok) return;
-    const data = await response.json();
-    if (data.configured) {
-      if (renderCaptionedVideos(data.videos)) return;
-      renderFallbackVideoLinks(query);
-      document.getElementById('video-caption-note').textContent = 'No captioned embeds were found for this search. Use these channel-focused YouTube searches and turn on CC when the video offers captions.';
-    }
-  } catch { /* Static-file mode keeps the channel search links available. */ }
+    const videos = await browserYoutubeVideos(query, youtubePublicKey);
+    if (activeVideoQuery !== query) return;
+    saveCachedYoutubeVideos(query, videos);
+    if (renderCaptionedVideos(videos)) return;
+    if (!cachedVideos.length) renderFallbackVideoLinks(query);
+    document.getElementById('video-caption-note').textContent = 'No matching videos were returned by Faisal Khan or MotorOctane for this search. The creator search cards still open YouTube results.';
+  } catch {
+    youtubeApiCooldownUntil = Date.now() + 60 * 1000;
+    if (activeVideoQuery !== query) return;
+    if (!cachedVideos.length) renderFallbackVideoLinks(query);
+    document.getElementById('video-caption-note').textContent = cachedVideos.length
+      ? 'YouTube could not refresh the saved results. They remain available; try again later.'
+      : 'YouTube search is temporarily unavailable. The search cards stay visible and open the matching creator results directly.';
+  }
 }
 
 async function searchCar(query) {
@@ -1214,7 +1264,7 @@ async function searchCar(query) {
   if (requestId !== searchRequestId) return;
   finderStatus.textContent = article
     ? vehicle.fullName + ' matched. Power and photos are shown only when their public records pass make/model checks; confirm the year and trim with the manufacturer.'
-    : vehicle.fullName + ' is in the India-market directory. No exact encyclopedia match was found, so Chassis did not substitute another car.';
+    : vehicle.fullName + ' is in the India-market directory. No exact encyclopedia match was found, so Velocitrak did not substitute another car.';
   loadVideos(vehicle.fullName);
 }
 
