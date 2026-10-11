@@ -1,4 +1,6 @@
 const inr = value => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Math.max(0, value));
+window.chassisBindPlanner?.('emi');
+window.chassisBindPlanner?.('mileage');
 const emiForm = document.getElementById('emi-form');
 function calculateEmi() {
   const price = Number(document.getElementById('emi-price').value);
@@ -6,6 +8,13 @@ function calculateEmi() {
   const annualRate = Number(document.getElementById('emi-rate').value);
   const years = Number(document.getElementById('emi-years').value);
   const result = document.getElementById('emi-result');
+  const make = document.getElementById('emi-make').value;
+  const model = document.getElementById('emi-model').value;
+  const year = document.getElementById('emi-year').value;
+  if (!make || !model || !year) {
+    result.textContent = 'Choose a manufacturer, model and year from the India-market lists.';
+    return;
+  }
   if (!Number.isFinite(price + down + annualRate + years) || price <= 0 || down < 0 || down >= price || annualRate < 0 || years <= 0) {
     result.textContent = 'Enter a vehicle amount above zero and a down payment below that amount.';
     return;
@@ -16,12 +25,64 @@ function calculateEmi() {
   const emi = monthlyRate === 0 ? principal / months : principal * monthlyRate * (1 + monthlyRate) ** months / ((1 + monthlyRate) ** months - 1);
   result.replaceChildren();
   const strong = document.createElement('strong'); strong.textContent = `${inr(emi)} / month`;
-  const note = document.createElement('span'); note.textContent = `Loan ${inr(principal)} · estimated total interest ${inr(emi * months - principal)}`;
+  const note = document.createElement('span'); note.textContent = `${year} ${make} ${model} · loan ${inr(principal)} · estimated total interest ${inr(emi * months - principal)}`;
   result.append(strong, note);
 }
 emiForm.addEventListener('submit', event => { event.preventDefault(); calculateEmi(); });
 emiForm.addEventListener('input', calculateEmi);
+emiForm.addEventListener('change', calculateEmi);
 calculateEmi();
+
+const mileageForm = document.getElementById('mileage-form');
+const mileageResult = document.getElementById('mileage-result');
+const mileageEnergy = document.getElementById('mileage-energy');
+const mileageEfficiency = document.getElementById('mileage-efficiency');
+const mileagePrice = document.getElementById('mileage-unit-price');
+function updateMileageUnits() {
+  const unit = mileageEnergy.value === 'cng' ? 'km/kg' : mileageEnergy.value === 'electric' ? 'km/kWh' : 'km/L';
+  const priceUnit = mileageEnergy.value === 'cng' ? '₹ per kg' : mileageEnergy.value === 'electric' ? '₹ per kWh' : '₹ per litre';
+  mileageEfficiency.closest('label').firstChild.textContent = `Efficiency (${unit})`;
+  mileagePrice.closest('label').firstChild.textContent = `Local price (${priceUnit})`;
+}
+function calculateMileage() {
+  const make = document.getElementById('mileage-make').value;
+  const model = document.getElementById('mileage-model').value;
+  const year = document.getElementById('mileage-year').value;
+  const efficiency = Number(mileageEfficiency.value);
+  const unitPrice = Number(mileagePrice.value);
+  const monthlyDistance = Number(document.getElementById('mileage-distance').value);
+  if (!make || !model || !year) {
+    mileageResult.textContent = 'Choose a manufacturer, model and year from the India-market lists.';
+    return;
+  }
+  if (!(efficiency > 0) || !(unitPrice > 0) || !(monthlyDistance > 0)) {
+    mileageResult.textContent = 'Enter positive values for efficiency, local energy price and monthly distance.';
+    return;
+  }
+  const unitsUsed = monthlyDistance / efficiency;
+  const monthlyCost = unitsUsed * unitPrice;
+  const annualCost = monthlyCost * 12;
+  const per1000 = (1000 / efficiency) * unitPrice;
+  const unitLabel = mileageEnergy.value === 'cng' ? 'kg' : mileageEnergy.value === 'electric' ? 'kWh' : 'L';
+  mileageResult.replaceChildren();
+  const stats = document.createElement('div'); stats.className = 'mileage-stats';
+  [[`${inr(monthlyCost)} / month`, 'ESTIMATED MONTHLY COST'], [`${unitsUsed.toFixed(1)} ${unitLabel}`, 'ENERGY USED / MONTH'], [`${inr(per1000)} / 1,000 km`, 'RUNNING COST']].forEach(([value, label]) => {
+    const item = document.createElement('div'); item.className = 'mileage-stat';
+    const strong = document.createElement('strong'); strong.textContent = value;
+    const small = document.createElement('small'); small.textContent = label;
+    item.append(strong, small); stats.append(item);
+  });
+  const barWrap = document.createElement('div'); barWrap.className = 'mileage-bar-wrap';
+  const bar = document.createElement('div'); bar.className = 'mileage-bar';
+  const fill = document.createElement('i'); fill.style.width = `${Math.max(6, Math.min(100, monthlyCost / 100))}%`; bar.append(fill);
+  const caption = document.createElement('small'); caption.textContent = `${year} ${make} ${model} · estimated annual spend ${inr(annualCost)} at your entered values`;
+  barWrap.append(bar, caption); mileageResult.append(stats, barWrap);
+}
+mileageForm.addEventListener('submit', event => { event.preventDefault(); calculateMileage(); });
+mileageForm.addEventListener('input', calculateMileage);
+mileageForm.addEventListener('change', () => { updateMileageUnits(); calculateMileage(); });
+updateMileageUnits();
+calculateMileage();
 
 const valueForm = document.getElementById('value-form');
 function calculateIllustrativeValue() {
@@ -133,3 +194,4 @@ document.getElementById('reminder-form').addEventListener('submit', event => {
 });
 renderPrivateList(serviceKey, 'service-list', ['date', 'odometer', 'note']);
 renderPrivateList(reminderKey, 'reminder-list', ['date', 'title']);
+

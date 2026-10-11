@@ -84,11 +84,16 @@ showFilm(0);
 // The dark presentation is the default; the optional light preference is local to this browser.
 const themeToggle = document.querySelector('[data-theme-toggle]');
 function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme;
+  const selected = theme === 'light' ? 'light' : 'dark';
+  const light = selected === 'light';
+  document.documentElement.dataset.theme = selected;
+  document.body.dataset.theme = selected;
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) themeColor.content = light ? '#f4f3ef' : '#08090b';
   if (themeToggle) {
-    const light = theme === 'light';
-    themeToggle.innerHTML = light ? '☾ <span>Dark theme</span>' : '☼ <span>Light theme</span>';
+    themeToggle.innerHTML = light ? '☾ <span>Dark</span>' : '☼ <span>Light</span>';
     themeToggle.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
+    themeToggle.setAttribute('aria-pressed', String(light));
   }
 }
 let preferredTheme = 'dark';
@@ -112,16 +117,25 @@ reportRegistration?.addEventListener('input', () => {
 });
 reportForm?.addEventListener('submit', event => {
   event.preventDefault();
-  const entered = reportRegistration.value.trim();
-  if (entered.replace(/[^A-Z0-9]/g, '').length < 5) {
+  const entered = reportRegistration.value.trim().toUpperCase();
+  const normalizedRegistration = entered.replace(/[^A-Z0-9]/g, '');
+  const regularRegistration = /^[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{1,4}$/.test(normalizedRegistration);
+  const bhRegistration = /^[0-9]{2}BH[0-9]{4}[A-Z]{1,2}$/.test(normalizedRegistration);
+  if (!regularRegistration && !bhRegistration) {
     reportResult.hidden = false;
-    reportResult.textContent = 'Enter a sample registration with at least five letters or numbers to preview the demo flow.';
+    reportResult.textContent = 'Enter a valid-looking Indian vehicle registration, such as DL 8C AB 1234. The number will not be checked here.';
+    document.getElementById('record-action-grid').hidden = true;
     reportRegistration.focus();
     return;
   }
-  reportRegistration.value = '';
   reportResult.hidden = false;
-  reportResult.innerHTML = '<strong>Demo preview complete</strong><span>No vehicle lookup was made. No report was created, no registration was saved or sent, and no payment was taken.</span>';
+  reportResult.replaceChildren();
+  const heading = document.createElement('strong');
+  heading.textContent = 'Your number stayed on this page.';
+  const detail = document.createElement('span');
+  detail.textContent = 'Chassis has no live challan or insurance connection, so it did not check or store the registration. Enter it again only after opening the official service.';
+  reportResult.append(heading, detail);
+  document.getElementById('record-action-grid').hidden = false;
 });
 
 const input = document.getElementById('car-photo');
@@ -151,10 +165,12 @@ menuButton.addEventListener('click', () => {
   const nav = document.querySelector('.topbar nav');
   const open = nav.classList.toggle('open');
   menuButton.setAttribute('aria-expanded', String(open));
+  menuButton.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
 });
 document.querySelectorAll('.topbar nav a').forEach(link => link.addEventListener('click', () => {
   document.querySelector('.topbar nav').classList.remove('open');
   menuButton.setAttribute('aria-expanded', 'false');
+  menuButton.setAttribute('aria-label', 'Open menu');
 }));
 
 const referenceProfiles = [
@@ -201,6 +217,51 @@ function knownProfileIndex(query) {
   const term = normalized(query);
   return referenceProfiles.findIndex(car => car.aliases.some(alias => term.includes(normalized(alias)) || normalized(alias).includes(term) && term.length > 4));
 }
+const indiaCarDirectory = window.CHASSIS_INDIA_DIRECTORY || [];
+const carOptions = document.getElementById('india-car-options');
+if (carOptions) {
+  indiaCarDirectory.forEach(make => {
+    make.models.forEach(model => {
+      const option = document.createElement('option');
+      option.value = `${make.make} ${model.name}`;
+      carOptions.append(option);
+    });
+  });
+}
+
+function renderMakeDirectory(make) {
+  finderResult.replaceChildren();
+  const card = document.createElement('article');
+  card.className = 'wiki-result-card directory-make-card';
+  const label = document.createElement('span'); label.className = 'result-kicker'; label.textContent = 'INDIA-MARKET MAKE';
+  const title = document.createElement('h3'); title.textContent = `${make.make} models`;
+  const note = document.createElement('p'); note.textContent = 'Choose a model to open its public reference profile. This directory is editorial and does not confirm a vehicle record or exact variant.';
+  const picks = document.createElement('div'); picks.className = 'directory-model-picks';
+  make.models.forEach(model => {
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'directory-model-pick';
+    button.dataset.directoryCar = `${make.make} ${model.name}`;
+    button.textContent = model.name;
+    picks.append(button);
+  });
+  const source = makeLink(`Visit ${make.make} official website ↗`, make.url);
+  card.append(label, title, note, picks, source);
+  finderResult.append(card);
+  finderStatus.textContent = `${make.make}: choose a model from the India-market directory.`;
+}
+
+function renderNoCarResult(query) {
+  finderResult.replaceChildren();
+  const card = document.createElement('article'); card.className = 'wiki-result-card no-car-result';
+  const label = document.createElement('span'); label.className = 'result-kicker'; label.textContent = 'CAR DIRECTORY';
+  const title = document.createElement('h3'); title.textContent = `No car found for “${query}”`;
+  const note = document.createElement('p'); note.textContent = 'Search is limited to makes and models listed for the Indian market. Try a make, a model, or a suggested name. No general web search was run.';
+  card.append(label, title, note);
+  finderResult.append(card);
+  finderStatus.textContent = 'No matching India-market car found.';
+}
+
+let searchRequestId = 0;
 function makeLink(label, href, className = 'finder-link') {
   const link = document.createElement('a');
   link.className = className;
@@ -817,29 +878,52 @@ if (savedYoutubeKey()) updateYoutubeKeyStatus(youtubePublicKey && savedYoutubeKe
 async function searchCar(query) {
   const term = query.trim();
   if (!term) return;
+  const requestId = ++searchRequestId;
   finderResult.hidden = false;
   finderStatus.textContent = `Searching for ${term}…`;
   finderVideos.hidden = true;
-  const localIndex = knownProfileIndex(term);
+  const make = window.chassisResolveMake?.(term);
+  const vehicle = window.chassisResolveCar?.(term);
+  if (!vehicle && make) {
+    renderMakeDirectory(make);
+    return;
+  }
+  if (!vehicle) {
+    renderNoCarResult(term);
+    return;
+  }
+  const carName = vehicle.fullName;
+  const localIndex = knownProfileIndex(carName) >= 0 ? knownProfileIndex(carName) : knownProfileIndex(term);
   if (localIndex >= 0) {
     renderKnownProfile(localIndex);
     const car = referenceProfiles[localIndex];
     let article = null;
     try { article = (await wikipediaOverview(car.title.replace(/^Possible\s+/i, '')))[0] || null; } catch { /* Keep the supplied photo profile and its source links available. */ }
+    if (requestId !== searchRequestId) return;
     await appendRichCarDetails(article, car.title.replace(/^Possible\s+/i, ''), { image: car.image, alt: car.alt });
   } else {
     try {
-      const articles = await wikipediaOverview(term);
-      renderWikipediaResult(articles, term);
-      if (articles.length) await appendRichCarDetails(articles[0], term);
-      finderStatus.textContent = articles.length ? `${articles.length} public reference results found. Confirm exact model year and variant with the manufacturer.` : 'No matching article preview found; direct source searches are ready.';
+      const articleResults = await wikipediaOverview(carName);
+      if (requestId !== searchRequestId) return;
+      const modelName = normalized(vehicle.model.name);
+      const makeName = normalized(vehicle.make.make);
+      const articles = articleResults.filter(article => {
+        const title = normalized(article.title);
+        return title.includes(modelName) || title.includes(makeName) && normalized(article.extract).includes(modelName);
+      });
+      renderWikipediaResult(articles, carName);
+      await appendRichCarDetails(articles[0] || null, carName);
+      if (requestId !== searchRequestId) return;
+      finderStatus.textContent = articles.length ? `${vehicle.fullName} found in the India-market directory. Confirm model year, variant and specifications with the manufacturer.` : `${vehicle.fullName} is in the India-market directory, but no matching Wikipedia article was found. Public specs and photos may be limited.`;
     } catch {
-      renderWikipediaResult(null, term);
-      await appendRichCarDetails(null, term);
-      finderStatus.textContent = 'Online reference could not load. Direct source searches are ready below.';
+      if (requestId !== searchRequestId) return;
+      renderWikipediaResult(null, carName);
+      await appendRichCarDetails(null, carName);
+      if (requestId !== searchRequestId) return;
+      finderStatus.textContent = `${vehicle.fullName} is in the India-market directory. Online references could not load just now.`;
     }
   }
-  loadVideos(term);
+  if (requestId === searchRequestId) loadVideos(carName);
 }
 
 searchForm.addEventListener('submit', event => {
@@ -852,6 +936,12 @@ document.querySelectorAll('[data-car-search]').forEach(button => button.addEvent
 }));
 
 finderResult.addEventListener('click', event => {
+  const modelPick = event.target.closest('[data-directory-car]');
+  if (modelPick) {
+    searchInput.value = modelPick.dataset.directoryCar;
+    searchCar(modelPick.dataset.directoryCar);
+    return;
+  }
   const compareButton = event.target.closest('[data-add-compare]');
   if (compareButton) {
     const index = Number(compareButton.dataset.addCompare);
@@ -910,3 +1000,4 @@ function renderComparison() {
   table.append(tbody);
   comparePanel.append(table);
 }
+
