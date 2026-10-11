@@ -107,6 +107,14 @@
     }
     const target = document.getElementById(id);
     if (!target || !owningSection(target)) return;
+    if (link.hasAttribute('data-scroll-to-showroom')) {
+      event.preventDefault();
+      closePanel(false);
+      closeMenu();
+      target.scrollIntoView({ block: 'center', behavior: reducedMotion ? 'auto' : 'smooth' });
+      requestAnimationFrame(() => target.querySelector('.showroom-feature-tile')?.focus({ preventScroll: true }));
+      return;
+    }
     event.preventDefault();
     openPanel(target, link);
   });

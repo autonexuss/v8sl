@@ -2,9 +2,9 @@
 
 Velocitrak is an independent car-discovery and ownership website: <https://v8sl-grg.github.io/v8sl/>. GitHub Actions publishes the repository's `main` branch to GitHub Pages.
 
-The homepage uses a compact Velocitrak header and places all 12 feature launchers in an image-led, 3D vehicle showroom below the opening film. Hover or keyboard-focus a tile to turn its model; select it to open an accessible feature panel on the same page and URL. On touchscreens, tap a tile to open its feature.
+The homepage uses a compact Velocitrak header, an editorial sequence of paired feature copy and smaller photo/video compositions, and a compact 12-tile 3D vehicle showroom. The showroom tiles use a three-column desktop grid and two columns on phones, with a centered “Get started” shortcut immediately above them. That shortcut scrolls to and focuses the first tile. Hover or keyboard-focus a tile to turn its model; select it to open an accessible feature panel on the same page and URL. On touchscreens, tap a tile to open its feature.
 
-The editorial home pairs the opening with supplied photos from `assets/1.jpg`–`assets/3.jpg`, eight optimized BMW and Mercedes-Benz photographs under `assets/editorial/`, and the supplied decorative film and stills. These are used in editorial page sections, not added to the slideshow. The opening hero slideshow’s videos, order, playback behavior, controls, size/cropping, ambient effects and styling remain unchanged.
+The editorial home uses supplied photos from `assets/1.jpg`–`assets/3.jpg`, eight optimized BMW and Mercedes-Benz photographs under `assets/editorial/`, and a small muted looping feature film at `assets/videos/defender-dakar-2026.mp4`. Feature copy describes Velocitrak tools and navigation rather than captioning the decorative editorial imagery. The opening hero slideshow’s videos, order, playback behavior, controls, size/cropping, ambient effects and styling remain unchanged.
 
 The 12 supplied vehicle models are optimized, self-contained GLB files under `assets/models/`. Previews load lazily through a locally hosted `<model-viewer>` component and local Draco decoder in `assets/vendor/`, so model rendering does not rely on a third-party CDN at runtime. Each feature card still opens its existing panel if WebGL or 3D rendering is unavailable. Third-party notices and licenses are included beside the bundled viewer.
 
@@ -39,7 +39,7 @@ Node.js 18 or later is required for the local static server. The website itself 
 
 ## Media and YouTube
 
-The hero slideshow uses `assets/videos/bmw-7-series.mp4`, `assets/videos/mercedes-s-class.mp4` and `assets/videos/chassis-film.mp4`. A separate muted film loops in the decorative home gallery from `assets/videos/defender-dakar-2026.mp4`, beside `assets/velocitrak-decor-1.jpeg` and `assets/velocitrak-decor-2.jpeg`. Keep these relative paths beside `index.html`. Hero films play to their end unless the viewer chooses Prev or Next.
+The hero slideshow uses `assets/videos/bmw-7-series.mp4`, `assets/videos/mercedes-s-class.mp4` and `assets/videos/chassis-film.mp4`. A separate muted film loops in a smaller feature-story panel from `assets/videos/defender-dakar-2026.mp4`. Keep these relative paths beside `index.html`. Hero films play to their end unless the viewer chooses Prev or Next.
 
 YouTube search uses the restricted browser API key injected by the GitHub Pages workflow. The latest deployment confirmed that the key works for the Velocitrak site referrer. Results are cached in each browser for repeat searches. Because the key is used by a public website, it is visible to visitors and restricted to the GitHub Pages referrer and YouTube Data API v3. API quota, internet access, or a thumbnail host can still be temporarily unavailable; in that case, the site keeps clearly labeled search previews and direct Faisal Khan/MotorOctane search links instead of blank image boxes.
 
