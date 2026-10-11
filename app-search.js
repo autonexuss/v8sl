@@ -935,6 +935,7 @@ function renderImageGallery(target, vehicle, requestedTerm) {
         figure.className = 'vehicle-gallery-image';
         const anchor = document.createElement('a');
         anchor.href = item.page;
+        anchor.dataset.photoView = view.key;
         anchor.target = '_blank';
         anchor.rel = 'noopener noreferrer';
         anchor.setAttribute('aria-label', 'Open Commons file ' + item.title);
