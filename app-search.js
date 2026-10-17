@@ -1,8 +1,9 @@
 // The hero advances only when its active film ends or the visitor uses Next/Previous.
 const heroFilms = [
-  { src: 'assets/videos/bmw-7-series.mp4', title: 'BMW 7 Series' },
-  { src: 'assets/videos/mercedes-s-class.mp4', title: 'Mercedes-Benz S-Class' },
-  { src: 'assets/videos/chassis-film.mp4', title: 'Supplied film 03' }
+  { src: 'assets/videos/video1.webm', title: 'Supplied film 01' },
+  { src: 'assets/videos/video2.webm', title: 'Supplied film 02' },
+  { src: 'assets/videos/video3.webm', title: 'Supplied film 03' },
+  { src: 'assets/videos/video4.webm', title: 'Supplied film 04' }
 ];
 const heroVideo = document.querySelector('.hero-video');
 const ambientCanvas = document.querySelector('.ambient-canvas');
@@ -10,7 +11,6 @@ const ambientContext = ambientCanvas?.getContext('2d', { alpha: false });
 const heroVideoCount = document.getElementById('hero-video-count');
 const heroVideoTitle = document.getElementById('hero-video-title');
 const heroVideoProgress = document.getElementById('hero-video-progress');
-const heroToggle = document.querySelector('[data-video-toggle]');
 const heroMuteToggle = document.querySelector('[data-video-mute]');
 let currentFilm = 0;
 let ambientTimer;
@@ -32,8 +32,6 @@ function updateFilmControls() {
   if (!heroVideo) return;
   const duration = Number.isFinite(heroVideo.duration) && heroVideo.duration > 0 ? heroVideo.duration : 0;
   heroVideoProgress.style.width = duration ? `${Math.min(100, heroVideo.currentTime / duration * 100)}%` : '0%';
-  heroToggle.textContent = heroVideo.paused ? '▶' : 'Ⅱ';
-  heroToggle.setAttribute('aria-label', heroVideo.paused ? 'Play film' : 'Pause film');
   heroMuteToggle.textContent = heroVideo.muted ? '◖' : '◖))';
   heroMuteToggle.setAttribute('aria-label', heroVideo.muted ? 'Turn sound on' : 'Turn sound off');
   heroMuteToggle.title = heroVideo.muted ? 'Turn sound on' : 'Turn sound off';
@@ -49,7 +47,7 @@ function showFilm(index) {
   heroVideo.src = film.src;
   heroVideo.load();
   heroVideoCount.textContent = `${String(currentFilm + 1).padStart(2, '0')} / ${String(heroFilms.length).padStart(2, '0')}`;
-  heroVideoTitle.textContent = `${film.title} · Supplied film`;
+  heroVideoTitle.textContent = film.title;
   heroVideoProgress.style.width = '0%';
   heroVideo.play().then(() => {
     if (loadId !== filmLoadId || heroVideo.paused) return;
@@ -59,11 +57,17 @@ function showFilm(index) {
   }).catch(() => {
     if (loadId !== filmLoadId) return;
     updateFilmControls();
-    heroVideoTitle.textContent = `${film.title} · Press play to begin`;
+    heroVideoTitle.textContent = `${film.title} · Select Next to start`;
   });
 }
 
 heroVideo?.addEventListener('ended', () => showFilm(currentFilm + 1));
+heroVideo?.addEventListener('click', () => showFilm(currentFilm + 1));
+heroVideo?.addEventListener('keydown', event => {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  showFilm(currentFilm + 1);
+});
 heroVideo?.addEventListener('timeupdate', updateFilmControls);
 heroVideo?.addEventListener('play', () => {
   window.clearInterval(ambientTimer);
@@ -73,10 +77,6 @@ heroVideo?.addEventListener('play', () => {
 heroVideo?.addEventListener('pause', () => { window.clearInterval(ambientTimer); paintAmbientFrame(); updateFilmControls(); });
 document.querySelector('[data-video-prev]')?.addEventListener('click', () => showFilm(currentFilm - 1));
 document.querySelector('[data-video-next]')?.addEventListener('click', () => showFilm(currentFilm + 1));
-heroToggle?.addEventListener('click', () => {
-  if (heroVideo.paused) heroVideo.play().catch(() => updateFilmControls());
-  else heroVideo.pause();
-});
 heroMuteToggle?.addEventListener('click', () => { heroVideo.muted = !heroVideo.muted; updateFilmControls(); });
 if (ambientCanvas) { ambientCanvas.width = 120; ambientCanvas.height = 68; }
 showFilm(0);
@@ -105,7 +105,7 @@ themeToggle?.addEventListener('click', () => {
   try { localStorage.setItem('chassis-theme', theme); } catch { /* Theme remains active for this page view. */ }
 });
 
-// Revenue-model UI only: never sends, stores, looks up, or charges for the entered registration.
+// Service-report preview only: never sends, stores, looks up, or charges for the entered registration.
 const reportForm = document.getElementById('service-report-form');
 const reportRegistration = document.getElementById('report-registration');
 const reportResult = document.getElementById('report-demo-result');
@@ -1277,6 +1277,11 @@ async function searchCar(query) {
 searchForm.addEventListener('submit', event => {
   event.preventDefault();
   searchCar(searchInput.value);
+});
+searchInput.addEventListener('keydown', event => {
+  if (event.key !== 'Enter' || event.isComposing) return;
+  event.preventDefault();
+  searchForm.requestSubmit();
 });
 document.querySelectorAll('[data-car-search]').forEach(button => button.addEventListener('click', () => {
   searchInput.value = button.dataset.carSearch;

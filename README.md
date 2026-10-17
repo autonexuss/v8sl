@@ -1,56 +1,46 @@
-# Velocitrak car explorer
+# Velocitrak
 
-Velocitrak is an independent car-discovery and ownership website: <https://v8sl-grg.github.io/v8sl/>. GitHub Actions publishes the repository's `main` branch to GitHub Pages.
+Velocitrak is an independent car-discovery and ownership website: <https://v8sl-grg.github.io/v8sl/>. GitHub Actions publishes the `main` branch to GitHub Pages. This project is a static site and does not require Firebase or billing to serve its current features.
 
-The homepage uses a compact Velocitrak header, an editorial sequence of paired feature copy and smaller photo/video compositions, and a compact 12-tile 3D vehicle showroom. The showroom tiles use a three-column desktop grid and two columns on phones, with a centered “Get started” shortcut immediately above them. That shortcut scrolls to and focuses the first tile. Hover or keyboard-focus a tile to turn its model; select it to open an accessible feature panel on the same page and URL. On touchscreens, tap a tile to open its feature.
+## Homepage and 3D feature panels
 
-The editorial home uses supplied photos from `assets/2.jpg` and `assets/3.jpg`, eight optimized BMW and Mercedes-Benz photographs under `assets/editorial/`, and a small muted looping feature film at `assets/videos/defender-dakar-2026.mp4`. The sunset car image has been removed from the homepage and its sample profile. Feature copy describes Velocitrak tools and navigation rather than captioning the decorative editorial imagery. The opening hero slideshow’s videos, order, playback behavior, controls, size/cropping, ambient effects and styling remain unchanged.
+The homepage combines a four-film hero slideshow, editorial car photographs and a dedicated EV charging artwork section. A white **Get started** control scrolls to the main 3D feature tiles. The page has seven general tools and a separate five-tile personal ownership collection. Model assets are stored under `assets/models/` and loaded through the locally bundled `<model-viewer>` component and Draco decoder.
 
-The 12 supplied vehicle models are optimized, self-contained GLB files under `assets/models/`. Previews load lazily through a locally hosted `<model-viewer>` component and local Draco decoder in `assets/vendor/`, so model rendering does not rely on a third-party CDN at runtime. Each feature card still opens its existing panel if WebGL or 3D rendering is unavailable. Third-party notices and licenses are included beside the bundled viewer.
+Each tile opens only its matching feature in an accessible same-page panel. Use **Close**, the Escape key, or the dimmed background to dismiss it. The slideshow has Previous, Next and mute controls; it advances when a video ends or when the viewer selects Next/Previous or clicks/taps the playing video. Its four supplied WebM files are `assets/videos/video1.webm` through `video4.webm`; they are copied without transcoding. The separate small Defender editorial film continues to loop independently.
 
-## Features available on the site
+The large `assets/editorial/gtavmap.jpg` image is illustrative fictional-city artwork. The EV search asks for an area and opens a Google Maps search; it does not display verified charging locations or station availability inside Velocitrak.
 
-- Search the curated India-market vehicle directory, including searches that start with a model year. Coverage is not exhaustive; confirm model year, variant and specifications with manufacturer sources.
-- Explore Wikipedia/Wikidata public vehicle references, with a direct Wikidata fallback when an exact Wikipedia model page is missing. Specs remain model-family facts unless a manufacturer source identifies the exact India variant.
-- View sourced Commons photographs only when the file matches the car make/model category and has camera metadata or an explicit photography category. Cabin matches must also identify an interior view in the file title. If a match does not pass those checks, the gallery stays empty rather than showing unrelated artwork or a nearby model.
-- Use the loan and mileage planners with values you provide.
-- Open direct Spinny model pages and model-specific searches on other used-car marketplaces; compare asking prices you enter. Velocitrak does not scrape or verify marketplace listings.
-- Save garage details, service notes, reminders and private listing drafts in the current browser profile. Listing photos use that browser's IndexedDB. Data does not sync across devices and can be lost if browser site data is cleared.
-- Open official eChallan, VAHAN and IRDAI-listed insurer pages for manual checks. Velocitrak does not retrieve challan, RTO or insurance records.
-- Review the service-history revenue model: ₹250 is an illustrative sample fee only. There is no report provider, checkout, payment gateway or transaction connected; no money is charged or collected.
+## Car search and tools
 
-## Features intentionally removed or inactive
+- The car search uses a curated India-market directory. Coverage is not exhaustive. Variant, model year and specifications should be verified against the linked manufacturer source.
+- Vehicle photos are shown only when public image metadata matches the searched make/model and the requested view. If a reliable match is unavailable, the gallery can remain empty instead of substituting an unrelated image.
+- YouTube results depend on the configured browser API key, quota, network and image hosts. Direct search links and a labeled fallback remain available when thumbnails cannot load. A browser API key is visible to visitors and must be restricted to the website referrer and the YouTube Data API.
+- Loan and mileage planners calculate from values entered by the visitor. Resale links open marketplace searches; Velocitrak does not scrape, verify or guarantee the individual ads.
+- Personal garage, reminders, service notes and listing drafts are saved in the current browser profile. They do not sync across devices. Browser alerts are available only while the site is open.
+- Challan, insurance, RTO and vehicle registration records are not retrieved. Links lead to the relevant official services for manual checks.
+- Service-report and payment screens are previews only. The ₹250 amount is illustrative; no report provider, checkout, payment gateway or transaction is connected, and no money is collected.
 
-- Photo scanning and car identification have been removed.
-- Firebase sign-in and cross-device sync are not active.
-- Public user listings, buyer interest, cloud photo storage and push notifications are not offered.
-- Live challan, insurance, registration and service-history lookups are not connected. Use the official providers directly.
+## Temporary developer gate
 
-The project remains in no-billing mode. No service account key or payment details are used by GitHub Pages.
+The current site includes the temporary developer-code screen requested for this preview. It is a client-side convenience gate, not real security: website files and the gate logic are public to anyone who can access the site. Remove the marked gate block and `dev-lock.css`/`dev-lock.js` references from `index.html` to restore direct access.
 
 ## Run locally on Windows
 
-1. Extract the ZIP, open the extracted folder, and double-click **Start Velocitrak.cmd**. Do not open `index.html` directly; browsers block 3D module loading from `file://` pages.
-2. Keep the terminal window open and use the local address it prints.
-3. If the address is busy, the launcher chooses an available port and prints it.
-4. Press **Ctrl+C** in the terminal window to stop the server.
+1. Install Node.js 18 or later.
+2. Extract the project and double-click **Start Velocitrak.cmd**.
+3. Keep the terminal open and use the local address it prints. Do not open `index.html` directly with `file://`, because browsers restrict local modules and 3D assets.
+4. Press **Ctrl+C** in the terminal to stop the local server.
 
-Node.js 18 or later is required for the local static server. The website itself requires no package installation. The public GitHub Pages site already uses HTTPS and loads its bundled models and decoder from the site.
+No npm package installation is required for the static website.
 
-## Media and YouTube
+## Assets and publishing
 
-The hero slideshow uses `assets/videos/bmw-7-series.mp4`, `assets/videos/mercedes-s-class.mp4` and `assets/videos/chassis-film.mp4`. A separate muted film loops in a smaller feature-story panel from `assets/videos/defender-dakar-2026.mp4`. Keep these relative paths beside `index.html`. Hero films play to their end unless the viewer chooses Prev or Next.
+The WebM videos, GLB models, supplied map artwork and editorial photos are stored beside the site using relative paths. The new media files are served as static GitHub Pages assets. The uploads did not include license documents for all third-party photos/models; check those rights before commercial use.
 
-YouTube search uses the restricted browser API key injected by the GitHub Pages workflow. The latest deployment confirmed that the key works for the Velocitrak site referrer. Results are cached in each browser for repeat searches. Because the key is used by a public website, it is visible to visitors and restricted to the GitHub Pages referrer and YouTube Data API v3. API quota, internet access, or a thumbnail host can still be temporarily unavailable; in that case, the site keeps clearly labeled search previews and direct Faisal Khan/MotorOctane search links instead of blank image boxes.
-
-The supplied interior/exterior photos and model previews illustrate specific manufacturer models named in their supplied filenames. They are visual editorial assets and do not determine or verify specifications in car search. Public reuse rights for supplied third-party photos and 3D files were not included in the upload; confirm those licenses before using the site commercially.
-## Publish
-
-GitHub Actions publishes `main` to GitHub Pages with relative asset paths. The static site does not require a Firebase project or billing account.
+GitHub Actions publishes `main` to GitHub Pages. Check the latest Actions run and the deployed site before treating a change as live. Do not put private credentials in HTML, JavaScript or Git history.
 
 ## Official services
 
 - [VAHAN vehicle services](https://vahan.parivahan.gov.in/vahanservice/)
 - [eChallan](https://echallan.parivahan.gov.in/index/accused-challan)
 - [IRDAI-listed general insurers](https://irdai.gov.in/list-of-general-insurers)
-

@@ -7,7 +7,7 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const firstPort = Number(process.env.PORT || 4173);
 const host = process.env.HOST || '127.0.0.1';
 const youtubeKey = process.env.YOUTUBE_API_KEY || '';
-const mimeTypes = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.glb': 'model/gltf-binary', '.wasm': 'application/wasm', '.md': 'text/markdown; charset=utf-8' };
+const mimeTypes = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.webm': 'video/webm', '.glb': 'model/gltf-binary', '.wasm': 'application/wasm', '.md': 'text/markdown; charset=utf-8' };
 const channelCache = new Map();
 const videoCache = new Map();
 const youtubeMakeWords = new Set(['maruti','suzuki','hyundai','kia','honda','mahindra','toyota','tata','mg','audi','bmw','mercedes','benz','volkswagen','vw','skoda','renault','nissan','citroen','jeep','volvo','jaguar','land','rover','porsche','ferrari','lamborghini','ford','faisal','khan','moto','octane','car','cars','review','reviews','india','new','launch','test','drive','variant','facelift']);

@@ -12,7 +12,10 @@
   overlay.setAttribute('aria-hidden', 'true');
   document.body.append(overlay);
 
-  let activeSection = null;
+  let activePanel = null;
+  let activeParentSection = null;
+  let parentWasClosed = false;
+  let hiddenPanelSiblings = [];
   let lastTrigger = null;
   let closeButton = null;
 
@@ -25,6 +28,47 @@
     return sections.find(section => section.contains(target)) || null;
   }
 
+  function panelFor(target) {
+    return target.closest('.tool-card, .own-card') || owningSection(target);
+  }
+
+  function isolatePanel(panel, parentSection) {
+    let node = panel;
+    while (node && node !== parentSection) {
+      const parent = node.parentElement;
+      if (!parent) break;
+      [...parent.children].forEach(sibling => {
+        if (sibling === node || sibling.classList.contains('section-modal-close')) return;
+        sibling.classList.add('panel-sibling-hidden');
+        hiddenPanelSiblings.push(sibling);
+      });
+      node = parent;
+    }
+  }
+
+  function scrollToShowroom(target) {
+    if (reducedMotion) {
+      target.scrollIntoView({ block: 'center', behavior: 'auto' });
+      return Promise.resolve();
+    }
+    const startY = (document.scrollingElement || document.documentElement).scrollTop;
+    const offset = Math.min(88, Math.round(window.innerHeight * 0.09));
+    const endY = Math.max(0, target.getBoundingClientRect().top + startY - offset);
+    const distance = endY - startY;
+    const duration = 430;
+    const startTime = performance.now();
+    return new Promise(resolve => {
+      function step(now) {
+        const progress = Math.min(1, (now - startTime) / duration);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        (document.scrollingElement || document.documentElement).scrollTop = startY + distance * eased;
+        if (progress < 1) requestAnimationFrame(step);
+        else resolve();
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
   function closeMenu() {
     nav?.classList.remove('open');
     menuButton?.setAttribute('aria-expanded', 'false');
@@ -32,8 +76,8 @@
   }
 
   function closePanel(restoreFocus = true) {
-    if (!activeSection) return;
-    const closing = activeSection;
+    if (!activePanel) return;
+    const closing = activePanel;
     closing.classList.remove('section-modal-active');
     closing.classList.add('shell-section-closed');
     closing.removeAttribute('role');
@@ -42,7 +86,15 @@
     closing.removeAttribute('tabindex');
     if (closeButton) closeButton.remove();
     closeButton = null;
-    activeSection = null;
+    hiddenPanelSiblings.forEach(element => element.classList.remove('panel-sibling-hidden'));
+    hiddenPanelSiblings = [];
+    if (activeParentSection) {
+      activeParentSection.classList.remove('section-panel-context');
+      if (parentWasClosed) activeParentSection.classList.add('shell-section-closed');
+      else activeParentSection.classList.remove('shell-section-closed');
+    }
+    activePanel = null;
+    activeParentSection = null;
     const returnFocus = lastTrigger && !closing.contains(lastTrigger) ? lastTrigger : (menuButton || nav?.querySelector('a') || document.querySelector('.brand'));
     document.body.classList.remove('section-panel-open');
     overlay.hidden = true;
@@ -51,26 +103,34 @@
   }
 
   function openPanel(target, trigger) {
-    const section = owningSection(target);
-    if (!section) return false;
+    const panel = panelFor(target);
+    const parentSection = owningSection(panel);
+    if (!panel || !parentSection) return false;
     closeMenu();
-    if (activeSection && activeSection !== section) closePanel(false);
+    if (activePanel && activePanel !== panel) closePanel(false);
     lastTrigger = trigger || document.activeElement;
 
-    if (activeSection === section) {
-      if (target !== section) target.scrollIntoView({ block: 'start', behavior: reducedMotion ? 'auto' : 'smooth' });
-      else section.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
+    if (activePanel === panel) {
+      if (target !== panel) target.scrollIntoView({ block: 'start', behavior: reducedMotion ? 'auto' : 'smooth' });
+      else panel.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
       return true;
     }
 
-    activeSection = section;
-    section.classList.remove('shell-section-closed');
-    section.classList.add('section-modal-active');
-    section.setAttribute('role', 'dialog');
-    section.setAttribute('aria-modal', 'true');
-    section.setAttribute('tabindex', '-1');
-    const heading = section.querySelector('h1, h2, h3');
-    section.setAttribute('aria-label', heading?.textContent.trim() || 'Velocitrak feature');
+    activePanel = panel;
+    activeParentSection = parentSection;
+    parentWasClosed = parentSection.classList.contains('shell-section-closed');
+    parentSection.classList.remove('shell-section-closed');
+    if (panel !== parentSection) {
+      parentSection.classList.add('section-panel-context');
+      isolatePanel(panel, parentSection);
+    }
+    panel.classList.remove('shell-section-closed');
+    panel.classList.add('section-modal-active');
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    panel.setAttribute('tabindex', '-1');
+    const heading = panel.querySelector('h1, h2, h3');
+    panel.setAttribute('aria-label', heading?.textContent.trim() || 'Velocitrak feature');
 
     closeButton = document.createElement('button');
     closeButton.type = 'button';
@@ -78,16 +138,16 @@
     closeButton.setAttribute('aria-label', 'Close feature panel');
     closeButton.innerHTML = '<span aria-hidden="true">×</span><span>Close</span>';
     closeButton.addEventListener('click', () => closePanel());
-    section.prepend(closeButton);
+    panel.prepend(closeButton);
 
     document.body.classList.add('section-panel-open');
     overlay.hidden = false;
     overlay.setAttribute('aria-hidden', 'false');
-    section.scrollTop = 0;
+    panel.scrollTop = 0;
     requestAnimationFrame(() => {
-      if (activeSection !== section) return;
-      if (target !== section) target.scrollIntoView({ block: 'start', behavior: reducedMotion ? 'auto' : 'smooth' });
-      else section.scrollTo({ top: 0, behavior: 'auto' });
+      if (activePanel !== panel) return;
+      if (target !== panel) target.scrollIntoView({ block: 'start', behavior: reducedMotion ? 'auto' : 'smooth' });
+      else panel.scrollTo({ top: 0, behavior: 'auto' });
       closeButton?.focus({ preventScroll: true });
     });
     return true;
@@ -111,8 +171,7 @@
       event.preventDefault();
       closePanel(false);
       closeMenu();
-      target.scrollIntoView({ block: 'center', behavior: reducedMotion ? 'auto' : 'smooth' });
-      requestAnimationFrame(() => target.querySelector('.showroom-feature-tile')?.focus({ preventScroll: true }));
+      scrollToShowroom(target).then(() => target.querySelector('.showroom-feature-tile')?.focus({ preventScroll: true }));
       return;
     }
     event.preventDefault();
@@ -133,18 +192,18 @@
   }
 
   document.addEventListener('keydown', event => {
-    if (!activeSection) return;
+    if (!activePanel) return;
     if (event.key === 'Escape') {
       event.preventDefault();
       closePanel();
       return;
     }
     if (event.key !== 'Tab') return;
-    const focusable = [...activeSection.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+    const focusable = [...activePanel.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
       .filter(element => element.getClientRects().length > 0);
     if (!focusable.length) {
       event.preventDefault();
-      activeSection.focus();
+      activePanel.focus();
       return;
     }
     const first = focusable[0];
