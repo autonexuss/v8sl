@@ -234,3 +234,57 @@
   .ev-space-stars, .ev-map-editorial-copy { animation: none !important; }
   .ev-map-earth::before, .ev-map-earth::after, .ev-earth-model { transition: none !important; }
 }
+
+/* Full-bleed space atmosphere: keep the Earth feature free of a card boundary. */
+.ev-map-editorial {
+  width: 100% !important;
+  max-width: none;
+  margin: clamp(42px, 6vw, 92px) 0;
+  padding: 0 !important;
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.ev-map-editorial::before {
+  inset: -22% -9vw;
+  border-radius: 0;
+  background:
+    radial-gradient(ellipse at 77% 48%, rgba(45, 126, 184, .24) 0%, rgba(39, 101, 154, .13) 30%, transparent 59%),
+    radial-gradient(ellipse at 21% 72%, rgba(105, 91, 169, .18) 0%, rgba(68, 79, 139, .1) 34%, transparent 62%),
+    radial-gradient(ellipse at 50% 50%, rgba(14, 27, 47, .14), transparent 76%);
+  filter: blur(64px);
+}
+.ev-map-space {
+  min-height: clamp(450px, 42vw, 610px);
+  padding: clamp(54px, 7vw, 106px) clamp(7%, 11.2vw, 160px);
+}
+.ev-map-space::before {
+  inset: -12% -5vw;
+  background:
+    radial-gradient(ellipse at 78% 50%, rgba(68, 139, 191, .12), transparent 44%),
+    radial-gradient(ellipse at 20% 72%, rgba(115, 104, 177, .08), transparent 47%);
+}
+.ev-space-stars { inset: -12% -5vw; }
+
+/* Keep the space palette legible in light mode while the aura fades into the page. */
+:root[data-theme="light"] .ev-map-editorial {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+:root[data-theme="light"] .ev-map-editorial::before {
+  background:
+    radial-gradient(ellipse at 44% 52%, rgba(5, 12, 25, .91) 0%, rgba(6, 14, 29, .78) 35%, rgba(7, 18, 35, .4) 58%, transparent 79%),
+    radial-gradient(ellipse at 79% 48%, rgba(30, 96, 149, .28) 0%, transparent 53%),
+    radial-gradient(ellipse at 20% 76%, rgba(71, 70, 133, .18) 0%, transparent 54%);
+}
+@media (max-width: 760px) {
+  .ev-map-editorial { margin: 42px 0 58px; }
+  .ev-map-space { min-height: 0; padding: 40px 7% 20px; }
+}
+@media (max-width: 420px) {
+  .ev-map-editorial { margin: 34px 0 48px; }
+  .ev-map-space { padding: 32px 7% 16px; }
+}
