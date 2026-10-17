@@ -14,7 +14,7 @@ function emit(name, detail = {}) {
 }
 
 function validUser() {
-  if (!currentUser) throw new Error('Sign in to a verified Chassis account to sync across devices.');
+  if (!currentUser) throw new Error('Sign in to a verified Autonexus account to sync across devices.');
   if (!currentUser.emailVerified) throw new Error('Verify your email address before using cloud sync.');
   return currentUser;
 }

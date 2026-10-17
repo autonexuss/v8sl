@@ -6,7 +6,7 @@
   if (openedAsFile) {
     document.body.classList.add('model-viewer-unavailable');
     document.querySelectorAll('.showroom-model-fallback').forEach(fallback => {
-      fallback.textContent = '3D needs the local server · run Start Velocitrak.cmd';
+      fallback.textContent = '3D needs the local server · run Start Autonexus.cmd';
     });
   }
 

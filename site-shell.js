@@ -130,7 +130,7 @@
     panel.setAttribute('aria-modal', 'true');
     panel.setAttribute('tabindex', '-1');
     const heading = panel.querySelector('h1, h2, h3');
-    panel.setAttribute('aria-label', heading?.textContent.trim() || 'Velocitrak feature');
+    panel.setAttribute('aria-label', heading?.textContent.trim() || 'Autonexus feature');
 
     closeButton = document.createElement('button');
     closeButton.type = 'button';

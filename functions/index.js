@@ -126,7 +126,7 @@ exports.deleteMyChassisAccount = onCall({
     return { deleted: true };
   } catch (error) {
     console.error('Account deletion failed', { uid, code: error?.code || 'unknown' });
-    throw new HttpsError('internal', 'Chassis could not finish deleting the account data. Contact support before creating a new account.');
+    throw new HttpsError('internal', 'Autonexus could not finish deleting the account data. Contact support before creating a new account.');
   }
 });
 
@@ -148,8 +148,8 @@ exports.notifyListingInterest = onDocumentCreated({
   await getMessaging().sendEachForMulticast({
     tokens,
     data: {
-      title: 'Someone is interested in your Chassis listing',
-      body: `${listing.year} ${listing.make} ${listing.model} · open Chassis to view their contact details`,
+      title: 'Someone is interested in your Autonexus listing',
+      body: `${listing.year} ${listing.make} ${listing.model} · open Autonexus to view their contact details`,
       link: 'https://v8sl-grg.github.io/v8sl/#ownership-tools'
     },
     webpush: { fcmOptions: { link: 'https://v8sl-grg.github.io/v8sl/#ownership-tools' } }
@@ -182,7 +182,7 @@ exports.notifyDueReminders = onSchedule({
     const response = await getMessaging().sendEachForMulticast({
       tokens,
       data: {
-        title: 'A Chassis reminder is due',
+        title: 'An Autonexus reminder is due',
         body: ready.slice(0, 3).map(item => `${item.type}${item.title ? ` · ${item.title}` : ''}`).join(' / '),
         link: 'https://v8sl-grg.github.io/v8sl/#private-reminders'
       },

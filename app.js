@@ -133,7 +133,7 @@ reportForm?.addEventListener('submit', event => {
   const heading = document.createElement('strong');
   heading.textContent = 'Your number stayed on this page.';
   const detail = document.createElement('span');
-  detail.textContent = 'Chassis has no live challan or insurance connection, so it did not check or store the registration. Enter it again only after opening the official service.';
+  detail.textContent = 'Autonexus has no live challan or insurance connection, so it did not check or store the registration. Enter it again only after opening the official service.';
   reportResult.append(heading, detail);
   document.getElementById('record-action-grid').hidden = false;
 });
@@ -324,7 +324,7 @@ function renderWikipediaResult(article, query, vehicle) {
   const summary = document.createElement('p');
   summary.textContent = article
     ? shortExcerpt(article.extract || 'Open the article for the available model overview.', 920)
-    : 'No article passed the make-and-model match. Chassis will not substitute a similar-looking car or an unrelated search result.';
+    : 'No article passed the make-and-model match. Autonexus will not substitute a similar-looking car or an unrelated search result.';
   body.append(label, title, summary);
   if (article?.url) body.append(makeLink('Read the matched Wikipedia overview ↗', article.url));
   card.append(body);
@@ -752,7 +752,7 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
   } else {
     const empty = document.createElement('p');
     empty.className = 'spec-empty';
-    empty.textContent = 'The matched public record does not publish usable power, engine or dimensions yet. Chassis leaves these values blank instead of inventing them.';
+    empty.textContent = 'The matched public record does not publish usable power, engine or dimensions yet. Autonexus leaves these values blank instead of inventing them.';
     section.append(empty);
   }
   const note = document.createElement('p');
@@ -943,7 +943,7 @@ async function appendRichCarDetails(article, query, carRecord, requestedTerm) {
   const extract = (article?.extract || '').replace(/\s+/g, ' ').trim();
   narrativeText.textContent = extract
     ? shortExcerpt(extract, 1150)
-    : 'No matching model overview was found in the public reference. Use the official manufacturer site for the exact year, powertrain and variant. Chassis will not show a nearby model as a substitute.';
+    : 'No matching model overview was found in the public reference. Use the official manufacturer site for the exact year, powertrain and variant. Autonexus will not show a nearby model as a substitute.';
   narrative.append(narrativeHeading, narrativeText);
   if (article?.url) narrative.append(makeLink('Read the full article ↗', article.url, 'spec-source-link'));
   panel.append(narrative);
@@ -1100,7 +1100,7 @@ async function loadVideos(query) {
       return;
     } catch (error) {
       renderFallbackVideoLinks(query);
-      document.getElementById('video-caption-note').textContent = `YouTube is temporarily unavailable (${error.message}). Use the creator searches below; the site key is managed by Chassis.`;
+      document.getElementById('video-caption-note').textContent = `YouTube is temporarily unavailable (${error.message}). Use the creator searches below; the site key is managed by Autonexus.`;
       return;
     }
   }
@@ -1155,7 +1155,7 @@ async function searchCar(query) {
   if (requestId !== searchRequestId) return;
   finderStatus.textContent = article
     ? vehicle.fullName + ' matched. Power and photos are shown only when their public records pass make/model checks; confirm the year and trim with the manufacturer.'
-    : vehicle.fullName + ' is in the India-market directory. No exact encyclopedia match was found, so Chassis did not substitute another car.';
+    : vehicle.fullName + ' is in the India-market directory. No exact encyclopedia match was found, so Autonexus did not substitute another car.';
   loadVideos(vehicle.fullName);
 }
 

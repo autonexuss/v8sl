@@ -313,7 +313,7 @@ function checkDueReminders() {
   entries.forEach(entry => {
     if (entry.date <= localToday() && !entry.notified) {
       try {
-        new Notification('Velocitrak reminder', { body: `${entry.type}${entry.title ? ` · ${entry.title}` : ''}`, tag: `chassis-${entry.id}` });
+        new Notification('Autonexus reminder', { body: `${entry.type}${entry.title ? ` · ${entry.title}` : ''}`, tag: `chassis-${entry.id}` });
         entry.notified = true; changed = true;
       } catch { /* Browser notification service can be unavailable. */ }
     }

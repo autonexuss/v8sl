@@ -1,5 +1,5 @@
 @echo off
-title Velocitrak car explorer
+title Autonexus car explorer
 cd /d "%~dp0"
 where node >nul 2>nul
 if errorlevel 1 (

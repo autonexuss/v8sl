@@ -1,4 +1,4 @@
-// The hero advances only when its active film ends or the visitor uses Next/Previous.
+// The hero advances when its active film ends or the viewer selects the film.
 const heroFilms = [
   { src: 'assets/videos/video1.webm', title: 'Supplied film 01' },
   { src: 'assets/videos/video2.webm', title: 'Supplied film 02' },
@@ -31,10 +31,12 @@ function paintAmbientFrame() {
 function updateFilmControls() {
   if (!heroVideo) return;
   const duration = Number.isFinite(heroVideo.duration) && heroVideo.duration > 0 ? heroVideo.duration : 0;
-  heroVideoProgress.style.width = duration ? `${Math.min(100, heroVideo.currentTime / duration * 100)}%` : '0%';
-  heroMuteToggle.textContent = heroVideo.muted ? '◖' : '◖))';
-  heroMuteToggle.setAttribute('aria-label', heroVideo.muted ? 'Turn sound on' : 'Turn sound off');
-  heroMuteToggle.title = heroVideo.muted ? 'Turn sound on' : 'Turn sound off';
+  if (heroVideoProgress) heroVideoProgress.style.width = duration ? `${Math.min(100, heroVideo.currentTime / duration * 100)}%` : '0%';
+  if (heroMuteToggle) {
+    heroMuteToggle.textContent = heroVideo.muted ? '◖' : '◖))';
+    heroMuteToggle.setAttribute('aria-label', heroVideo.muted ? 'Turn sound on' : 'Turn sound off');
+    heroMuteToggle.title = heroVideo.muted ? 'Turn sound on' : 'Turn sound off';
+  }
 }
 
 function showFilm(index) {
@@ -48,7 +50,7 @@ function showFilm(index) {
   heroVideo.load();
   heroVideoCount.textContent = `${String(currentFilm + 1).padStart(2, '0')} / ${String(heroFilms.length).padStart(2, '0')}`;
   heroVideoTitle.textContent = film.title;
-  heroVideoProgress.style.width = '0%';
+  if (heroVideoProgress) heroVideoProgress.style.width = '0%';
   heroVideo.play().then(() => {
     if (loadId !== filmLoadId || heroVideo.paused) return;
     window.clearInterval(ambientTimer);
@@ -133,7 +135,7 @@ reportForm?.addEventListener('submit', event => {
   const heading = document.createElement('strong');
   heading.textContent = 'Your number stayed on this page.';
   const detail = document.createElement('span');
-  detail.textContent = 'Velocitrak has no live challan or insurance connection, so it did not check or store the registration. Enter it again only after opening the official service.';
+  detail.textContent = 'Autonexus has no live challan or insurance connection, so it did not check or store the registration. Enter it again only after opening the official service.';
   reportResult.append(heading, detail);
   document.getElementById('record-action-grid').hidden = false;
 });
@@ -326,7 +328,7 @@ function renderWikipediaResult(article, query, vehicle) {
   const summary = document.createElement('p');
   summary.textContent = article
     ? shortExcerpt(article.extract || 'Open the article for the available model overview.', 920)
-    : 'No article passed the make-and-model match. Velocitrak will not substitute a similar-looking car or an unrelated search result.';
+    : 'No article passed the make-and-model match. Autonexus will not substitute a similar-looking car or an unrelated search result.';
   body.append(label, title, summary);
   if (article?.url) body.append(makeLink('Read the matched Wikipedia overview ↗', article.url));
   card.append(body);
@@ -810,7 +812,7 @@ function renderSpecTable(target, vehicle, infoboxRows, carRecord, requestedTerm)
   } else {
     const empty = document.createElement('p');
     empty.className = 'spec-empty';
-    empty.textContent = 'The matched public record does not publish usable power, engine or dimensions yet. Velocitrak leaves these values blank instead of inventing them.';
+    empty.textContent = 'The matched public record does not publish usable power, engine or dimensions yet. Autonexus leaves these values blank instead of inventing them.';
     section.append(empty);
   }
   const note = document.createElement('p');
@@ -1006,7 +1008,7 @@ async function appendRichCarDetails(article, query, carRecord, requestedTerm) {
   const extract = (article?.extract || '').replace(/\s+/g, ' ').trim();
   narrativeText.textContent = extract
     ? shortExcerpt(extract, 1150)
-    : 'No matching model overview was found in the public reference. Use the official manufacturer site for the exact year, powertrain and variant. Velocitrak will not show a nearby model as a substitute.';
+    : 'No matching model overview was found in the public reference. Use the official manufacturer site for the exact year, powertrain and variant. Autonexus will not show a nearby model as a substitute.';
   narrative.append(narrativeHeading, narrativeText);
   if (article?.url) narrative.append(makeLink('Read the full article ↗', article.url, 'spec-source-link'));
   panel.append(narrative);
@@ -1112,7 +1114,7 @@ function renderCaptionedVideos(videos) {
       if (thumbnailAttempt < thumbnailCandidates.length) thumbnail.src = thumbnailCandidates[thumbnailAttempt];
       else if (!thumbnail.dataset.localFallback) {
         thumbnail.dataset.localFallback = 'true';
-        thumbnail.alt = `Velocitrak preview artwork for ${video.title}; the original YouTube thumbnail could not be loaded.`;
+        thumbnail.alt = `Autonexus preview artwork for ${video.title}; the original YouTube thumbnail could not be loaded.`;
         thumbnail.src = makeVideoSearchArtwork(video.title, video.creator);
         thumbLink.classList.add('thumbnail-unavailable');
       } else thumbnail.removeAttribute('src');
@@ -1208,7 +1210,7 @@ async function loadVideos(query) {
   const cachedEntry = readCachedYoutubeVideos(query);
   const cachedVideos = cachedEntry?.videos || [];
   if (cachedVideos.length && renderCaptionedVideos(cachedVideos)) {
-    document.getElementById('video-caption-note').textContent = 'Showing saved YouTube results while Velocitrak checks for fresh videos.';
+    document.getElementById('video-caption-note').textContent = 'Showing saved YouTube results while Autonexus checks for fresh videos.';
   } else {
     renderFallbackVideoLinks(query);
   }
@@ -1270,7 +1272,7 @@ async function searchCar(query) {
   if (requestId !== searchRequestId) return;
   finderStatus.textContent = article
     ? vehicle.fullName + ' matched. Power and photos are shown only when their public records pass make/model checks; confirm the year and trim with the manufacturer.'
-    : vehicle.fullName + ' is in the India-market directory. No exact encyclopedia match was found, so Velocitrak did not substitute another car.';
+    : vehicle.fullName + ' is in the India-market directory. No exact encyclopedia match was found, so Autonexus did not substitute another car.';
   loadVideos(vehicle.fullName);
 }
 

@@ -1,4 +1,4 @@
-name: Deploy Chassis Firestore rules (no-billing)
+name: Deploy Autonexus Firestore rules (no-billing)
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
     if: ${{ vars.FIREBASE_PROJECT_ID != '' && vars.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && vars.GCP_FIREBASE_DEPLOYER_SERVICE_ACCOUNT != '' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check out Chassis
+      - name: Check out Autonexus
         uses: actions/checkout@v6
 
       - name: Authenticate to Google Cloud with GitHub OIDC

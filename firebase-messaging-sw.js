@@ -7,9 +7,9 @@ if (self.CHASSIS_FIREBASE_CONFIG?.apiKey && self.CHASSIS_FIREBASE_CONFIG?.projec
   const messaging = firebase.messaging();
   messaging.onBackgroundMessage(payload => {
     const notification = payload.notification || payload.data || {};
-    self.registration.showNotification(notification.title || 'Chassis update', {
-      body: notification.body || 'Open Chassis to see the latest update.',
-      icon: new URL('./assets/chassis-mark.svg', self.registration.scope).href,
+    self.registration.showNotification(notification.title || 'Autonexus update', {
+      body: notification.body || 'Open Autonexus to see the latest update.',
+      icon: new URL('./assets/autonexus-icon.png', self.registration.scope).href,
       data: { link: payload.fcmOptions?.link || 'https://v8sl-grg.github.io/v8sl/' }
     });
   });

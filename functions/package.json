@@ -1,5 +1,5 @@
 {
-  "name": "chassis-functions",
+  "name": "autonexus-functions",
   "private": true,
   "main": "index.js",
   "engines": { "node": "22" },
