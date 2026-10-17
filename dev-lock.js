@@ -18,7 +18,6 @@
     'crucialmembertanisha',
     'crucialmemberarnav'
   ]);
-  const sessionKey = 'velocitrak-developer-preview-unlocked';
   const protectedElements = [...document.body.children].filter(element => element !== gate);
   const originalStates = protectedElements.map(element => ({
     element,
@@ -47,15 +46,6 @@
     });
   }
 
-  try {
-    if (sessionStorage.getItem(sessionKey) === 'yes') {
-      unlockPage();
-      return;
-    }
-  } catch {
-    // If browser storage is disabled, the visitor can still unlock this page.
-  }
-
   lockPage();
 
   form.addEventListener('submit', event => {
@@ -71,11 +61,6 @@
 
     input.removeAttribute('aria-invalid');
     status.textContent = '';
-    try {
-      sessionStorage.setItem(sessionKey, 'yes');
-    } catch {
-      // Continue for this page view even when browser storage is unavailable.
-    }
     unlockPage();
   });
 
