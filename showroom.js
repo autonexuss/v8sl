@@ -2,6 +2,9 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const loader = document.getElementById('model-viewer-runtime');
   const openedAsFile = window.location.protocol === 'file:';
+  const earthViewer = document.querySelector('.ev-earth-model');
+  const earthStage = document.querySelector('.ev-map-earth');
+  const earthFallback = earthStage?.querySelector('.ev-earth-fallback');
 
   if (openedAsFile) {
     document.body.classList.add('model-viewer-unavailable');
@@ -17,7 +20,29 @@
         fallback.textContent = '3D preview unavailable · open feature';
       });
     }
+    if (earthStage) {
+      earthStage.classList.add('is-earth-error');
+      if (earthFallback) earthFallback.textContent = openedAsFile
+        ? 'Run Start Autonexus.cmd to view the 3D Earth.'
+        : 'The Earth preview could not load. The charging search is still available.';
+    }
   }, { once: true });
+
+  if (earthViewer && earthStage) {
+    earthViewer.addEventListener('load', () => earthStage.classList.add('is-earth-ready'), { once: true });
+    earthViewer.addEventListener('error', () => {
+      earthStage.classList.add('is-earth-error');
+      if (earthFallback) earthFallback.textContent = 'The Earth preview could not load. The charging search is still available.';
+    }, { once: true });
+    if (openedAsFile && earthFallback) earthFallback.textContent = 'Run Start Autonexus.cmd to view the 3D Earth.';
+
+    const syncEarthMotion = () => {
+      if (reduceMotion.matches) earthViewer.removeAttribute('auto-rotate');
+      else earthViewer.setAttribute('auto-rotate', '');
+    };
+    syncEarthMotion();
+    reduceMotion.addEventListener?.('change', syncEarthMotion);
+  }
 
   document.querySelectorAll('.showroom-feature-tile').forEach(tile => {
     const viewer = tile.querySelector('model-viewer');

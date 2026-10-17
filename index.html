@@ -6,7 +6,7 @@
   <title>Autonexus — Know your car, better</title><link rel="icon" type="image/png" sizes="512x512" href="assets/autonexus-icon.png?v=1"><link rel="apple-touch-icon" href="assets/autonexus-icon.png?v=1"><link rel="stylesheet" href="styles.css?v=20261011-car-accuracy-3"><link rel="stylesheet" href="premium.css?v=20261011-chassis-v5"><link rel="stylesheet" href="shell.css?v=20261017-autonexus-shell-1">
   <link rel="stylesheet" href="home.css?v=20261011-home-3">
   <link rel="stylesheet" href="editorial-home.css?v=20261011-editorial-3">
-  <link rel="stylesheet" href="feature-refresh.css?v=20261017-feature-refresh-1"><link rel="stylesheet" href="autonexus-refresh.css?v=20261017-autonexus-3"><link rel="stylesheet" href="squirtle-easter-egg.css?v=20261017-1">
+  <link rel="stylesheet" href="feature-refresh.css?v=20261017-feature-refresh-1"><link rel="stylesheet" href="autonexus-refresh.css?v=20261017-autonexus-4"><link rel="stylesheet" href="ev-space.css?v=20261017-earth-1"><link rel="stylesheet" href="squirtle-easter-egg.css?v=20261017-1">
   <!-- TEMPORARY DEVELOPER GATE: remove this link, the marked body block, and the dev-lock.js script to restore direct access. -->
   <link rel="stylesheet" href="dev-lock.css?v=20261012-1">
   <script>self.ModelViewerElement = self.ModelViewerElement || {}; self.ModelViewerElement.dracoDecoderLocation = 'assets/vendor/draco/';</script>
@@ -61,18 +61,22 @@
       <div class="feature-film-media" aria-hidden="true"><div class="feature-film-glow"></div><video autoplay muted loop playsinline preload="metadata" tabindex="-1"><source src="assets/videos/defender-dakar-2026.mp4" type="video/mp4"></video></div>
     </section>
     <section class="ev-map-editorial section-wrap home-visible scroll-reveal" aria-labelledby="ev-map-editorial-title">
-      <div class="ev-map-editorial-copy">
-        <div class="eyebrow"><i></i> Plan the next stop</div>
-        <h2 id="ev-map-editorial-title">A better route<br>to your next charge.</h2>
-        <p>Use the nearby search to open live charging-station results for the location you choose.</p>
-        <a class="editorial-feature-link" href="#ev-charging">Find EV charging <span aria-hidden="true">↗</span></a>
+      <div class="ev-map-space">
+        <div class="ev-map-editorial-copy">
+          <div class="eyebrow"><i></i> Electric journeys</div>
+          <h2 id="ev-map-editorial-title">Find your next<br>charging point.</h2>
+          <p>Choose a city or neighborhood to explore nearby EV charging stations and plan the next stop in your journey.</p>
+          <a class="editorial-feature-link" href="#ev-charging">Find EV charging <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="ev-map-earth" aria-hidden="true">
+          <span class="ev-space-stars ev-space-stars--distant"></span>
+          <span class="ev-space-stars ev-space-stars--near"></span>
+          <span class="ev-earth-halo"></span>
+          <span class="ev-earth-orbit"></span>
+          <model-viewer class="ev-earth-model" src="assets/models/earth.glb" alt="" loading="eager" reveal="auto" auto-rotate auto-rotate-delay="0" rotation-per-second="12deg" shadow-intensity="0.8" exposure="1.05" environment-image="neutral" interaction-prompt="none" disable-zoom></model-viewer>
+          <span class="ev-earth-fallback">Loading Earth model…</span>
+        </div>
       </div>
-      <a class="ev-map-artwork" href="#ev-charging" aria-label="Open nearby EV charging station search">
-        <span class="ev-map-artwork-glow" aria-hidden="true"></span>
-        <img src="assets/editorial/gtavmap.jpg" alt="Illustrative fictional city map artwork" loading="lazy">
-        <span class="ev-map-artwork-tag">EXPLORE NEARBY</span>
-      </a>
-      <p class="ev-map-disclosure">Map artwork is illustrative. Nearby searches open Google Maps.</p>
     </section>
     <section class="ownership-story ownership-story--text-only home-visible scroll-reveal">
       <div class="ownership-story-copy">
@@ -167,7 +171,7 @@
   <video class="squirtle-easter-egg__video" id="squirtle-easter-egg-video" src="assets/easter-eggs/squirtle-dance.mp4" preload="auto" playsinline aria-hidden="true" tabindex="-1"></video>
   <span class="visually-hidden" id="squirtle-easter-egg-help">Squirtle dance is playing. Click anywhere or press Escape to close it.</span>
 </div>
-  <script src="youtube-config.js?v=20261017-autonexus-1"></script><script src="vehicle-data.js?v=20261011-india-cars-2"></script><script src="app-search.js?v=20261017-squirtle-1"></script><script src="features.js?v=20261017-autonexus-features-1"></script><script src="site-shell.js?v=20261017-squirtle-1"></script><script src="showroom.js?v=20261017-autonexus-showroom-1"></script>
+  <script src="youtube-config.js?v=20261017-autonexus-1"></script><script src="vehicle-data.js?v=20261011-india-cars-2"></script><script src="app-search.js?v=20261017-squirtle-1"></script><script src="features.js?v=20261017-autonexus-features-1"></script><script src="site-shell.js?v=20261017-squirtle-1"></script><script src="showroom.js?v=20261017-autonexus-showroom-2"></script>
 <script src="squirtle-easter-egg.js?v=20261017-1"></script>
 <script src="dev-lock.js?v=20261012-1"></script>
 </body></html>
