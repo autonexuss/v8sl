@@ -66,7 +66,7 @@
     setProgressVisible(true);
     progressBar.value = 0;
     progressText.textContent = 'Starting…';
-    setStatus('Starting the browser AI. The first download is about 181 MB.');
+    setStatus('Starting the browser AI. The first download is about 272 MB.');
     try {
       worker = new Worker(new URL('chatbot-worker.js', document.baseURI), { type: 'module', name: 'autonexus-local-ai' });
     } catch (error) {
@@ -144,6 +144,52 @@
     worker.postMessage({ type: 'load' });
   }
 
+  function normalized(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  function retrieveVehicleContext(question) {
+    const query = normalized(question);
+    if (!query) return '';
+    const profiles = typeof curatedIndiaSpecProfiles !== 'undefined' && Array.isArray(curatedIndiaSpecProfiles) ? curatedIndiaSpecProfiles : [];
+    const matches = profiles.filter(profile => {
+      const make = normalized(profile.make), model = normalized(profile.model);
+      const excludedVariant = (profile.excludes || []).some(name => normalized(name) && query.includes(normalized(name)));
+      return model && query.includes(model) && !excludedVariant && (!make || query.includes(make) || model.length >= 3);
+    }).sort((a, b) => normalized(b.make + ' ' + b.model).length - normalized(a.make + ' ' + a.model).length).slice(0, 3);
+    if (matches.length) {
+      return matches.map(profile => {
+        const years = `${profile.fromYear || '?'}–${profile.toYear || '?'}`;
+        const engines = (profile.engines || []).slice(0, 6).map(engine => {
+          const fields = [engine.name, engine.fuel && `fuel ${engine.fuel}`, engine.displacement, engine.powerKW && `${engine.powerKW} kW`, engine.powerPS && `${engine.powerPS} PS`, engine.powerRpm && `power at ${engine.powerRpm}`, engine.torque && `torque ${engine.torque}`, engine.torqueRpm && `torque at ${engine.torqueRpm}`, engine.transmission].filter(Boolean);
+          return `- ${fields.join(' · ')}`;
+        });
+        const rows = (profile.rows || []).slice(0, 9).map(row => `- ${row.name}: ${row.value}${row.source ? ` (source: ${row.source})` : ''}`);
+        return [
+          `Vehicle: ${profile.make} ${profile.model}; curated profile years ${years}.`,
+          profile.provenance ? `Scope: ${profile.provenance}` : '',
+          engines.length ? `Published engine variants:\n${engines.join('\n')}` : 'Engine variants: not available in this profile.',
+          rows.length ? `Other published specifications:\n${rows.join('\n')}` : '',
+          profile.brochure ? `Official manufacturer brochure: ${profile.brochure}` : '',
+          profile.performance ? `Official performance page: ${profile.performance}` : ''
+        ].filter(Boolean).join('\n');
+      }).join('\n\n');
+    }
+
+    const directory = Array.isArray(window.CHASSIS_INDIA_DIRECTORY) ? window.CHASSIS_INDIA_DIRECTORY : [];
+    const entries = [];
+    for (const make of directory) {
+      const makeName = normalized(make.make);
+      for (const model of make.models || []) {
+        const modelName = normalized(model.name);
+        if (modelName && query.includes(modelName) && (!makeName || query.includes(makeName) || modelName.length >= 3)) {
+          entries.push(`Directory match: ${make.make} ${model.name}; listed India-market years ${model.from}–${model.to}. Official manufacturer page: ${make.url || 'not supplied'}. Exact specifications are not in the locally curated profile.`);
+        }
+      }
+    }
+    return entries.slice(0, 3).join('\n');
+  }
+
   function stopGeneration(silent = false) {
     if (!generating) return;
     const partialReply = activeReply?.textContent || '';
@@ -208,12 +254,13 @@
     sendButton.disabled = true;
     input.value = '';
     setStatus(modelReady ? 'Thinking on this device…' : 'Preparing the local model…');
-    if (modelReady && worker) worker.postMessage({ type: 'generate', messages: transcript.slice(0, -1).slice(-8), requestId: activeRequest });
+    const vehicleContext = retrieveVehicleContext(question);
+    if (modelReady && worker) worker.postMessage({ type: 'generate', messages: transcript.slice(0, -1).slice(-8), requestId: activeRequest, vehicleContext });
     else {
       const waitForReady = event => {
         if (event.data?.type === 'ready' && worker && generating && activeRequest !== null) {
           worker.removeEventListener('message', waitForReady);
-          worker.postMessage({ type: 'generate', messages: transcript.slice(0, -1).slice(-8), requestId: activeRequest });
+          worker.postMessage({ type: 'generate', messages: transcript.slice(0, -1).slice(-8), requestId: activeRequest, vehicleContext });
         }
       };
       worker?.addEventListener('message', waitForReady);

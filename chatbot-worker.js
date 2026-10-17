@@ -3,8 +3,8 @@ let textStreamer = null;
 let loadingPromise = null;
 let generationActive = false;
 
-const MODEL_ID = 'onnx-community/SmolLM2-135M-Instruct-ONNX';
-const MODEL_REVISION = 'b8a5c0f183b78c55955a5364f610c36668b5e681';
+const MODEL_ID = 'onnx-community/SmolLM2-360M-Instruct-ONNX';
+const MODEL_REVISION = 'fe7c7db';
 function send(type, detail = {}) {
   self.postMessage({ type, ...detail });
 }
@@ -43,24 +43,26 @@ async function loadModel() {
   }
 }
 
-const SYSTEM_CONTEXT = `You are Autonexus AI, a small on-device helper for the Autonexus car website. Answer clearly and briefly. Explain how to use the site's car search, loan and mileage planners, resale guide, EV map links, environment simulator and guides, and local browser-only Pro tools. Do not claim the site performs live vehicle identification, government challan or insurance checks, service-history searches, payments, notifications, or cross-device sync. Simulated environment readings and sample costs are illustrative only. If asked for vehicle-specific facts or exact figures not present in the conversation, say you cannot verify them and direct the visitor to the official source links shown in the car profile. Do not invent current availability, prices, specs, policies, or citations. If a question is outside car discovery, ownership, the environment tools, or site navigation, say you are a limited Autonexus helper.`;
+const SYSTEM_CONTEXT = `You are Autonexus AI, a free on-device assistant for the Autonexus car website. Answer directly in clear, helpful language. You can explain site features and answer Indian-market car questions when the supplied vehicle context contains the needed facts. Treat that context as the only trusted source for exact specs: never fill gaps with guesses, and say when a detail is unavailable. Include the official source URL provided in the context when giving vehicle facts. Do not claim live browsing, live market prices, live vehicle identification, government challan or insurance checks, service-history searches, real payments, notifications, or cross-device sync. Simulator readings and sample costs are illustrative. The EV map opens a map provider; availability is not confirmed by this site. If a question is unrelated to cars or the site, say you are a focused Autonexus helper.`;
 
-async function generate(messages, requestId) {
+async function generate(messages, requestId, vehicleContext = '') {
   if (generationActive) throw new Error('A response is already being generated.');
   generationActive = true;
   try {
     const generator = await loadModel();
     const history = Array.isArray(messages) ? messages.slice(-8).filter(item => item && ['user', 'assistant'].includes(item.role)) : [];
-    const chat = [{ role: 'system', content: SYSTEM_CONTEXT }, ...history];
+    const context = String(vehicleContext || '').slice(0, 7000);
+    const system = context ? `${SYSTEM_CONTEXT}\n\nRETRIEVED SITE DATA (use only when relevant):\n${context}` : SYSTEM_CONTEXT;
+    const chat = [{ role: 'system', content: system }, ...history];
     const streamer = new textStreamer(generator.tokenizer, {
       skip_prompt: true,
       skip_special_tokens: true,
       callback_function: token => send('token', { requestId, token })
     });
     await generator(chat, {
-      max_new_tokens: 128,
+      max_new_tokens: 220,
       do_sample: true,
-      temperature: 0.35,
+      temperature: 0.22,
       repetition_penalty: 1.08,
       streamer
     });
@@ -78,7 +80,7 @@ self.addEventListener('message', async event => {
     return;
   }
   if (message.type === 'generate') {
-    try { await generate(message.messages, message.requestId); }
+    try { await generate(message.messages, message.requestId, message.vehicleContext); }
     catch (error) { send('error', { requestId: message.requestId, message: error?.message || 'The response could not be generated.' }); }
   }
 });
