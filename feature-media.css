@@ -1,0 +1,75 @@
+/* Editorial image placements requested for the ownership and charging features. */
+.feature-inline-media { position: relative; display: block; min-width: 0; margin: 0; overflow: hidden; border-radius: 16px; background: #15191d; isolation: isolate; }
+.feature-inline-media::after { position: absolute; inset: 0; content: ""; pointer-events: none; background: linear-gradient(180deg,transparent 55%,#05070838); }
+.feature-inline-media img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .65s cubic-bezier(.2,.75,.25,1); }
+.feature-inline-media:hover img { transform: scale(1.025); }
+.ownership-story-visual { min-height: 390px; }
+.ownership-story-visual img { object-position: 52% 62%; }
+.ownership-card-media { width: 100%; height: 150px; margin: 0 0 16px; border-radius: 12px; }
+.ownership-card-media img { object-position: center 58%; }
+.report-feature-media { width: 100%; height: clamp(170px, 23vw, 280px); margin-top: 22px; border-radius: 16px; }
+.report-feature-media img { object-position: center 52%; }
+.resale-feature-media { width: 100%; aspect-ratio: 16 / 7; margin: 17px 0; border-radius: 13px; }
+.resale-feature-media img { object-position: center 58%; }
+.official-service-media { grid-column: 1 / -1; width: 100%; height: clamp(150px, 19vw, 230px); margin-top: 16px; border-radius: 13px; }
+.official-service-media img { object-position: center 54%; }
+.ev-charging-map-visual { width: 100%; grid-column: 1 / -1; margin: 24px 0 0; border-radius: 16px; box-shadow: 0 0 52px #70aee328, 0 18px 48px #0004; }
+.ev-charging-map-visual img { display: block; width: 100%; height: auto; max-height: none; object-fit: contain; object-position: center; }
+
+/* The engine control is a compact push-button start/stop affordance. */
+.environment-simulator .env-engine-off { display: grid; grid-template-columns: minmax(0,1fr) 76px auto; align-items: center; gap: 14px 18px; min-height: 0; }
+.environment-simulator .env-engine-off > p { grid-column: 1 / -1; flex: initial; }
+.environment-simulator .env-engine-toggle { display: grid; width: 76px; height: 76px; min-height: 76px; place-content: center; justify-items: center; gap: 2px; padding: 0; border: 1px solid #f0dcae; border-radius: 50%; background: radial-gradient(circle at 35% 24%,#45515a,#11181d 67%); color: #fff; box-shadow: inset 0 1px #ffffff45, 0 8px 22px #0006; }
+.environment-simulator .env-engine-toggle:hover { transform: translateY(-1px) scale(1.035); border-color: #fff0ca; background: radial-gradient(circle at 35% 24%,#5c6870,#172027 67%); }
+.engine-button-icon { font-size: 26px; line-height: 1; }
+.engine-button-label { font-size: 9px; font-weight: 800; letter-spacing: .12em; }
+.environment-simulator .env-engine-off #env-sim-status { min-width: 0; }
+.env-gear-n { left: 63% !important; }
+
+/* Keep editorial content legible in the light theme while preserving dark cards. */
+:root[data-theme="light"] #care { color: #202426; }
+:root[data-theme="light"] #care > h2,
+:root[data-theme="light"] #care > .eyebrow,
+:root[data-theme="light"] #care .own-card h3 { color: #202426 !important; }
+:root[data-theme="light"] #care .own-card { color: #26302f; }
+:root[data-theme="light"] #care .own-card p,
+:root[data-theme="light"] #care .own-card small { color: #53605d !important; }
+:root[data-theme="light"] #care .own-card > a,
+:root[data-theme="light"] #care .own-card .quiet-action { color: #405d50 !important; }
+:root[data-theme="light"] #service-report .report-intro .eyebrow,
+:root[data-theme="light"] #service-report .report-intro h2,
+:root[data-theme="light"] #service-report .report-intro > p { color: #202426 !important; }
+:root[data-theme="light"] #service-report .report-highlights span { color: #4e5957 !important; }
+:root[data-theme="light"] #service-report .report-card { color: #f4f1eb; }
+:root[data-theme="light"] #service-report .report-card h3,
+:root[data-theme="light"] #service-report .report-card p,
+:root[data-theme="light"] #service-report .report-card label { color: #f4f1eb; }
+:root[data-theme="light"] #official-services { background: #111417 !important; color: #f4f1eb !important; }
+:root[data-theme="light"] #official-services h2,
+:root[data-theme="light"] #official-services .eyebrow,
+:root[data-theme="light"] #official-services .lookup-list > div b { color: #f4f1eb !important; }
+:root[data-theme="light"] #official-services .lookup-copy > p,
+:root[data-theme="light"] #official-services .lookup-list > p { color: #d2d8da !important; }
+:root[data-theme="light"] #official-services .lookup-list > div span { color: #b5c0c4 !important; }
+:root[data-theme="light"] #official-services .official-links a { color: #d5e8ef !important; }
+
+/* Reserve a clean title area below the fixed modal control on these photo-led features. */
+.section-modal-active#vehicle-services,
+.section-modal-active#service-report,
+.section-modal-active#official-services { padding-top: 70px !important; }
+
+@media (max-width: 760px) {
+  .ownership-story-visual { min-height: 260px; }
+  .environment-simulator .env-engine-off { grid-template-columns: 64px minmax(0,1fr); gap: 12px; }
+  .environment-simulator .env-engine-off > p { grid-column: 1 / -1; }
+  .environment-simulator .env-engine-toggle { width: 64px; height: 64px; min-height: 64px; grid-column: 1; grid-row: 2 / span 2; }
+  .environment-simulator .env-engine-off #env-sim-status { grid-column: 2; }
+  .official-service-media { height: 165px; }
+  .section-modal-active#vehicle-services,
+  .section-modal-active#service-report,
+  .section-modal-active#official-services { padding-top: 68px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .feature-inline-media img { transition: none; }
+  .environment-simulator .env-engine-toggle { transition: none; }
+}

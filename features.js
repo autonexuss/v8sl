@@ -90,6 +90,23 @@ calculateMileage();
 const valueForm = document.getElementById('value-form');
 const resaleResult = document.getElementById('value-result');
 const resaleLinks = document.getElementById('resale-links');
+const resaleSlug = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+function resaleCity(value, marketplace) {
+  const city = String(value || '').trim().toLowerCase();
+  const aliases = [
+    [/\b(delhi|new delhi|ncr)\b/, marketplace === 'cars24' ? 'delhi-ncr' : 'delhi'],
+    [/\b(bengaluru|bangalore)\b/, 'bangalore'],
+    [/\b(gurugram|gurgaon)\b/, 'gurgaon'],
+    [/\b(chandigarh tricity|chandigarh)\b/, marketplace === 'cars24' ? 'chandigarh-tricity' : 'chandigarh'],
+    [/\b(mumbai|navi mumbai|thane)\b/, 'mumbai'],
+    [/\b(pune|hyderabad|chennai|kolkata|ahmedabad|jaipur|lucknow|surat|indore|coimbatore|kochi|nagpur|noida)\b/, match => resaleSlug(match[0])]
+  ];
+  for (const [pattern, route] of aliases) {
+    const match = city.match(pattern);
+    if (match) return typeof route === 'function' ? route(match) : route;
+  }
+  return resaleSlug(city);
+}
 valueForm.addEventListener('submit', event => {
   event.preventDefault();
   const make = document.getElementById('value-make').value;
@@ -98,19 +115,26 @@ valueForm.addEventListener('submit', event => {
   const city = document.getElementById('value-city').value.trim();
   const km = Number(document.getElementById('value-km').value);
   if (!make || !model || !year || !city || !Number.isFinite(km) || km < 0) return;
-  const search = `${year} ${make} ${model} used car ${city} ${km} km`;
-  const spinnySlug = [make, model].map(value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')).filter(Boolean).join('-');
+  const makeSlug = resaleSlug(make);
+  const modelSlug = resaleSlug(model);
+  const cityCarWale = resaleCity(city, 'carwale');
+  const cityCars24 = resaleCity(city, 'cars24');
+  const citySpinny = resaleCity(city, 'spinny');
+  const carWaleSlug = resaleSlug(`${make} ${model}`);
   const sources = [
-    ['CarDekho used cars', `site:cardekho.com/used-cars ${search}`],
-    ['CarWale used cars', `site:carwale.com/used-cars ${search}`],
-    ['CARS24 listings', `site:cars24.com/buy-used-cars ${search}`],
-    ['Spinny listings', `site:spinny.com ${search}`]
+    ['CarWale', `https://www.carwale.com/used/${cityCarWale}/${carWaleSlug}/`, `${make} ${model} · ${city}`],
+    ['Cars24', `https://www.cars24.com/buy-used-${makeSlug}-${modelSlug}-${encodeURIComponent(year)}-cars-${cityCars24}/`, `${year} ${make} ${model} · ${city}`],
+    ['Spinny', `https://www.spinny.com/used-${modelSlug}-cars-in-${citySpinny}/s/`, `${make} ${model} · ${city}`]
   ];
   resaleLinks.replaceChildren();
-  sources.forEach(([label, query]) => {
-    const link = document.createElement('a'); link.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-    if (label.startsWith('Spinny')) link.href = 'https://www.spinny.com/used-' + spinnySlug + '-cars/s/';
-    link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = `${label} ↗`; resaleLinks.append(link);
+  sources.forEach(([label, href, query]) => {
+    const link = document.createElement('a');
+    link.href = href;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = `${label} · ${query} ↗`;
+    link.title = `Open ${label} used-car listings for ${query}`;
+    resaleLinks.append(link);
   });
   resaleLinks.hidden = false;
   const low = Number(document.getElementById('value-low').value);
@@ -122,7 +146,7 @@ valueForm.addEventListener('submit', event => {
     resaleResult.append(strong, note);
   } else {
     const strong = document.createElement('strong'); strong.textContent = 'Live marketplace searches are ready';
-    const note = document.createElement('span'); note.textContent = 'Spinny opens the ' + make + ' ' + model + ' used-car listings directly. Other links search for ' + search + '; compare actual model year, trim, condition and photos.';
+    const note = document.createElement('span'); note.textContent = `CarWale and Spinny open used-car listings for ${make} ${model} in ${city}; Cars24 also uses the selected model year. Refine odometer, trim and condition on each marketplace and verify the listing details there.`;
     resaleResult.append(strong, note);
   }
 });
