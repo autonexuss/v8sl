@@ -85,27 +85,58 @@ showFilm(0);
 
 // The dark presentation is the default; the optional light preference is local to this browser.
 const themeToggle = document.querySelector('[data-theme-toggle]');
-function applyTheme(theme) {
-  const selected = theme === 'light' ? 'light' : 'dark';
+const themeRoot = document.documentElement;
+let preferredTheme = 'dark';
+let earthThemeZoneActive = false;
+let themeTransitionTimer;
+let themeHasInitialized = false;
+try { preferredTheme = localStorage.getItem('chassis-theme') === 'light' ? 'light' : 'dark'; } catch { /* Theme still works without storage. */ }
+
+function applyTheme(theme, { animate = true } = {}) {
+  preferredTheme = theme === 'light' ? 'light' : 'dark';
+  const selected = preferredTheme === 'light' && earthThemeZoneActive ? 'dark' : preferredTheme;
   const light = selected === 'light';
-  document.documentElement.dataset.theme = selected;
+  const changed = themeRoot.dataset.theme !== selected;
+  if (changed && themeHasInitialized && animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    themeRoot.classList.add('theme-transitioning');
+    window.clearTimeout(themeTransitionTimer);
+    themeTransitionTimer = window.setTimeout(() => themeRoot.classList.remove('theme-transitioning'), 1350);
+  }
+  themeRoot.dataset.theme = selected;
   document.body.dataset.theme = selected;
   const themeColor = document.querySelector('meta[name="theme-color"]');
   if (themeColor) themeColor.content = light ? '#f4f3ef' : '#08090b';
   if (themeToggle) {
-    themeToggle.innerHTML = light ? '☾ <span>Dark</span>' : '☼ <span>Light</span>';
-    themeToggle.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
-    themeToggle.setAttribute('aria-pressed', String(light));
+    const choosingLight = preferredTheme === 'dark';
+    themeToggle.innerHTML = choosingLight ? '☼ <span>Light</span>' : '☾ <span>Dark</span>';
+    themeToggle.setAttribute('aria-label', choosingLight ? 'Switch to light theme' : 'Switch to dark theme');
+    themeToggle.setAttribute('aria-pressed', String(preferredTheme === 'light'));
+    themeToggle.title = preferredTheme === 'light' && earthThemeZoneActive
+      ? 'Dark appearance is temporary around Earth; your Light preference returns as you scroll away.'
+      : '';
   }
+  themeHasInitialized = true;
 }
-let preferredTheme = 'dark';
-try { preferredTheme = localStorage.getItem('chassis-theme') === 'light' ? 'light' : 'dark'; } catch { /* Theme still works without storage. */ }
-applyTheme(preferredTheme);
+
+applyTheme(preferredTheme, { animate: false });
 themeToggle?.addEventListener('click', () => {
-  const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  const theme = preferredTheme === 'dark' ? 'light' : 'dark';
   applyTheme(theme);
   try { localStorage.setItem('chassis-theme', theme); } catch { /* Theme remains active for this page view. */ }
 });
+
+// In Light mode, gently borrow the site's dark palette while the Earth section
+// occupies the centre of the viewport. The saved preference is never changed.
+const earthSection = document.querySelector('.ev-map-editorial');
+if (earthSection && 'IntersectionObserver' in window) {
+  const earthThemeObserver = new IntersectionObserver(entries => {
+    const isNearEarth = entries.some(entry => entry.isIntersecting);
+    if (earthThemeZoneActive === isNearEarth) return;
+    earthThemeZoneActive = isNearEarth;
+    if (preferredTheme === 'light') applyTheme(preferredTheme);
+  }, { root: null, rootMargin: '-22% 0px -22% 0px', threshold: 0 });
+  earthThemeObserver.observe(earthSection);
+}
 
 // Service-report preview only: never sends, stores, looks up, or charges for the entered registration.
 const reportForm = document.getElementById('service-report-form');
