@@ -14,23 +14,42 @@
   const gearPull = { '-1': .3, 1: 1, 2: .76, 3: .56, 4: .43, 5: .34, 6: .28 };
   const sim = { engine: false, gear: 0, lane: 1, speed: 0, rpm: 0, fuel: 0, brakeWear: 0, throttle: 0, brake: 0, paused: false, pointer: null, dragOrigin: null, dragStart: null, dragMoved: false, shifting: false, lastFrame: 0, raf: 0 };
   const startSfx = $('env-engine-start-audio');
-  const loopAudio = $('env-engine-loop-audio');
+  const idleAudio = $('env-engine-idle-audio');
+  const revAudio = $('env-engine-rev-audio');
   const stopSfx = $('env-engine-stop-audio');
   let startSfxTimer = 0;
   let idleLoopStarted = false;
   let idleLoopGain = .42;
+  const idleLoopStart = 0;
+  const revLoopStart = 0;
   function beginIdleLoop() {
-    if (!sim.engine || !loopAudio || idleLoopStarted) return;
+    if (!sim.engine || !idleAudio || idleLoopStarted) return;
     idleLoopStarted = true;
-    loopAudio.currentTime = 0;
-    loopAudio.playbackRate = 1;
-    loopAudio.volume = idleLoopGain;
-    if ('preservesPitch' in loopAudio) loopAudio.preservesPitch = false;
-    if ('mozPreservesPitch' in loopAudio) loopAudio.mozPreservesPitch = false;
-    if ('webkitPreservesPitch' in loopAudio) loopAudio.webkitPreservesPitch = false;
-    loopAudio.play().catch(() => { idleLoopStarted = false; });
+    idleAudio.loop = true;
+    idleAudio.currentTime = idleLoopStart;
+    idleAudio.playbackRate = 1;
+    idleAudio.volume = idleLoopGain;
+    idleAudio.play().catch(() => { idleLoopStarted = false; });
   }
   const releaseIdleLoop = () => { if (sim.engine && idleLoopStarted) idleLoopGain = .42; };
+  function setRevAudio(throttle, rpm) {
+    if (!revAudio) return;
+    const amount = sim.engine && !sim.paused ? clamp(throttle, 0, 1) : 0;
+    revAudio.loop = true;
+    revAudio.volume = amount < .025 ? 0 : clamp(amount * .56, 0, .56);
+    // This is a short, matching rev segment from the same CC0 diesel recording.
+    // A restrained pitch change follows the instrument reading without speeding up idle.
+    revAudio.playbackRate = clamp(.96 + (rpm - idle) / (redline - idle) * .12, .96, 1.08);
+    if (amount >= .025) {
+      if (revAudio.paused) {
+        revAudio.currentTime = revLoopStart;
+        revAudio.play().catch(() => {});
+      }
+    } else if (!revAudio.paused) {
+      revAudio.pause();
+      revAudio.currentTime = revLoopStart;
+    }
+  }
 
   const position = gear => gear === -1 ? { x: 12, y: 22 } : gear === 0 ? { x: lanes[1], y: 50 } : { x: lanes[Math.floor((gear - 1) / 2)], y: gear % 2 ? 22 : 78 };
   function setLever(point, animate = true) {
@@ -51,7 +70,7 @@
     const label = sim.gear === -1 ? 'R' : sim.gear === 0 ? 'N' : String(sim.gear);
     if ($('env-gear-readout')) $('env-gear-readout').textContent = label;
     if ($('env-drive-direction')) $('env-drive-direction').textContent = sim.gear === -1 ? (sim.speed < -.2 ? 'Reverse' : 'Stopped · reverse') : Math.abs(sim.speed) > .2 ? 'Moving' : 'Stationary';
-    knob.setAttribute('aria-label', `Gear lever, ${label === 'N' ? 'neutral' : label === 'R' ? 'reverse' : `gear ${label}`}. A and D select a lane, up and down select its gear, R selects reverse and N returns to neutral.`);
+    knob.setAttribute('aria-label', `Gear lever, ${label === 'N' ? 'neutral' : label === 'R' ? 'reverse' : `gear ${label}`}. Left and right arrows or A and D select a lane. Up and down select its gear. R selects reverse and N returns to neutral.`);
     setLever(position(sim.gear));
   }
   function snapNeutral(message = 'The lever returned to centered neutral.') {
@@ -230,7 +249,8 @@
     idleLoopGain = .42;
     startSfx?.pause();
     if (startSfx) startSfx.onended = null;
-    if (loopAudio) { loopAudio.pause(); loopAudio.currentTime = 0; }
+    if (idleAudio) { idleAudio.pause(); idleAudio.currentTime = idleLoopStart; }
+    if (revAudio) { revAudio.pause(); revAudio.currentTime = revLoopStart; }
     $('env-engine-toggle')?.setAttribute('aria-pressed', 'false');
     $('env-engine-toggle')?.setAttribute('aria-label', 'Start engine');
     if ($('env-engine-button-label')) $('env-engine-button-label').textContent = 'START';
@@ -253,6 +273,7 @@
     event.currentTarget.textContent = sim.paused ? 'Resume simulation' : 'Pause simulation';
     sim.lastFrame = 0;
     setStatus(sim.paused ? 'Simulation paused.' : 'Simulation resumed.');
+    updateScreen(1 / 60);
   });
 
   function updateScreen(dt = 1 / 60) {
@@ -279,11 +300,8 @@
     const speedArc = $('env-speed-arc'); if (speedArc) speedArc.style.width = `${clamp(absSpeed / 205 * 100, 0, 100)}%`;
     const rpmArc = $('env-rpm-arc'); if (rpmArc) rpmArc.style.width = `${clamp(sim.rpm / redline * 100, 0, 100)}%`;
     if ($('env-drive-status') && !sim.paused) $('env-drive-status').textContent = sim.gear === 0 && throttle > .03 ? 'In neutral · engine speed rises while the wheels remain still.' : 'Illustrative simulation · no live vehicle data.';
-    if (loopAudio && sim.engine) {
-      const revs = clamp((sim.rpm - idle) / (redline - idle), 0, 1);
-      loopAudio.playbackRate = clamp(1 + revs * .88, 1, 1.88);
-      loopAudio.volume = idleLoopGain;
-    }
+    if (idleAudio && sim.engine) idleAudio.volume = idleLoopGain * (1 - throttle * .13);
+    setRevAudio(throttle, sim.rpm);
   }
   function frame(now) {
     let dt = 1 / 60;
@@ -320,18 +338,18 @@
 
   const isTyping = target => target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
   document.addEventListener('keydown', event => {
-    if (!feature.classList.contains('section-modal-active') || !sim.engine || isTyping(event.target) || event.target.closest?.('.section-modal-close') || event.target.closest?.('button:not(#env-shifter)')) return;
+    if (!feature.classList.contains('section-modal-active') || !sim.engine || isTyping(event.target)) return;
     if (sim.shifting) return;
     const key = event.key.toLowerCase();
-    if (['w', 's', ' ', 'a', 'd', 'r', 'n', 'arrowup', 'arrowdown'].includes(key)) event.preventDefault();
+    if (['w', 's', ' ', 'a', 'd', 'r', 'n', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) event.preventDefault();
     if (key === 'w') setPedal('accelerator', 100);
     else if (key === 's' || key === ' ') setPedal('brake', 100);
     else if (key === 'n') snapNeutral('Centered neutral selected.');
     else if (key === 'r') selectGear(-1);
-    else if (key === 'a' || key === 'd') {
+    else if (key === 'a' || key === 'd' || key === 'arrowleft' || key === 'arrowright') {
       const currentLane = sim.gear > 0 ? Math.floor((sim.gear - 1) / 2) : sim.lane;
       if (sim.gear !== 0) snapNeutral('Centered neutral selected · choose a lane next.');
-      sim.lane = clamp(currentLane + (key === 'a' ? -1 : 1), 0, 2);
+      sim.lane = clamp(currentLane + (key === 'a' || key === 'arrowleft' ? -1 : 1), 0, 2);
       sim.gear = 0;
       renderGear();
       setStatus('Neutral gate · choose an upper or lower gear.');

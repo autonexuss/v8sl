@@ -18,6 +18,7 @@
   let hiddenPanelSiblings = [];
   let lastTrigger = null;
   let closeButton = null;
+  let closeToolbar = null;
 
   document.body.classList.add('velocitrak-shell-ready');
   sections.forEach(section => {
@@ -86,7 +87,9 @@
     closing.removeAttribute('aria-modal');
     closing.removeAttribute('aria-label');
     closing.removeAttribute('tabindex');
-    if (closeButton) closeButton.remove();
+    if (closeToolbar) closeToolbar.remove();
+    else if (closeButton) closeButton.remove();
+    closeToolbar = null;
     closeButton = null;
     hiddenPanelSiblings.forEach(element => element.classList.remove('panel-sibling-hidden'));
     hiddenPanelSiblings = [];
@@ -140,7 +143,19 @@
     closeButton.setAttribute('aria-label', 'Close feature panel');
     closeButton.innerHTML = '<span aria-hidden="true">×</span><span>Close</span>';
     closeButton.addEventListener('click', () => closePanel());
-    panel.prepend(closeButton);
+    if (panel.dataset.modalPhoto) {
+      closeToolbar = document.createElement('div');
+      closeToolbar.className = 'section-modal-toolbar';
+      closeToolbar.setAttribute('aria-label', 'Feature photo and close control');
+      const figure = document.createElement('figure');
+      figure.className = 'section-modal-photo';
+      const image = document.createElement('img');
+      image.src = panel.dataset.modalPhoto;
+      image.alt = panel.dataset.modalPhotoAlt || '';
+      figure.append(image);
+      closeToolbar.append(figure, closeButton);
+      panel.prepend(closeToolbar);
+    } else panel.prepend(closeButton);
 
     document.body.classList.add('section-panel-open');
     overlay.hidden = false;

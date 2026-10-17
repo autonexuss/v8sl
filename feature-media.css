@@ -26,34 +26,34 @@
 .environment-simulator .env-engine-off #env-sim-status { min-width: 0; }
 .env-gear-n { left: 63% !important; }
 
-/* Keep editorial content legible in the light theme while preserving dark cards. */
-:root[data-theme="light"] #care { color: #202426; }
+/* Improve contrast through text colors only; retain each section's original surface and palette. */
 :root[data-theme="light"] #care > h2,
 :root[data-theme="light"] #care > .eyebrow,
-:root[data-theme="light"] #care .own-card h3 { color: #202426 !important; }
-:root[data-theme="light"] #care .own-card { color: #26302f; }
+:root[data-theme="light"] #care .own-card h3 { color: var(--chassis-text); }
 :root[data-theme="light"] #care .own-card p,
-:root[data-theme="light"] #care .own-card small { color: #53605d !important; }
-:root[data-theme="light"] #care .own-card > a,
-:root[data-theme="light"] #care .own-card .quiet-action { color: #405d50 !important; }
+:root[data-theme="light"] #care .own-card small { color: var(--chassis-muted); }
 :root[data-theme="light"] #service-report .report-intro .eyebrow,
 :root[data-theme="light"] #service-report .report-intro h2,
-:root[data-theme="light"] #service-report .report-intro > p { color: #202426 !important; }
-:root[data-theme="light"] #service-report .report-highlights span { color: #4e5957 !important; }
-:root[data-theme="light"] #service-report .report-card { color: #f4f1eb; }
+:root[data-theme="light"] #service-report .report-intro > p,
+:root[data-theme="light"] #service-report .report-highlights span { color: var(--chassis-text); }
+:root[data-theme="light"] #service-report .report-highlights strong,
+:root[data-theme="light"] #service-report .report-card strong { color: var(--chassis-accent); }
+:root[data-theme="light"] #service-report .report-card,
 :root[data-theme="light"] #service-report .report-card h3,
 :root[data-theme="light"] #service-report .report-card p,
-:root[data-theme="light"] #service-report .report-card label { color: #f4f1eb; }
-:root[data-theme="light"] #official-services { background: #111417 !important; color: #f4f1eb !important; }
-:root[data-theme="light"] #official-services h2,
-:root[data-theme="light"] #official-services .eyebrow,
-:root[data-theme="light"] #official-services .lookup-list > div b { color: #f4f1eb !important; }
-:root[data-theme="light"] #official-services .lookup-copy > p,
-:root[data-theme="light"] #official-services .lookup-list > p { color: #d2d8da !important; }
-:root[data-theme="light"] #official-services .lookup-list > div span { color: #b5c0c4 !important; }
-:root[data-theme="light"] #official-services .official-links a { color: #d5e8ef !important; }
+:root[data-theme="light"] #service-report .report-card label,
+:root[data-theme="light"] #service-report .report-card-top,
+:root[data-theme="light"] #service-report .report-status,
+:root[data-theme="light"] #service-report .report-disclosure,
+:root[data-theme="light"] #service-report .revenue-fee-row { color: var(--chassis-text); }
 
-/* Reserve a clean title area below the fixed modal control on these photo-led features. */
+/* Photos share the fixed close-control row without shifting modal content. */
+.section-modal-toolbar { position: fixed; z-index: 110; top: calc(var(--vel-nav-height, 78px) + 20px); right: clamp(22px, 4.5vw, 62px); display: flex; align-items: center; gap: 10px; }
+.section-modal-photo { width: clamp(92px, 11vw, 142px); height: 42px; margin: 0; overflow: hidden; border: 1px solid #ffffff50; border-radius: 11px; background: #101417; box-shadow: 0 8px 25px #0005; }
+.section-modal-photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.section-modal-toolbar .section-modal-close { position: static !important; inset: auto !important; flex: 0 0 auto; }
+
+/* Preserve the existing title offset beneath the fixed modal controls. */
 .section-modal-active#vehicle-services,
 .section-modal-active#service-report,
 .section-modal-active#official-services { padding-top: 70px !important; }
@@ -64,7 +64,8 @@
   .environment-simulator .env-engine-off > p { grid-column: 1 / -1; }
   .environment-simulator .env-engine-toggle { width: 64px; height: 64px; min-height: 64px; grid-column: 1; grid-row: 2 / span 2; }
   .environment-simulator .env-engine-off #env-sim-status { grid-column: 2; }
-  .official-service-media { height: 165px; }
+  .section-modal-toolbar { top: 84px; right: 17px; gap: 8px; }
+  .section-modal-photo { width: clamp(72px, 24vw, 94px); height: 35px; border-radius: 9px; }
   .section-modal-active#vehicle-services,
   .section-modal-active#service-report,
   .section-modal-active#official-services { padding-top: 68px !important; }
