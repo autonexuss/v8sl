@@ -179,6 +179,10 @@
   });
 
   overlay.addEventListener('click', () => closePanel());
+  window.addEventListener('autonexus:close-feature-panel', () => {
+    closePanel(false);
+    closeMenu();
+  });
   if (menuButton) {
     menuButton.addEventListener('click', () => {
       queueMicrotask(() => {

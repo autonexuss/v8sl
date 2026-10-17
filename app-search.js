@@ -1283,6 +1283,10 @@ searchForm.addEventListener('submit', event => {
 searchInput.addEventListener('keydown', event => {
   if (event.key !== 'Enter' || event.isComposing) return;
   event.preventDefault();
+  if (searchInput.value.trim().toLowerCase() === 'squirtlesquad') {
+    window.dispatchEvent(new CustomEvent('autonexus:squirtle-easter-egg'));
+    return;
+  }
   searchForm.requestSubmit();
 });
 document.querySelectorAll('[data-car-search]').forEach(button => button.addEventListener('click', () => {

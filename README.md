@@ -6,6 +6,8 @@ Autonexus is an independent car-discovery and ownership website: <https://v8sl-g
 
 The homepage combines a four-film hero slideshow, editorial car photographs and a dedicated EV charging artwork section. The hero **Get started** control scrolls to the main 3D feature tiles. The general tools and five-tile Autonexus Pro collection use 3D model tiles with a title, short summary and one focused feature panel per tile. The About section at the end of the page uses the supplied transparent Autonexus wordmark. Model assets are stored under `assets/models/` and loaded through the locally bundled `<model-viewer>` component and Draco decoder.
 
+Entering `squirtlesquad` in the car search box and pressing Enter plays the supplied `assets/easter-eggs/squirtle-dance.mp4` as a transparent chroma-key overlay with the video's original audio. It closes when the video ends, when the visitor clicks/taps anywhere, or with Escape. Browser autoplay policies can still block audio in some environments; the trigger is a direct Enter-key gesture to allow playback.
+
 Each tile opens only its matching feature in an accessible, scrollable same-page panel. Use **Close**, the Escape key, or the dimmed background to dismiss it. The slideshow advances when a video ends or when the viewer clicks/taps the playing video. Its four supplied WebM files are `assets/videos/video1.webm` through `video4.webm`; they are copied without transcoding. The separate small Defender editorial film continues to loop independently.
 
 The large `assets/editorial/gtavmap.jpg` image is illustrative fictional-city artwork. The EV search asks for an area and opens a Google Maps search; it does not display verified charging locations or station availability inside Autonexus.

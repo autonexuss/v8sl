@@ -16,15 +16,15 @@
   height: 56px !important;
   max-height: 56px !important;
 }
-:root[data-theme="light"] .topbar .brand-logo { filter: drop-shadow(0 1px 5px #28313b2b) !important; }
+:root[data-theme="light"] .topbar .brand-logo { filter: brightness(.48) contrast(1.32) drop-shadow(0 1px 4px #17212b70) !important; }
 
-/* Place the single hero action at the left, where the old controls used to sit. */
+/* Place the single hero action at the right, where the old slideshow card sat. */
 .hero-copy > p { margin-bottom: 0; }
 .hero-get-started {
   position: absolute;
   z-index: 8;
-  left: clamp(24px, 6vw, 92px);
-  right: auto;
+  left: auto;
+  right: clamp(24px, 6vw, 92px);
   bottom: clamp(76px, 9vh, 108px);
   min-width: 148px;
   min-height: 44px;
@@ -98,6 +98,8 @@
   line-height: 1.55;
   letter-spacing: .01em;
 }
+:root:not([data-theme="light"]) .showroom-feature-copy strong { color: #fff !important; text-shadow: 0 1px 10px #0008; }
+:root:not([data-theme="light"]) .showroom-feature-copy small { color: #f0f3f2 !important; text-shadow: 0 1px 8px #0009; }
 .showroom-feature-copy i {
   position: absolute;
   left: 21px;
@@ -242,7 +244,7 @@ body.section-panel-open { overflow: hidden !important; }
 @media (max-width: 700px) {
   :root { --vel-nav-height: 72px; }
   .topbar .brand-logo { width: clamp(150px, 43vw, 194px) !important; height: 48px !important; max-height: 48px !important; }
-  .hero-get-started { left: 14px; right: auto; bottom: 84px; min-width: 132px; min-height: 41px; }
+  .hero-get-started { left: auto; right: 14px; bottom: 84px; min-width: 132px; min-height: 41px; }
   .hero-note { left: 14px; bottom: 28px; max-width: calc(100% - 166px); gap: 7px; }
   .showroom-feature-grid,
   .premium-feature-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 10px !important; }

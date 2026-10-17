@@ -1,0 +1,26 @@
+.squirtle-easter-egg[hidden] { display: none !important; }
+.squirtle-easter-egg {
+  position: fixed;
+  z-index: 2147483000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  background: transparent;
+  isolation: isolate;
+}
+.squirtle-easter-egg__canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+  filter: drop-shadow(0 0 24px #53d9ff42);
+}
+.squirtle-easter-egg__video {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
