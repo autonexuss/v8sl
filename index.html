@@ -6,7 +6,7 @@
   <title>Autonexus — Know your car, better</title><link rel="icon" type="image/png" sizes="512x512" href="assets/autonexus-icon.png?v=1"><link rel="apple-touch-icon" href="assets/autonexus-icon.png?v=1"><link rel="stylesheet" href="styles.css?v=20261011-car-accuracy-3"><link rel="stylesheet" href="premium.css?v=20261011-chassis-v5"><link rel="stylesheet" href="shell.css?v=20261017-autonexus-shell-1">
   <link rel="stylesheet" href="home.css?v=20261011-home-3">
   <link rel="stylesheet" href="editorial-home.css?v=20261011-editorial-3">
-  <link rel="stylesheet" href="feature-refresh.css?v=20261017-feature-refresh-1"><link rel="stylesheet" href="autonexus-refresh.css?v=20261017-autonexus-4"><link rel="stylesheet" href="ev-space.css?v=20261017-earth-ambient-2"><link rel="stylesheet" href="squirtle-easter-egg.css?v=20261017-1">
+  <link rel="stylesheet" href="feature-refresh.css?v=20261017-feature-refresh-1"><link rel="stylesheet" href="autonexus-refresh.css?v=20261017-autonexus-5"><link rel="stylesheet" href="ev-space.css?v=20261017-earth-pins-3"><link rel="stylesheet" href="squirtle-easter-egg.css?v=20261017-1">
   <!-- TEMPORARY DEVELOPER GATE: remove this link, the marked body block, and the dev-lock.js script to restore direct access. -->
   <link rel="stylesheet" href="dev-lock.css?v=20261012-1">
   <script>self.ModelViewerElement = self.ModelViewerElement || {}; self.ModelViewerElement.dracoDecoderLocation = 'assets/vendor/draco/';</script>
@@ -32,7 +32,31 @@
   </section>
   <!-- TEMPORARY DEVELOPER GATE END -->
   <header class="topbar">
-  <div class="topbar-brand-row"><a class="brand" href="#top" aria-label="Autonexus home"><img class="brand-logo" src="assets/autonexus-wordmark.png?v=1" alt="Autonexus"><span class="visually-hidden">Autonexus</span></a><div class="topbar-actions"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" aria-pressed="false">☼ <span>Light</span></button></div></div>
+  <div class="topbar-brand-row"><a class="brand" href="#top" aria-label="Autonexus home"><img class="brand-logo" src="assets/autonexus-wordmark.png?v=1" alt="Autonexus"><span class="visually-hidden">Autonexus</span></a><div class="topbar-actions"><a class="about-shortcut" href="#about" data-scroll-to-about>About us</a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open section menu"><span aria-hidden="true">☰</span><b>Menu</b></button><button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" aria-pressed="false">☼ <span>Light</span></button></div></div>
+  <nav id="site-nav" class="glass-nav" aria-label="Site features" aria-hidden="true" inert>
+    <div class="glass-nav-group" aria-labelledby="site-nav-free-title">
+      <h2 id="site-nav-free-title">Free features</h2>
+      <div class="glass-nav-links">
+        <a href="#find-cars"><span>DISCOVER</span><strong>Find a car</strong><i aria-hidden="true">↗</i></a>
+        <a href="#loan-planner"><span>PLAN AHEAD</span><strong>Loan planner</strong><i aria-hidden="true">↗</i></a>
+        <a href="#mileage-planner"><span>PLAN AHEAD</span><strong>Mileage planner</strong><i aria-hidden="true">↗</i></a>
+        <a href="#resale-market"><span>MARKET</span><strong>Resale guide</strong><i aria-hidden="true">↗</i></a>
+        <a href="#listing-draft"><span>MARKET</span><strong>Listing draft</strong><i aria-hidden="true">↗</i></a>
+        <a href="#official-services"><span>TRUSTED LINKS</span><strong>Official services</strong><i aria-hidden="true">↗</i></a>
+        <a href="#ev-charging"><span>ON THE ROAD</span><strong>EV charging map</strong><i aria-hidden="true">↗</i></a>
+      </div>
+    </div>
+    <div class="glass-nav-group glass-nav-group--pro" aria-labelledby="site-nav-pro-title">
+      <h2 id="site-nav-pro-title">Pro</h2>
+      <div class="glass-nav-links">
+        <a href="#vehicle-services"><span>OWNERSHIP</span><strong>Ownership</strong><i aria-hidden="true">↗</i></a>
+        <a href="#personal-garage"><span>YOUR CARS</span><strong>Personal garage</strong><i aria-hidden="true">↗</i></a>
+        <a href="#service-report"><span>VEHICLE CHECKS</span><strong>Service report</strong><i aria-hidden="true">↗</i></a>
+        <a href="#service-history"><span>YOUR RECORDS</span><strong>Keep a service record</strong><i aria-hidden="true">↗</i></a>
+        <a href="#private-reminders"><span>YOUR RECORDS</span><strong>Private reminders</strong><i aria-hidden="true">↗</i></a>
+      </div>
+    </div>
+  </nav>
 </header>
   <main id="top">
     <section class="hero">
@@ -72,8 +96,7 @@
           <span class="ev-space-stars ev-space-stars--distant"></span>
           <span class="ev-space-stars ev-space-stars--near"></span>
           <span class="ev-earth-halo"></span>
-          <span class="ev-earth-orbit"></span>
-          <model-viewer class="ev-earth-model" src="assets/models/earth.glb?v=20261017-earth-pbr-2" alt="" loading="eager" reveal="auto" auto-rotate auto-rotate-delay="0" rotation-per-second="12deg" shadow-intensity="0.8" exposure="1.05" environment-image="neutral" interaction-prompt="none" disable-zoom></model-viewer>
+          <model-viewer class="ev-earth-model" src="assets/models/earth.glb?v=20261017-earth-pins-3" alt="" loading="eager" reveal="auto" auto-rotate auto-rotate-delay="0" rotation-per-second="12deg" shadow-intensity="0" exposure="1.05" environment-image="neutral" interaction-prompt="none" disable-zoom></model-viewer>
           <span class="ev-earth-fallback">Loading Earth model…</span>
         </div>
       </div>
@@ -171,7 +194,7 @@
   <video class="squirtle-easter-egg__video" id="squirtle-easter-egg-video" src="assets/easter-eggs/squirtle-dance.mp4" preload="auto" playsinline aria-hidden="true" tabindex="-1"></video>
   <span class="visually-hidden" id="squirtle-easter-egg-help">Squirtle dance is playing. Click anywhere or press Escape to close it.</span>
 </div>
-  <script src="youtube-config.js?v=20261017-autonexus-1"></script><script src="vehicle-data.js?v=20261011-india-cars-2"></script><script src="app-search.js?v=20261017-squirtle-1"></script><script src="features.js?v=20261017-autonexus-features-1"></script><script src="site-shell.js?v=20261017-squirtle-1"></script><script src="showroom.js?v=20261017-autonexus-showroom-2"></script>
+  <script src="youtube-config.js?v=20261017-autonexus-1"></script><script src="vehicle-data.js?v=20261011-india-cars-2"></script><script src="app-search.js?v=20261017-nav-2"></script><script src="features.js?v=20261017-autonexus-features-1"></script><script src="site-shell.js?v=20261017-nav-2"></script><script src="showroom.js?v=20261017-autonexus-showroom-2"></script>
 <script src="squirtle-easter-egg.js?v=20261017-1"></script>
 <script src="dev-lock.js?v=20261017-gate-2"></script>
 </body></html>

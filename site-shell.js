@@ -71,6 +71,8 @@
 
   function closeMenu() {
     nav?.classList.remove('open');
+    nav?.setAttribute('aria-hidden', 'true');
+    nav?.setAttribute('inert', '');
     menuButton?.setAttribute('aria-expanded', 'false');
     menuButton?.setAttribute('aria-label', 'Explore all sections');
   }
@@ -166,6 +168,13 @@
       return;
     }
     const target = document.getElementById(id);
+    if (link.hasAttribute('data-scroll-to-about') && target) {
+      event.preventDefault();
+      closePanel(false);
+      closeMenu();
+      target.scrollIntoView({ block: 'start', behavior: reducedMotion ? 'auto' : 'smooth' });
+      return;
+    }
     if (!target || !owningSection(target)) return;
     if (link.hasAttribute('data-scroll-to-showroom')) {
       event.preventDefault();
@@ -196,12 +205,18 @@
   }
 
   document.addEventListener('keydown', event => {
-    if (!activePanel) return;
     if (event.key === 'Escape') {
-      event.preventDefault();
-      closePanel();
+      if (activePanel) {
+        event.preventDefault();
+        closePanel();
+      } else if (nav?.classList.contains('open')) {
+        event.preventDefault();
+        closeMenu();
+        menuButton?.focus({ preventScroll: true });
+      }
       return;
     }
+    if (!activePanel) return;
     if (event.key !== 'Tab') return;
     const focusable = [...activePanel.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
       .filter(element => element.getClientRects().length > 0);

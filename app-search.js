@@ -153,13 +153,18 @@ if (menuButton) {
   menuButton.addEventListener('click', () => {
     const nav = document.querySelector('.topbar nav');
     const open = nav.classList.toggle('open');
+    nav.setAttribute('aria-hidden', String(!open));
+    nav.toggleAttribute('inert', !open);
     menuButton.setAttribute('aria-expanded', String(open));
-    menuButton.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    menuButton.setAttribute('aria-label', open ? 'Close section menu' : 'Explore all sections');
   });
   document.querySelectorAll('.topbar nav a').forEach(link => link.addEventListener('click', () => {
-    document.querySelector('.topbar nav').classList.remove('open');
+    const nav = document.querySelector('.topbar nav');
+    nav.classList.remove('open');
+    nav.setAttribute('aria-hidden', 'true');
+    nav.setAttribute('inert', '');
     menuButton.setAttribute('aria-expanded', 'false');
-    menuButton.setAttribute('aria-label', 'Open menu');
+    menuButton.setAttribute('aria-label', 'Explore all sections');
   }));
 }
 
