@@ -1326,7 +1326,7 @@ const TEMPLATE = '' +
 '    <div class="anx-deck-a">' +
 '     <div class="anx-row"><label for="anx-thr-{{id}}">Throttle</label><b class="anx-big" data-ref="tv">0%</b></div>' +
 '     <input class="anx-range anx-range--big" id="anx-thr-{{id}}" data-ref="thr" type="range" min="0" max="100" value="0" aria-label="Throttle">' +
-'     <div class="anx-pedals"><button type="button" class="anx-pedal" data-ref="gasB"><span>Gas</span><kbd>W</kbd></button><button type="button" class="anx-pedal" data-ref="brkB"><span>Brake</span><kbd>S</kbd></button><button type="button" class="anx-pedal" data-ref="clB"><span>Clutch</span><kbd>Space</kbd></button></div>' +
+'     <div class="anx-pedals"><button type="button" class="anx-pedal" data-ref="gasB"><span>Gas</span><kbd>W</kbd></button><button type="button" class="anx-pedal" data-ref="brkB"><span>Brake</span><kbd>S</kbd></button><button type="button" class="anx-pedal" data-ref="clB"><span>Clutch</span><kbd>Space / C</kbd></button></div>' +
 '    </div>' +
 '    <div class="anx-deck-b">' +
 '     <div class="anx-row"><label for="anx-ld-{{id}}">Dyno load</label><b data-ref="lv">0%</b></div>' +
@@ -1359,7 +1359,7 @@ const TEMPLATE = '' +
 ' </div>' +
 ' <dialog class="anx-dialog" data-ref="dlg" aria-label="Keyboard shortcuts"><h3>Controls</h3><dl>' +
 '  <dt><kbd>E</kbd></dt><dd>Toggle engine on / off</dd><dt><kbd>W</kbd></dt><dd>Accelerator (hold)</dd><dt><kbd>S</kbd></dt><dd>Brake (hold)</dd>' +
-'  <dt><kbd>Space</kbd></dt><dd>Clutch (hold)</dd><dt><kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>Shift up / down</dd>' +
+'  <dt><kbd>Space</kbd> / <kbd>C</kbd></dt><dd>Clutch (hold)</dd><dt><kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>Shift up / down</dd>' +
 '  <dt><kbd>N</kbd></dt><dd>Neutral</dd><dt><kbd>M</kbd></dt><dd>Mute</dd><dt><kbd>R</kbd></dt><dd>Reset all inputs</dd><dt><kbd>F</kbd></dt><dd>Fullscreen</dd>' +
 '  <dt>Mouse / touch</dt><dd>Drag the 3D view to orbit; Ctrl + wheel or the +/- buttons to zoom</dd></dl>' +
 '  <button type="button" class="anx-btn anx-primary" data-ref="dlgClose">Close</button></dialog>' +
@@ -1511,7 +1511,7 @@ function mount(target, userOpts) {
     if (!kind) { R.ovl.hidden = true; return; }
     const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
     R.ovl.innerHTML = kind === 'intro'
-      ? '<div class="anx-card"><span class="anx-eyebrow">Ready</span><h3>Turn the key.</h3><p>Pick an engine, press <kbd>E</kbd> to start or stop it, use <kbd>↑</kbd> / <kbd>↓</kbd> to shift, and hold <kbd>Space</kbd> for throttle.</p><div class="anx-card-actions"><button type="button" class="anx-btn anx-go" data-act="start">' + ICON.power + '<span>Start engine</span></button></div><small>Sound plays after you press start.</small></div>'
+      ? '<div class="anx-card"><span class="anx-eyebrow">Ready</span><h3>Turn the key.</h3><p>Pick an engine, press <kbd>E</kbd> to start or stop it, use <kbd>↑</kbd> / <kbd>↓</kbd> to shift, and hold <kbd>Space</kbd> or <kbd>C</kbd> for the clutch.</p><div class="anx-card-actions"><button type="button" class="anx-btn anx-go" data-act="start">' + ICON.power + '<span>Start engine</span></button></div><small>Sound plays after you press start.</small></div>'
       : '<div class="anx-card anx-card--fail"><span class="anx-eyebrow">Engine stopped</span><h3>' + esc(title) + '</h3>' + (detail ? '<p>' + esc(detail) + '</p>' : '') + '<div class="anx-card-actions"><button type="button" class="anx-btn anx-go" data-act="start">' + ICON.power + '<span>Restart engine</span></button><button type="button" class="anx-btn" data-act="reset">' + ICON.reset + '<span>Reset all</span></button></div></div>';
     R.ovl.hidden = false;
   }
@@ -1666,7 +1666,7 @@ function mount(target, userOpts) {
     if (onRange && (c === 'ArrowLeft' || c === 'ArrowRight')) return;
     if (KEYS.thr.indexOf(c) >= 0) { key = 1; e.preventDefault(); }
     else if (KEYS.brk.indexOf(c) >= 0) { brk = 1; e.preventDefault(); }
-    else if (c === 'Space') { cp = 1; e.preventDefault(); }
+    else if (c === 'Space' || c === 'KeyC') { cp = 1; e.preventDefault(); }
     else if (c === 'ArrowUp') { if (!e.repeat) sh(1); e.preventDefault(); }
     else if (c === 'ArrowDown') { if (!e.repeat) sh(-1); e.preventDefault(); }
     else if (c === 'KeyE') { if (!e.repeat) { if (state === 0) start(); else stop(); } }
@@ -1674,7 +1674,7 @@ function mount(target, userOpts) {
     else if (c === 'KeyM') setMute(!muted); else if (c === 'KeyR') resetAll(); else if (c === 'KeyF') toggleFS();
     else if (e.key === '?' || c === 'KeyH') openHelp();
   });
-  on(document, 'keyup', e => { const c = e.code; if (KEYS.thr.indexOf(c) >= 0) key = 0; if (KEYS.brk.indexOf(c) >= 0) brk = 0; if (c === 'Space') cp = 0; });
+  on(document, 'keyup', e => { const c = e.code; if (KEYS.thr.indexOf(c) >= 0) key = 0; if (KEYS.brk.indexOf(c) >= 0) brk = 0; if (c === 'Space' || c === 'KeyC') cp = 0; });
   on(global, 'blur', () => { key = 0; brk = 0; cp = 0; gas = 0; });
 
   /* ---------- gauges + charts ---------- */
