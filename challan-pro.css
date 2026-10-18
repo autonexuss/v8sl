@@ -25,7 +25,7 @@
 .challan-pay-disclosure strong { color: #e2cea8; }
 :root[data-theme="light"] .challan-pay-heading p,
 :root[data-theme="light"] .challan-pay-details p { color: #66736e; }
-:root[data-theme="light"] :root[data-theme="light"] .challan-pay-card { border-color: #25302d25; background: linear-gradient(145deg, #ffffffc9, #edf1eea8); box-shadow: 0 18px 44px #27352c13, inset 0 1px #fff; }
+:root[data-theme="light"] .challan-pay-card { border-color: #25302d25; background: linear-gradient(145deg, #ffffffc9, #edf1eea8); box-shadow: 0 18px 44px #27352c13, inset 0 1px #fff; }
 :root[data-theme="light"] .challan-pay-card-top { border-color: #26312d20; color: #7d6943; }
 :root[data-theme="light"] .challan-pay-card label { color: #25302d; }
 :root[data-theme="light"] .challan-amount-row { border-color: #26312d2d; background: #fff; }
@@ -68,7 +68,7 @@
   .challan-pay-grid { grid-template-columns: 1fr; gap: 16px; }
   .challan-pay-details { padding: 0; }
   .challan-pay-heading { align-items: flex-start; }
-  }
+}
 @media (max-width: 460px) {
   .challan-pay-heading { gap: 12px; }
   .challan-amount-row { flex-wrap: wrap; }
