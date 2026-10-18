@@ -20,14 +20,14 @@
 .ownership-story-copy { grid-column: 1; grid-row: 1; }
 .ownership-story-visual { grid-column: 2; grid-row: 1; min-width: 0; min-height: 0 !important; height: 100%; aspect-ratio: auto !important; }
 .ownership-story-visual img { min-height: 0 !important; height: 100%; object-position: 52% 58%; }
-.ownership-story-visual::after { background: linear-gradient(90deg, #1a141475 0%, transparent 36%), linear-gradient(0deg, #0e0b0b24, transparent 50%); }
-:root[data-theme="light"] .ownership-story-visual::after { background: linear-gradient(90deg, #f1f1ec88 0%, transparent 30%), linear-gradient(0deg, #0e0b0b18, transparent 50%); }
+.ownership-story-visual::after { background: linear-gradient(90deg, #11111175 0%, transparent 36%), linear-gradient(0deg, #08080824, transparent 50%); }
+:root[data-theme="light"] .ownership-story-visual::after { background: linear-gradient(90deg, #f1f1ec88 0%, transparent 30%), linear-gradient(0deg, #08080818, transparent 50%); }
 
 /* New feature panels share Autonexus' existing modal shell and scroll behavior. */
 .new-feature-panel {
-  --nf-bg: #181212;
-  --nf-card: #221a1b;
-  --nf-card-raised: #2b2122;
+  --nf-bg: #000000;
+  --nf-card: #070707;
+  --nf-card-raised: #101010;
   --nf-text: #f1f3f0;
   --nf-muted: #b4c0bd;
   --nf-soft: #8f9e9b;
@@ -38,7 +38,7 @@
   padding: clamp(22px, 4vw, 52px);
   border: 1px solid var(--nf-border);
   border-radius: clamp(20px, 2.5vw, 32px);
-  background: radial-gradient(ellipse at 88% 0%, #c28f9319, transparent 32%), var(--nf-bg);
+  background: var(--nf-bg);
   color: var(--nf-text);
   box-shadow: 0 24px 72px #0003, inset 0 1px #ffffff12;
 }
@@ -107,7 +107,7 @@
 .nf-game-toolbar > label, .nf-quiz-controls > label { display: grid; min-width: 150px; gap: 7px; color: var(--nf-muted); font-size: 13px; font-weight: 650; }
 .nf-game-stats { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 17px; color: var(--nf-muted); font-size: 12px; }
 .nf-game-stats b { color: var(--nf-text); font-variant-numeric: tabular-nums; }
-#parking-canvas { display: block; width: 100%; height: auto; aspect-ratio: 9 / 5; border: 1px solid var(--nf-border); border-radius: 14px; background: #25191a; outline-offset: 4px; touch-action: none; }
+#parking-canvas { display: block; width: 100%; height: auto; aspect-ratio: 9 / 5; border: 1px solid var(--nf-border); border-radius: 14px; background: #000000; outline-offset: 4px; touch-action: none; }
 .nf-game-help { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 18px; }
 .nf-game-help p { margin: 0; color: var(--nf-muted); font-size: 12px; line-height: 1.65; }
 .nf-game-help strong { color: var(--nf-text); }
@@ -202,7 +202,7 @@
   .section-modal-active#official-services > .official-services-photo { height: clamp(170px, 52vw, 280px); }
 }
 @media (max-width: 580px) {
-  .new-feature-panel { width: calc(100% - 20px); margin: 10px auto 34px; padding: 18px 14px 24px; border-radius: 18px; }
+  .new-feature-panel { width: calc(100% - 20px); margin: 10px auto 34px; padding: 18px 14px 24px; border-radius: 18px; background:var(--nf-bg);}
   .new-feature-panel .nf-heading h2 { font-size: clamp(30px, 9vw, 40px); }
   .new-feature-panel .nf-heading > p { font-size: 14px; }
   .nf-card { padding: 16px 13px; border-radius: 15px; }
