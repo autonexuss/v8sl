@@ -48,7 +48,7 @@
 .env-compare-selectors legend { padding: 0 6px; color: #ead8b5; font-size: 11px; font-weight: 750; }
 .env-compare-selectors label,.env-distance-controls label { display: grid; gap: 5px; color: #cfcacb; font-size: 11px; }
 .env-compare-selectors fieldset>div { display: grid; grid-template-columns: 1fr; gap: 8px; }
-.env-compare-selectors select,.env-distance-controls select,.env-distance-controls input { width: 100%; min-width: 0; min-height: 39px; padding: 8px 10px; border: 1px solid #ffffff30; border-radius: 9px; background: #1d1212; color: #eceaea; font: inherit; }
+.env-compare-selectors select,.env-distance-controls select,.env-distance-controls input { width: 100%; min-width: 0; min-height: 39px; padding: 8px 10px; border: 1px solid #ffffff30; border-radius: 9px; background: #090909; color: #eceaea; font: inherit; }
 .env-compare-results { margin-top: 15px; }
 .env-compare-results > p { color: #c2b5b6; font-size: 12px; }
 .env-compare-table-wrap { overflow-x: auto; border: 1px solid #ffffff20; border-radius: 14px; }
@@ -198,6 +198,6 @@
 :root[data-theme="light"] .env-compare-selectors select,:root[data-theme="light"] .env-distance-controls select,:root[data-theme="light"] .env-distance-controls input { border-color: #3728293d; background: #fff; color: #2c2121; }
 :root[data-theme="light"] .env-compare-table { color: #36292a; }
 :root[data-theme="light"] .env-compare-table th { color: #70582e; }
-:root[data-theme="light"] .env-compare-table th,:root[data-theme="light"] .env-compare-table td { border-color: #37282920; }
+:root[data-theme="light"] .env-compare-table th,:root[data-theme="light"] .env-compare-table td { border-color: #28282820; }
 :root[data-theme="light"] .env-power-bar,:root[data-theme="light"] .env-power-bar strong { color: #453637; }
-:root[data-theme="light"] .env-power-bar-track { background: #37282920; }
+:root[data-theme="light"] .env-power-bar-track { background: #28282820; }
