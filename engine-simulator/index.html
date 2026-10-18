@@ -1326,7 +1326,7 @@ const TEMPLATE = '' +
 '    <div class="anx-deck-a">' +
 '     <div class="anx-row"><label for="anx-thr-{{id}}">Throttle</label><b class="anx-big" data-ref="tv">0%</b></div>' +
 '     <input class="anx-range anx-range--big" id="anx-thr-{{id}}" data-ref="thr" type="range" min="0" max="100" value="0" aria-label="Throttle">' +
-'     <div class="anx-pedals"><button type="button" class="anx-pedal" data-ref="gasB"><span>Gas</span><kbd>Space</kbd></button><button type="button" class="anx-pedal" data-ref="brkB"><span>Brake</span><kbd>B</kbd></button><button type="button" class="anx-pedal" data-ref="clB"><span>Clutch</span><kbd>C</kbd></button></div>' +
+'     <div class="anx-pedals"><button type="button" class="anx-pedal" data-ref="gasB"><span>Gas</span><kbd>W</kbd></button><button type="button" class="anx-pedal" data-ref="brkB"><span>Brake</span><kbd>S</kbd></button><button type="button" class="anx-pedal" data-ref="clB"><span>Clutch</span><kbd>Space</kbd></button></div>' +
 '    </div>' +
 '    <div class="anx-deck-b">' +
 '     <div class="anx-row"><label for="anx-ld-{{id}}">Dyno load</label><b data-ref="lv">0%</b></div>' +
@@ -1358,8 +1358,8 @@ const TEMPLATE = '' +
 '  </aside>' +
 ' </div>' +
 ' <dialog class="anx-dialog" data-ref="dlg" aria-label="Keyboard shortcuts"><h3>Controls</h3><dl>' +
-'  <dt><kbd>E</kbd></dt><dd>Toggle engine on / off</dd><dt><kbd>S</kbd></dt><dd>Start engine</dd><dt><kbd>K</kbd></dt><dd>Stop engine</dd><dt><kbd>Space</kbd> <kbd>W</kbd></dt><dd>Throttle (hold)</dd>' +
-'  <dt><kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>Shift up / down</dd><dt><kbd>B</kbd></dt><dd>Brake (hold)</dd><dt><kbd>C</kbd></dt><dd>Clutch (hold)</dd>' +
+'  <dt><kbd>E</kbd></dt><dd>Toggle engine on / off</dd><dt><kbd>W</kbd></dt><dd>Accelerator (hold)</dd><dt><kbd>S</kbd></dt><dd>Brake (hold)</dd>' +
+'  <dt><kbd>Space</kbd></dt><dd>Clutch (hold)</dd><dt><kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>Shift up / down</dd>' +
 '  <dt><kbd>N</kbd></dt><dd>Neutral</dd><dt><kbd>M</kbd></dt><dd>Mute</dd><dt><kbd>R</kbd></dt><dd>Reset all inputs</dd><dt><kbd>F</kbd></dt><dd>Fullscreen</dd>' +
 '  <dt>Mouse / touch</dt><dd>Drag the 3D view to orbit; Ctrl + wheel or the +/- buttons to zoom</dd></dl>' +
 '  <button type="button" class="anx-btn anx-primary" data-ref="dlgClose">Close</button></dialog>' +
@@ -1370,7 +1370,7 @@ const TEMPLATE = '' +
  * ========================================================================== */
 let uid = 0;
 const DEFAULTS = { engine: 'd8', sound: 1, volume: 70, ambient: 20, keyboard: 'engaged', persist: true, storageKey: 'autonexus.engineSim.v1', workletUrl: '', autoOrbit: true };
-const KEYS = { thr: ['Space', 'KeyW'], brk: ['KeyB'] };
+const KEYS = { thr: ['KeyW'], brk: ['KeyS'] };
 
 function mount(target, userOpts) {
   const host = typeof target === 'string' ? document.querySelector(target) : target;
@@ -1664,15 +1664,17 @@ function mount(target, userOpts) {
     if (o.keyboard === 'off' || !engaged || e.ctrlKey || e.metaKey || e.altKey || typing()) return;
     const a = document.activeElement, onRange = a && a.tagName === 'INPUT' && a.type === 'range', c = e.code;
     if (onRange && (c === 'ArrowLeft' || c === 'ArrowRight')) return;
-    if (KEYS.thr.indexOf(c) >= 0) { if (c === 'Space' && a && a.tagName === 'BUTTON') return; key = 1; e.preventDefault(); }
+    if (KEYS.thr.indexOf(c) >= 0) { key = 1; e.preventDefault(); }
     else if (KEYS.brk.indexOf(c) >= 0) { brk = 1; e.preventDefault(); }
+    else if (c === 'Space') { cp = 1; e.preventDefault(); }
     else if (c === 'ArrowUp') { if (!e.repeat) sh(1); e.preventDefault(); }
     else if (c === 'ArrowDown') { if (!e.repeat) sh(-1); e.preventDefault(); }
-    else if (c === 'KeyE') { if (!e.repeat) { if (state === 0) start(); else stop(); } } else if (c === 'KeyS') start(); else if (c === 'KeyQ') sh(-1); else if (c === 'KeyN') setNeutral(); else if (c === 'KeyC') cp = 1;
-    else if (c === 'KeyK') stop(); else if (c === 'KeyM') setMute(!muted); else if (c === 'KeyR') resetAll(); else if (c === 'KeyF') toggleFS();
+    else if (c === 'KeyE') { if (!e.repeat) { if (state === 0) start(); else stop(); } }
+    else if (c === 'KeyN') setNeutral();
+    else if (c === 'KeyM') setMute(!muted); else if (c === 'KeyR') resetAll(); else if (c === 'KeyF') toggleFS();
     else if (e.key === '?' || c === 'KeyH') openHelp();
   });
-  on(document, 'keyup', e => { const c = e.code; if (KEYS.thr.indexOf(c) >= 0) key = 0; if (KEYS.brk.indexOf(c) >= 0) brk = 0; if (c === 'KeyC') cp = 0; });
+  on(document, 'keyup', e => { const c = e.code; if (KEYS.thr.indexOf(c) >= 0) key = 0; if (KEYS.brk.indexOf(c) >= 0) brk = 0; if (c === 'Space') cp = 0; });
   on(global, 'blur', () => { key = 0; brk = 0; cp = 0; gas = 0; });
 
   /* ---------- gauges + charts ---------- */

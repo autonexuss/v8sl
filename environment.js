@@ -150,6 +150,12 @@
     const sourceNote = profile?.provenance || (lookup?.article || lookup?.vehicleFacts || (lookup?.infoboxRows || []).length
       ? 'Public reference data describes a model family and may not match the selected year, engine or trim.'
       : 'No exact technical rows were returned by the car-search references. Use the manufacturer link to verify the selected year and trim.');
+    const overviewSource = profile?.provenance
+      || lookup?.article?.extract
+      || lookup?.vehicleFacts?.description
+      || `${car.make.make} ${car.model.name} is listed in the India-market vehicle directory for ${car.model.from || '—'}–${car.model.to || '—'}; selected model year ${car.year}.`;
+    const overviewText = String(overviewSource).replace(/\s+/g, ' ').trim();
+    const overview = overviewText.length > 520 ? overviewText.slice(0, 517) + '…' : overviewText;
     const dimensions = [
       ['Length', rowValue(/^length/i)],
       ['Width', rowValue(/^width/i)],
@@ -170,7 +176,9 @@
         wheelbase: rowValue(/wheelbase/i),
         drive: rowValue(/drivetrain|drive type/i),
         tankAndBoot: [rowValue(/fuel tank/i), rowValue(/boot capacity|luggage capacity/i)].filter(value => value !== 'Not available in the matched search sources').join(' · ') || 'Not available',
-        co2: tailpipe
+        co2: tailpipe,
+        marketYears: `${car.model.from || '—'}–${car.model.to || '—'} · selected ${car.year}`,
+        overview
       },
       sourceUrl,
       sourceLabel,
@@ -208,9 +216,10 @@
       for (const car of selected) {
         if (requestId !== compareRequestId) return;
         let lookup = null;
-        if (!car.profile && typeof window.chassisLoadCarComparisonProfile === 'function') {
-          try { lookup = await window.chassisLoadCarComparisonProfile(car.make.make, car.model.name, car.year); }
-          catch { lookup = null; }
+        if (typeof window.chassisLoadCarComparisonProfile === 'function') {
+          try {
+            lookup = await window.chassisLoadCarComparisonProfile(car.make.make, car.model.name, car.year);
+          } catch { lookup = null; }
         }
         data.push(makeComparisonData(car, lookup));
       }
@@ -224,7 +233,9 @@
       data.forEach(item => { const th = document.createElement('th'); th.scope = 'col'; th.textContent = item.title; header.append(th); });
       head.append(header); table.append(head);
       const rows = [
-        ['Engine / powertrain', item => item.values.engine],
+        ['India model-year coverage', item => item.values.marketYears],
+      ['Model overview', item => item.values.overview],
+      ['Engine / powertrain', item => item.values.engine],
         ['Fuel / energy', item => item.values.fuel],
         ['Published peak power', item => item.values.power],
         ['Published peak torque', item => item.values.torque],

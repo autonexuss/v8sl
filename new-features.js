@@ -28,23 +28,6 @@
     if (!make || !model) return [];
     return [{ id: `${make.make}|${model.name}`, make: make.make, model: model.name, from: model.from, to: model.to }];
   });
-  const EV_PROFILES = [
-    { make: 'MG', model: 'ZS EV', year: 2025, battery: 50.3, range: 461, cycle: 'manufacturer-stated certified range', source: 'mg', note: 'MG India lists a 50.3 kWh battery and 461 km certified range for this published profile. Real-world range varies.' },
-    { make: 'Mahindra', model: 'BE 6', year: 2025, battery: 79, range: 683, cycle: 'MIDC P1 + P2 certified range', source: 'mahindra', note: 'Mahindra’s brochure lists a 79 kWh battery and 683 km MIDC range for this profile. Real-world range varies.' },
-    { make: 'Hyundai', model: 'Ioniq 5', year: 2026, battery: 84, range: 690, cycle: 'ARAI-certified range', source: 'hyundaiIoniq', note: 'Hyundai India lists an 84 kWh battery and up to 690 km ARAI-certified range for the 2026 model. Real-world range varies.' },
-    { make: 'Hyundai', model: 'Creta Electric', year: 2025, variant: '42 kWh · standard range', battery: 42, range: 390, cycle: 'MIDC P1 + P2 · launch specification', source: 'hyundaiCreta2025', note: 'Hyundai’s launch material lists 390 km for the 42 kWh battery pack in the 2025 model-year profile.' },
-    { make: 'Hyundai', model: 'Creta Electric', year: 2025, variant: '51.4 kWh · long range', battery: 51.4, range: 473, cycle: 'MIDC P1 + P2 · launch specification', source: 'hyundaiCreta2025', note: 'Hyundai’s launch material lists 473 km for the 51.4 kWh battery pack in the 2025 model-year profile.' },
-    { make: 'Hyundai', model: 'Creta Electric', year: 2026, variant: '42 kWh · standard range', battery: 42, range: 420, cycle: 'ARAI-certified range', source: 'hyundaiCreta', note: 'Hyundai’s current specification page lists up to 420 km for the 42 kWh pack. Verify the selected vehicle’s exact variant and brochure revision.' },
-    { make: 'Hyundai', model: 'Creta Electric', year: 2026, variant: '51.4 kWh · long range', battery: 51.4, range: 510, cycle: 'ARAI-certified range', source: 'hyundaiCreta', note: 'Hyundai’s current specification page lists up to 510 km for the 51.4 kWh pack. Verify the selected vehicle’s exact variant and brochure revision.' },
-    { make: 'Kia', model: 'Carens Clavis EV', year: 2025, variant: '42 kWh · standard range', battery: 42, range: 404, cycle: 'manufacturer-published estimated range', source: 'kiaClavis', note: 'Kia India publishes an estimated 404 km for the 42 kWh pack. The page labels this as an estimate; it is not treated here as a certified range.' },
-    { make: 'Kia', model: 'Carens Clavis EV', year: 2025, variant: '51.4 kWh · extended range', battery: 51.4, range: 490, cycle: 'manufacturer-published estimated range', source: 'kiaClavis', note: 'Kia India publishes an estimated 490 km for the 51.4 kWh pack. The page labels this as an estimate; it is not treated here as a certified range.' },
-    { make: 'Kia', model: 'Syros EV', year: 2026, variant: '51.4 kWh · extended range', battery: 51.4, range: 526, cycle: 'ARAI MIDC-Full certified range', source: 'kiaSyros', note: 'Kia India lists a 526 km ARAI MIDC-Full range and a 51.4 kWh extended-range pack for this specification.' },
-    { make: 'Mahindra', model: 'XUV 3XO EV', year: 2026, variant: '39.4 kWh', battery: 39.4, range: 285, cycle: 'manufacturer-stated real-world range', source: 'mahindra3xo', note: 'Mahindra states up to 285 km real-world range for the 39.4 kWh pack; this is not a certified-cycle result.' },
-    { make: 'Maruti Suzuki', model: 'e VITARA', year: 2026, variant: '61 kWh', battery: 61, range: 543, cycle: 'Rule 124 certified range', source: 'marutiEv', note: 'Maruti Suzuki’s release identifies up to 543 km for the 61 kWh pack, certified by the test agency under Rule 124. No range is inferred for the 49 kWh pack.' },
-    { make: 'Toyota', model: 'Urban Cruiser Ebella', year: 2026, variant: '49 kWh · E1', battery: 49, range: 440, cycle: 'AIS 040 (Rev.1)', source: 'toyotaEbella', note: 'Toyota’s brochure lists 440 km for the 49 kWh E1 pack under AIS 040 (Rev.1).' },
-    { make: 'Toyota', model: 'Urban Cruiser Ebella', year: 2026, variant: '61 kWh · E2', battery: 61, range: 543, cycle: 'ARAI-certified range', source: 'toyotaEbella', note: 'Toyota lists 543 km for the 61 kWh E2 pack and identifies it as ARAI certified.' }
-  ];
-
   // Questions use direct official sources and restrained wording. Review date is stored per item.
   const QUESTIONS = [
     { c: 'EVs', claim: 'A battery-electric car has zero tailpipe emissions while it is being driven.', fact: true, why: 'BEE describes battery-operated vehicles as having zero tailpipe emissions. This says nothing about electricity generation or lifecycle emissions.', src: 'bee' },
@@ -77,14 +60,10 @@
 
 
   put(`<section class="new-feature-panel section-wrap" id="ev-range-adventure" aria-labelledby="ev-range-title">
-    ${panelHead('BATTERY-ELECTRIC CARS · INDIA DIRECTORY', 'EV Range Adventure', 'Choose a battery-electric make, model and model year. Published battery options are filled when indexed; otherwise the trip uses a clearly labelled general planning estimate. You never need to enter battery or range figures. Trip-condition effects are illustrative, not live telemetry.')}
+    ${panelHead('BATTERY-ELECTRIC CARS · INDIA DIRECTORY', 'EV Range Adventure', 'Set your starting charge and driving conditions, then explore how the route changes the trip estimate.')}
     <div class="nf-layout nf-ev-layout"><form class="nf-card nf-form" id="ev-range-form">
-      <label>Brand / make<select id="ev-make" required><option value="">Choose an EV brand</option></select></label>
-      <label>Electric car<select id="ev-model" required disabled><option value="">Choose a brand first</option></select></label>
-      <label>Model year<select id="ev-year" required disabled><option value="">Choose a model first</option></select></label>
-      <label>Battery option<select id="ev-variant" disabled><option value="">Choose a model year first</option></select></label>
-      
-      <p class="nf-source-line" id="ev-profile-source"></p>
+      <label>Brand / make<select id="ev-make"><option value="">Choose an EV brand</option></select></label>
+      <label>Electric car<select id="ev-model" disabled><option value="">Choose a brand first</option></select></label>
       <label>Starting battery <output id="ev-start-output">80%</output><input id="ev-start" type="range" min="10" max="100" step="1" value="80"></label>
       <label>Trip distance <output id="ev-distance-output">120 km</output><input id="ev-distance" type="range" min="10" max="600" step="5" value="120"></label>
       <label>Average speed <output id="ev-speed-output">80 km/h</output><input id="ev-speed" type="range" min="30" max="120" step="5" value="80"></label>
@@ -93,7 +72,7 @@
       <label>Air conditioning<select id="ev-ac"><option value="on">On</option><option value="off">Off</option></select></label>
       <label>Passenger and cargo load<select id="ev-load"><option value="light">Light</option><option value="medium" selected>Typical</option><option value="heavy">Heavy</option></select></label>
       <div class="nf-actions"><button class="nf-primary" id="ev-start-trip" type="button">Start adventure</button><button class="nf-secondary" id="ev-pause-trip" type="button" disabled>Pause</button><button class="nf-secondary" id="ev-reset-trip" type="button">Reset</button></div>
-    </form><div class="nf-card nf-output nf-ev-output"><span class="nf-kicker">TRIP ESTIMATE</span><h3 id="ev-trip-status" aria-live="polite">Ready when you are.</h3><div class="nf-progress"><i id="ev-trip-progress"></i></div><div class="nf-metrics"><div><span>Trip energy</span><strong id="ev-energy">—</strong></div><div><span>Arrival battery</span><strong id="ev-arrival">—</strong></div><div><span>Estimated remaining range</span><strong id="ev-remaining">—</strong></div></div><p id="ev-reachability" class="nf-reachability">Select a battery-electric car. Its published specification or labelled planning estimate will be used automatically.</p><p class="nf-note">Planning simulation, not a live vehicle forecast: it scales the selected pack/range ratio using illustrative speed, weather, hills, HVAC and payload factors. Manufacturer test-cycle figures do not predict a specific trip. If no source-checked battery option exists for the selected car and year, a generic 50 kWh / 350 km planning estimate is used and labelled; it is not a vehicle specification. EV choices are a maintained directory of battery-electric passenger-car families, not an official complete national sales register; model-year coverage is approximate.</p><p class="nf-source-line" id="ev-model-note"></p></div></div>
+    </form><div class="nf-card nf-output nf-ev-output"><span class="nf-kicker">TRIP ESTIMATE</span><h3 id="ev-trip-status" aria-live="polite">Ready when you are.</h3><div class="nf-progress"><i id="ev-trip-progress"></i></div><div class="nf-metrics"><div><span>Trip energy</span><strong id="ev-energy">—</strong></div><div><span>Arrival battery</span><strong id="ev-arrival">—</strong></div><div><span>Estimated remaining range</span><strong id="ev-remaining">—</strong></div></div><p id="ev-reachability" class="nf-reachability">Adjust the trip controls to see how the route conditions affect the estimate.</p><p class="nf-note">Trip estimates respond to starting charge, distance, speed, weather, terrain, air conditioning and passenger load.</p></div></div>
   </section>`);
 
   put(`<section class="new-feature-panel section-wrap" id="myth-or-fact" aria-labelledby="myth-title">
@@ -109,122 +88,109 @@
 
   const resetSelect = (select, placeholder, disabled = true) => { select.replaceChildren(option(placeholder, '')); select.disabled = disabled; };
 
-  const evMake = document.getElementById('ev-make'), evModel = document.getElementById('ev-model'), evYear = document.getElementById('ev-year'), evVariant = document.getElementById('ev-variant');
-  const evSource = document.getElementById('ev-profile-source');
+  const evMake = document.getElementById('ev-make'), evModel = document.getElementById('ev-model');
   const evDirectory = DIRECTORY.map(entry => ({ ...entry, models: entry.models.filter(car => EV_CARS.some(ev => ev.make === entry.make && ev.model === car.name)) })).filter(entry => entry.models.length);
   evDirectory.forEach(entry => evMake.add(option(entry.make, entry.make)));
-  const getEV = () => EV_CARS.find(car => car.make === evMake.value && car.model === evModel.value) || null;
-  const profilesFor = (car, yearValue) => EV_PROFILES.filter(profile => profile.make === car?.make && profile.model === car?.model && String(profile.year) === String(yearValue));
-  const selectedEVProfile = () => {
-    const profiles = profilesFor(getEV(), evYear.value);
-    return evVariant.value === '' || evVariant.value === 'estimate' ? null : profiles[Number(evVariant.value)] || null;
-  };
-  const genericEVProfile = car => car && evYear.value ? {
-    make: car.make, model: car.model, year: Number(evYear.value),
-    battery: 50, range: 350, cycle: 'general planning estimate',
-    variant: 'General estimate · 50 kWh / 350 km',
-    fallback: true,
-    note: 'No source-checked battery and range profile is indexed for this model year. The simulator uses a generic 50 kWh / 350 km planning estimate, not the vehicle’s published specification.'
-  } : null;
-  const useEVProfile = profile => {
-    const car = getEV();
-    const activeProfile = profile || genericEVProfile(car);
-    if (!activeProfile) {
-      evSource.textContent = car ? 'Choose a model year.' : 'Select an electric make and model.';
-      return;
-    }
-    const source = activeProfile.source ? linkFor(activeProfile.source) : null;
-    evSource.innerHTML = activeProfile.fallback
-      ? `General planning estimate · 50 kWh / 350 km · not a verified vehicle specification. Check the official manufacturer information before relying on a trip estimate. ${evDirectory.find(item => item.make === car.make)?.url ? safeAnchor({ title: `${car.make} official website`, url: evDirectory.find(item => item.make === car.make).url }) : ''}`
-      : `${activeProfile.battery} kWh · ${activeProfile.range} km · ${htmlSafe(activeProfile.cycle)} · ${source ? safeAnchor(source) : ''}`;
-  };
-  function setEVProfile() {
-    const car = getEV();
-    resetSelect(evYear, car ? 'Choose a model year' : 'Choose a model first', !car);
-    if (car) for (let y = Math.min(car.to, new Date().getFullYear()); y >= car.from; y--) evYear.add(option(String(y), String(y)));
-    resetSelect(evVariant, car ? 'Choose a model year first' : 'Choose a model first');
-    evSource.textContent = car ? 'Choose a model year. Available published battery options will load automatically.' : 'Select an electric make and model.';
-    updateEV();
-  }
   evMake.addEventListener('change', () => {
     const entry = evDirectory.find(item => item.make === evMake.value);
-    resetSelect(evModel, entry ? 'Choose an electric model' : 'Choose an EV make', !entry);
+    resetSelect(evModel, entry ? 'Choose an electric model' : 'Choose a brand first', !entry);
     (entry?.models || []).forEach(item => evModel.add(option(item.name, item.name)));
-    setEVProfile();
   });
-  evModel.addEventListener('change', setEVProfile);
-  evYear.addEventListener('change', () => {
-    const car = getEV(), profiles = profilesFor(car, evYear.value);
-    if (!car || !evYear.value) {
-      resetSelect(evVariant, 'Choose a model year first');
-      useEVProfile(null);
-      updateEV();
-      return;
-    }
-    evVariant.replaceChildren();
-    if (profiles.length) {
-      profiles.forEach((profile, index) => evVariant.add(option(profile.variant || `${profile.battery} kWh · ${profile.cycle}`, String(index))));
-      // Preselect a sourced option so choosing the car and year is enough to run the trip.
-      evVariant.value = '0';
-      evVariant.disabled = profiles.length < 2;
-      useEVProfile(profiles[0]);
-    } else {
-      evVariant.add(option('General estimate · 50 kWh / 350 km', 'estimate'));
-      evVariant.value = 'estimate';
-      evVariant.disabled = true;
-      useEVProfile(null);
-    }
-    updateEV();
-  });
-  evVariant.addEventListener('change', () => {
-    useEVProfile(selectedEVProfile());
-    updateEV();
-  });
+
+  // Trip controls run independently of the display-only vehicle picker.
+  const EV_SCENARIO = { batteryKwh: 50, referenceRangeKm: 350 };
   const evOut = id => document.getElementById(`${id}-output`);
+  const evControlIds = ['ev-start', 'ev-distance', 'ev-speed', 'ev-weather', 'ev-terrain', 'ev-ac', 'ev-load'];
   function updateEV() {
-    const car = getEV();
-    const profile = selectedEVProfile() || genericEVProfile(car);
-    const battery = Number(profile?.battery), range = Number(profile?.range);
-    const start = Number(document.getElementById('ev-start').value), distance = Number(document.getElementById('ev-distance').value), speed = Number(document.getElementById('ev-speed').value);
-    evOut('ev-start').textContent = `${start}%`; evOut('ev-distance').textContent = `${distance} km`; evOut('ev-speed').textContent = `${speed} km/h`;
-    if (!car || !evYear.value || !Number.isFinite(battery) || battery < 1 || battery > 300 || !Number.isFinite(range) || range < 1 || range > 2000) {
-      document.getElementById('ev-energy').textContent = '—'; document.getElementById('ev-arrival').textContent = '—'; document.getElementById('ev-remaining').textContent = '—';
-      document.getElementById('ev-reachability').textContent = car ? `Selected: ${car.make} ${car.model} · ${evYear.value || 'choose model year'}. Choose a model year to load its published battery option or planning estimate.` : 'Choose a battery-electric model and model year.';
-      document.getElementById('ev-model-note').textContent = 'The estimate uses a published pack and range where available; otherwise it uses the clearly labelled generic planning estimate. Real-world range depends on vehicle, route and conditions.';
-      return null;
-    }
-    const weather = document.getElementById('ev-weather').value, terrain = document.getElementById('ev-terrain').value, ac = document.getElementById('ev-ac').value, load = document.getElementById('ev-load').value;
-    const factors = { speed: Math.max(.88, Math.min(1.45, 1 + (speed - 60) * .003)), weather: weather === 'mild' ? 1 : 1.09, terrain: terrain === 'hilly' ? 1.13 : 1, ac: ac === 'on' ? 1.08 : 1, load: load === 'light' ? .98 : load === 'heavy' ? 1.1 : 1.04 };
+    const battery = EV_SCENARIO.batteryKwh, range = EV_SCENARIO.referenceRangeKm;
+    const start = Number(document.getElementById('ev-start').value);
+    const distance = Number(document.getElementById('ev-distance').value);
+    const speed = Number(document.getElementById('ev-speed').value);
+    evOut('ev-start').textContent = `${start}%`;
+    evOut('ev-distance').textContent = `${distance} km`;
+    evOut('ev-speed').textContent = `${speed} km/h`;
+
+    const weather = document.getElementById('ev-weather').value;
+    const terrain = document.getElementById('ev-terrain').value;
+    const ac = document.getElementById('ev-ac').value;
+    const load = document.getElementById('ev-load').value;
+    const factors = {
+      speed: Math.max(.88, Math.min(1.45, 1 + (speed - 60) * .003)),
+      weather: weather === 'mild' ? 1 : weather === 'cold' ? 1.12 : 1.08,
+      terrain: terrain === 'hilly' ? 1.13 : 1,
+      ac: ac === 'on' ? 1.08 : 1,
+      load: load === 'light' ? .98 : load === 'heavy' ? 1.1 : 1.04
+    };
     const kwhPerKm = battery / range * Object.values(factors).reduce((a, b) => a * b, 1);
-    const usable = battery * start / 100, need = distance * kwhPerKm, arrival = usable - need;
-    const arrivalPct = Math.max(0, arrival) / battery * 100, remaining = Math.max(0, arrival) / kwhPerKm;
-    document.getElementById('ev-energy').textContent = `${need.toFixed(1)} kWh`;
-    document.getElementById('ev-arrival').textContent = arrival < 0 ? 'Below 0% · not reachable' : `${arrivalPct.toFixed(0)}%`;
-    document.getElementById('ev-remaining').textContent = `${remaining.toFixed(0)} km`;
-    document.getElementById('ev-reachability').textContent = arrival >= 0 ? `Planning estimate · modifiers: speed ×${factors.speed.toFixed(2)}, weather ×${factors.weather.toFixed(2)}, terrain ×${factors.terrain.toFixed(2)}, HVAC ×${factors.ac.toFixed(2)}, load ×${factors.load.toFixed(2)}.` : 'This scenario exceeds the starting energy estimate. Reduce distance or conditions that increase estimated use.';
-    const verifiedInputs = Boolean(profile && !profile.fallback);
-    const makeURL = evDirectory.find(item => item.make === car.make)?.url;
-    const makerLink = makeURL ? safeAnchor({ title: `${car.make} official website`, url: makeURL }) : '';
-    document.getElementById('ev-model-note').innerHTML = verifiedInputs ? `${htmlSafe(profile.note)} ${safeAnchor(linkFor(profile.source))}` : `${htmlSafe(profile.note)} ${makerLink}`;
-    useEVProfile(verifiedInputs ? profile : null);
-    return { distance, arrival, arrivalPct, verifiedInputs };
+    const available = battery * start / 100;
+    const energy = distance * kwhPerKm;
+    const arrivalEnergy = available - energy;
+    const arrivalPercent = Math.max(0, arrivalEnergy) / battery * 100;
+    const remainingRange = Math.max(0, arrivalEnergy) / kwhPerKm;
+
+    document.getElementById('ev-energy').textContent = `${energy.toFixed(1)} kWh`;
+    document.getElementById('ev-arrival').textContent = arrivalEnergy < 0 ? 'Below 0% · not reachable' : `${arrivalPercent.toFixed(0)}%`;
+    document.getElementById('ev-remaining').textContent = `${remainingRange.toFixed(0)} km`;
+    document.getElementById('ev-reachability').textContent = arrivalEnergy >= 0
+      ? `Scenario factors · speed ×${factors.speed.toFixed(2)}, weather ×${factors.weather.toFixed(2)}, terrain ×${factors.terrain.toFixed(2)}, HVAC ×${factors.ac.toFixed(2)}, load ×${factors.load.toFixed(2)}.`
+      : 'This scenario exceeds the starting charge estimate. Reduce distance or conditions that increase energy use.';
+    return { distance, arrival: arrivalEnergy, arrivalPct: arrivalPercent };
   }
-  evIds.concat(['ev-weather', 'ev-terrain', 'ev-ac', 'ev-load']).forEach(id => document.getElementById(id).addEventListener('input', updateEV));
-  document.getElementById('ev-weather').addEventListener('change', updateEV); document.getElementById('ev-terrain').addEventListener('change', updateEV); document.getElementById('ev-ac').addEventListener('change', updateEV); document.getElementById('ev-load').addEventListener('change', updateEV);
+  evControlIds.forEach(id => {
+    const control = document.getElementById(id);
+    control.addEventListener(control.tagName === 'INPUT' ? 'input' : 'change', updateEV);
+  });
   updateEV();
-  function stopEV(reset) { clearInterval(tripTimer); tripTimer = 0; tripRunning = false; document.getElementById('ev-pause-trip').textContent = 'Pause'; document.getElementById('ev-pause-trip').disabled = true; if (reset) { tripProgress = 0; document.getElementById('ev-trip-status').textContent = 'Ready when you are.'; } document.getElementById('ev-trip-progress').style.width = `${tripProgress * 100}%`; }
+
+  let tripProgress = 0, tripTimer = 0, tripRunning = false;
+  function stopEV(reset) {
+    clearInterval(tripTimer);
+    tripTimer = 0;
+    tripRunning = false;
+    document.getElementById('ev-pause-trip').textContent = 'Pause';
+    document.getElementById('ev-pause-trip').disabled = true;
+    if (reset) {
+      tripProgress = 0;
+      document.getElementById('ev-trip-status').textContent = 'Ready when you are.';
+    }
+    document.getElementById('ev-trip-progress').style.width = `${tripProgress * 100}%`;
+  }
   document.getElementById('ev-start-trip').addEventListener('click', () => {
     if (tripRunning) return;
     const estimate = updateEV();
-    if (!estimate) { document.getElementById('ev-trip-status').textContent = 'Choose an electric car and model year first.'; return; }
     if (tripProgress >= 1) tripProgress = 0;
     tripRunning = true;
-    const status = document.getElementById('ev-trip-status'); status.textContent = 'Adventure in progress · illustrative trip estimate';
-    const pause = document.getElementById('ev-pause-trip'); pause.disabled = false; pause.textContent = 'Pause';
-    const duration = Math.max(8, Math.min(36, estimate.distance / 4)); let last = performance.now();
-    tripTimer = window.setInterval(() => { const now = performance.now(), dt = Math.min(.2, (now - last) / 1000); last = now; tripProgress = Math.min(1, tripProgress + dt / duration); document.getElementById('ev-trip-progress').style.width = `${tripProgress * 100}%`; if (tripProgress >= 1) { stopEV(false); status.textContent = estimate.arrival >= 0 ? `Trip complete · estimated arrival ${estimate.arrivalPct.toFixed(0)}%` : 'Trip simulation complete · energy estimate falls short.'; } }, 80);
+    const status = document.getElementById('ev-trip-status');
+    status.textContent = 'Adventure in progress · adjusting to your trip controls';
+    const pause = document.getElementById('ev-pause-trip');
+    pause.disabled = false;
+    pause.textContent = 'Pause';
+    const duration = Math.max(8, Math.min(36, estimate.distance / 4));
+    let last = performance.now();
+    tripTimer = window.setInterval(() => {
+      const now = performance.now(), dt = Math.min(.2, (now - last) / 1000);
+      last = now;
+      tripProgress = Math.min(1, tripProgress + dt / duration);
+      document.getElementById('ev-trip-progress').style.width = `${tripProgress * 100}%`;
+      if (tripProgress >= 1) {
+        stopEV(false);
+        status.textContent = estimate.arrival >= 0
+          ? `Trip complete · estimated arrival ${estimate.arrivalPct.toFixed(0)}%`
+          : 'Trip simulation complete · energy estimate falls short.';
+      }
+    }, 80);
   });
-  document.getElementById('ev-pause-trip').addEventListener('click', event => { if (tripRunning) { clearInterval(tripTimer); tripTimer = 0; tripRunning = false; event.currentTarget.textContent = 'Resume'; document.getElementById('ev-trip-status').textContent = 'Paused · resume when ready.'; } else if (tripProgress > 0 && tripProgress < 1) { document.getElementById('ev-start-trip').click(); } });
+  document.getElementById('ev-pause-trip').addEventListener('click', event => {
+    if (tripRunning) {
+      clearInterval(tripTimer);
+      tripTimer = 0;
+      tripRunning = false;
+      event.currentTarget.textContent = 'Resume';
+      document.getElementById('ev-trip-status').textContent = 'Paused · resume when ready.';
+    } else if (tripProgress > 0 && tripProgress < 1) {
+      document.getElementById('ev-start-trip').click();
+    }
+  });
   document.getElementById('ev-reset-trip').addEventListener('click', () => stopEV(true));
 
   // Sourced myth/fact rounds, category filtering, optional clock, and local-only best score.
