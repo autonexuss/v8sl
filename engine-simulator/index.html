@@ -1360,6 +1360,7 @@ const TEMPLATE = '' +
 ' <dialog class="anx-dialog" data-ref="dlg" aria-label="Keyboard shortcuts"><h3>Controls</h3><dl>' +
 '  <dt><kbd>E</kbd></dt><dd>Toggle engine on / off</dd><dt><kbd>W</kbd></dt><dd>Accelerator (hold)</dd><dt><kbd>S</kbd></dt><dd>Brake (hold)</dd>' +
 '  <dt><kbd>Space</kbd> / <kbd>C</kbd></dt><dd>Clutch (hold)</dd><dt><kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>Shift up / down</dd>' +
+'  <dt><kbd>1</kbd>–<kbd>6</kbd></dt><dd>Select a forward gear (manual: hold clutch)</dd><dt><kbd>7</kbd></dt><dd>Select reverse (manual: hold clutch)</dd>' +
 '  <dt><kbd>N</kbd></dt><dd>Neutral</dd><dt><kbd>M</kbd></dt><dd>Mute</dd><dt><kbd>R</kbd></dt><dd>Reset all inputs</dd><dt><kbd>F</kbd></dt><dd>Fullscreen</dd>' +
 '  <dt>Mouse / touch</dt><dd>Drag the 3D view to orbit; Ctrl + wheel or the +/- buttons to zoom</dd></dl>' +
 '  <button type="button" class="anx-btn anx-primary" data-ref="dlgClose">Close</button></dialog>' +
@@ -1445,19 +1446,19 @@ function mount(target, userOpts) {
       pump = (1 - te) * g.tq * (g.dsl ? .03 : .12) * f;
     } else bst *= 1 - Math.min(1, dt * 2);
     if (state == 1) { ts = g.tq * .6 * Math.max(.3, 1 - Math.max(0, 5 - Tc) * .02) * Math.max(0, 1 - rpm / (crk * 1.8)); crkT += dt; }
-    const net = tg - fr - pump - uLoad * 0 - tl + ts, rt = gear ? (g.G || DG)[gear - 1] * (g.fd || 3.9) : 0, mv = g.mass || 1500, RW = .33;
+    const net = tg - fr - pump - uLoad * 0 - tl + ts, dir = gear === -1 ? -1 : 1, rt = gear === -1 ? (g.G || DG)[0] * (g.fd || 3.9) : gear > 0 ? (g.G || DG)[gear - 1] * (g.fd || 3.9) : 0, mv = g.mass || 1500, RW = .33;
     cd = Math.max(0, cd - dt);
-    const dr = (.5 * 1.2 * .7 * 2.2 * v * v + .015 * mv * 9.81 + brk * mv * 8) * RW * (v > .01 ? 1 : 0);   // aero + rolling + brake (8 m/s2)
+    const dragMag = (.5 * 1.2 * .7 * 2.2 * v * v + .015 * mv * 9.81 + brk * mv * 8) * RW * (Math.abs(v) > .01 ? 1 : 0), dr = Math.sign(v) * dragMag; // signed aero + rolling + brake (8 m/s2)
     const cl = gear && !cp ? (AUTO ? (cd == 0 ? Math.max(0, Math.min(1, (rpm - g.idle * 1.1) / (g.idle * .8))) : 0) : 1) : 0;
-    const ri = rt ? v / RW * rt * 30 / Math.PI : 0;
+    const ri = rt ? Math.abs(v) / RW * rt * 30 / Math.PI : 0;
     if (cl > .98 && Math.abs(rpm - ri) < 60) {
       const Je = g.J + mv * RW * RW / (rt * rt);
-      rpm = Math.max(0, rpm + (net - dr / rt) / Je * dt * 30 / Math.PI);
-      v = rpm * Math.PI / 30 * RW / rt;
+      rpm = Math.max(0, rpm + (net - dr * dir / rt) / Je * dt * 30 / Math.PI);
+      v = dir * rpm * Math.PI / 30 * RW / rt;
     } else {
       let tc = 0;
-      if (rt) { tc = cl * g.tq * 1.6 * Math.tanh((rpm - ri) * Math.PI / 30 * .1); v = Math.max(0, v + (tc * rt / RW - dr / RW) / mv * dt); }
-      else v = Math.max(0, v - dr / RW / mv * dt);
+      if (rt) { tc = cl * g.tq * 1.6 * Math.tanh((rpm - ri) * Math.PI / 30 * .1); v += (tc * dir * rt / RW - dr / RW) / mv * dt; }
+      else v -= dr / RW / mv * dt;
       rpm = Math.max(0, rpm + (net - tc) / g.J * dt * 30 / Math.PI);
     }
     if (dyn) rpm = Math.min(dyn.r, g.rl - 1);
@@ -1572,8 +1573,15 @@ function mount(target, userOpts) {
   on(R.stop, 'click', e => { stop(); e.currentTarget.blur(); });
   const sh = d => {
     if (!AUTO && !cp) { toast('Press and hold the clutch to shift gears'); return false; }
-    const n = Math.max(0, Math.min((E.G || DG).length, gear + d));
+    const n = Math.max(-1, Math.min((E.G || DG).length, gear + d));
     if (n != gear) { gear = n; cd = .3; }
+    return true;
+  };
+  const selectGear = target => {
+    if (!AUTO && !cp) { toast('Press and hold the clutch to shift gears'); return false; }
+    const maxGear = (E.G || DG).length;
+    if (target > maxGear) { toast('This engine has only ' + maxGear + ' forward gears'); return false; }
+    if (target !== gear) { gear = target; cd = .3; }
     return true;
   };
   const setNeutral = () => {
@@ -1582,7 +1590,7 @@ function mount(target, userOpts) {
     return true;
   };
   on(R.upb, 'click', e => { sh(1); e.currentTarget.blur(); }); on(R.dn, 'click', e => { sh(-1); e.currentTarget.blur(); }); on(R.neutral, 'click', e => { setNeutral(); e.currentTarget.blur(); });
-  function buildPips() { const n = (E.G || DG).length; R.pips.innerHTML = '<i data-g="0">N</i>' + Array.from({ length: n }, (_, i) => '<i data-g="' + (i + 1) + '">' + (i + 1) + '</i>').join(''); R.pips._c = null; }
+  function buildPips() { const n = (E.G || DG).length; R.pips.innerHTML = '<i data-g="-1">R</i><i data-g="0">N</i>' + Array.from({ length: n }, (_, i) => '<i data-g="' + (i + 1) + '">' + (i + 1) + '</i>').join(''); R.pips._c = null; }
   function setAuto(b) { AUTO = b ? 1 : 0; R.auto.classList.toggle('is-on', !!AUTO); R.auto.setAttribute('aria-pressed', AUTO ? 'true' : 'false'); }
   on(R.auto, 'click', e => { setAuto(!AUTO); e.currentTarget.blur(); });
   function hold(btn, set) {
@@ -1669,7 +1677,7 @@ function mount(target, userOpts) {
     else if (c === 'Space' || c === 'KeyC') { cp = 1; e.preventDefault(); }
     else if (c === 'ArrowUp') { if (!e.repeat) sh(1); e.preventDefault(); }
     else if (c === 'ArrowDown') { if (!e.repeat) sh(-1); e.preventDefault(); }
-    else if (c === 'KeyE') { if (!e.repeat) { if (state === 0) start(); else stop(); } }
+    else if (/^(?:Digit|Numpad)[1-6]$/.test(c)) { if (!e.repeat) selectGear(Number(c.slice(-1))); e.preventDefault(); } else if (/^(?:Digit|Numpad)7$/.test(c)) { if (!e.repeat) selectGear(-1); e.preventDefault(); } else if (c === 'KeyE') { if (!e.repeat) { if (state === 0) start(); else stop(); } }
     else if (c === 'KeyN') setNeutral();
     else if (c === 'KeyM') setMute(!muted); else if (c === 'KeyR') resetAll(); else if (c === 'KeyF') toggleFS();
     else if (e.key === '?' || c === 'KeyH') openHelp();
@@ -1711,7 +1719,7 @@ function mount(target, userOpts) {
     const lh = Math.max(0, (sig.ind || 0)) * w / 1000 / (g.dsl ? .4 * 9.97 : .3 * 8.8) + (state == 2 ? .4 * g.disp / 5 : 0);
     if (state == 2) fuel = Math.max(0, fuel - lh / 3600 * dt * 3);
     const egt = Tamb + 250 + (state == 2 ? 550 * (sig.tq || 0) * (.4 + .6 * f) + 80 * f : 0), bm = (sig.brake || 0) * 4 * PI / (g.disp * 1e-3) / 1e5;
-    const kmh = v * 3.6;
+    const kmh = Math.abs(v) * 3.6;
 
     // ----- status / overlay -----
     const kind = state == 2 ? 'run' : state == 1 ? 'crank' : msg == 'OFF' ? 'off' : 'fail';
@@ -1727,7 +1735,7 @@ function mount(target, userOpts) {
     R.start.disabled = state == 1;
 
     // ----- text readouts -----
-    setText(R.tv, Math.round(thr * 100) + '%'); setText(R.lv, Math.round(uLoad * 100) + '%'); setText(R.gear, gear || 'N');
+    setText(R.tv, Math.round(thr * 100) + '%'); setText(R.lv, Math.round(uLoad * 100) + '%'); setText(R.gear, gear < 0 ? 'R' : gear || 'N');
     if (R.pips._c !== gear) { R.pips._c = gear; Array.from(R.pips.children).forEach(c => c.classList.toggle('is-on', +c.dataset.g === gear)); }
     setText(R.tk, fuel.toFixed(1) + ' L'); R.tkBar.style.width = Math.min(100, fuel / 60 * 100) + '%'; toggleCls(R.tkBar, 'is-low', fuel < 8);
     const zn = ZONE(); setText(R.zone, zn[0]); R.zone.dataset.z = zn[1];
@@ -1754,7 +1762,7 @@ function mount(target, userOpts) {
     // ----- instruments -----
     if (kmh > spMax * .94) spMax += 50;
     const rmax = Math.ceil(g.rl * 1.12 / 1000) * 1000;
-    gR.draw({ val: rpm, max: rmax, minor: rmax > 9000 ? 500 : 200, major: 1000, red: g.rl, label: 'RPM x1000', unit: 'rpm', txt: Math.round(rpm), sub: gear ? 'G' + gear : 'N', fmt: q => q / 1000, key: 'r' + g.rl, t: T }, PAL);
+    gR.draw({ val: rpm, max: rmax, minor: rmax > 9000 ? 500 : 200, major: 1000, red: g.rl, label: 'RPM x1000', unit: 'rpm', txt: Math.round(rpm), sub: gear < 0 ? 'R' : gear ? 'G' + gear : 'N', fmt: q => q / 1000, key: 'r' + g.rl, t: T }, PAL);
     gS.draw({ val: kmh, max: spMax, minor: 10, major: spMax > 260 ? 50 : 20, red: 0, label: 'SPEED', unit: 'km/h', txt: Math.round(kmh), key: 's', t: T }, PAL);
     gT.draw({ val: Tc, max: 140, minor: 5, major: 20, red: 106, label: 'COOLANT', unit: '°C', txt: Math.round(Tc), key: 'c', t: T }, PAL);
     const ph = (cav - E.fo[0] + 1440) % 720, tpv = (ph + 360) % 720, sidx = strokeOfT(tpv);
