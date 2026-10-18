@@ -16,6 +16,38 @@
 .ev-charging-map-visual { width: 100%; grid-column: 1 / -1; margin: 24px 0 0; border-radius: 16px; box-shadow: 0 0 52px #70aee328, 0 18px 48px #0004; }
 .ev-charging-map-visual img { display: block; width: 100%; height: auto; max-height: none; object-fit: contain; object-position: center; }
 
+/* Four supplied photos fill the marked image spaces without covering controls. */
+.ownership-story-visual { min-height: 0; aspect-ratio: 1.38; border-radius: 0; background: transparent; }
+.ownership-story-visual img { min-height: 0; object-position: 52% 48%; }
+.ownership-story-visual::after { background: linear-gradient(90deg, #13191b22, transparent 28%), linear-gradient(0deg, #0a0e0f2b, transparent 52%); }
+.section-modal-active#loan-planner .loan-planner-photo,
+.section-modal-active#listing-draft .listing-draft-photo {
+  position: absolute;
+  top: 34%;
+  right: 4%;
+  width: min(25%, 440px);
+  height: clamp(250px, 43vh, 430px);
+  margin: 0;
+  border-radius: 18px;
+  box-shadow: 0 24px 58px #1114, 0 0 0 1px #ffffff85;
+}
+.section-modal-active#loan-planner .loan-planner-photo img { object-position: 55% center; }
+.section-modal-active#listing-draft .listing-draft-photo { top: 43%; height: clamp(280px, 47vh, 470px); }
+.section-modal-active#listing-draft .listing-draft-photo img { object-position: 54% center; }
+.section-modal-active#personal-garage .garage-shell { position: relative; }
+.section-modal-active#personal-garage .garage-shell .tool-form { max-width: 70%; }
+.section-modal-active#personal-garage .personal-garage-photo {
+  position: absolute;
+  top: 18%;
+  right: 3%;
+  width: min(23%, 390px);
+  height: clamp(190px, 30vh, 290px);
+  margin: 0;
+  border-radius: 15px;
+  box-shadow: 0 20px 48px #1114, 0 0 0 1px #ffffff85;
+}
+.section-modal-active#personal-garage .personal-garage-photo img { object-position: 54% center; }
+
 /* The engine control is a compact push-button start/stop affordance. */
 .engine-button-icon { font-size: 26px; line-height: 1; }
 .engine-button-label { font-size: 9px; font-weight: 800; letter-spacing: .12em; }
@@ -53,7 +85,17 @@
 .section-modal-active#official-services { padding-top: 70px !important; }
 
 @media (max-width: 760px) {
-  .ownership-story-visual { min-height: 260px; }
+  .ownership-story-visual { min-height: 260px; aspect-ratio: 1.55; }
+  .section-modal-active#loan-planner .loan-planner-photo,
+  .section-modal-active#listing-draft .listing-draft-photo,
+  .section-modal-active#personal-garage .personal-garage-photo {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: clamp(190px, 55vw, 320px);
+    margin: 18px 0 10px;
+  }
+  .section-modal-active#personal-garage .garage-shell .tool-form { max-width: 100%; }
   .section-modal-toolbar { top: 84px; right: 17px; gap: 8px; }
   .section-modal-photo { width: clamp(72px, 24vw, 94px); height: 35px; border-radius: 9px; }
   .section-modal-active#vehicle-services,
