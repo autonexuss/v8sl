@@ -90,20 +90,20 @@
   const panelHead = (eyebrow, title, text) => `<header class="nf-heading"><div class="eyebrow"><i></i>${eyebrow}</div><h2>${title}</h2><p>${text}</p></header>`;
 
   put(`<section class="new-feature-panel section-wrap" id="car-price-history" aria-labelledby="price-history-title">
-    ${panelHead('INDIA · MODEL DIRECTORY + VERIFIED ARCHIVE', 'Car Price History', 'Choose any make, model and model year in the site’s India-market directory. The calculator compares dated manufacturer prices when a source record exists; it never fabricates a historical or current price.')}
-    <div class="nf-layout nf-price-layout"><form class="nf-card nf-form" id="price-history-form"><div class="nf-coverage"><strong>Directory-backed selection · price archive is partial</strong><span>All makes and model names from Find a car are selectable. Only individually source-checked price records are labelled verified.</span></div>
+    ${panelHead('INDIA · DATED, SOURCE-CHECKED PRICE POINTS', 'Car Price History', 'Choose a make, model and date. Where a verified dated price record exists, the calculator compares the latest record available on or before that date with the latest indexed price point and calculates the nominal change.')}
+    <div class="nf-layout nf-price-layout"><form class="nf-card nf-form" id="price-history-form"><div class="nf-coverage"><strong>India-market directory · dated price coverage is partial</strong><span>Vehicle choices follow Find a car. Prices auto-fill only from source-checked records; unsupported dates or models are identified instead of guessed.</span></div>
       <label>Brand / make<select id="ph-make" required><option value="">Choose a brand</option></select></label>
       <label>Model<select id="ph-model" required disabled><option value="">Choose a brand first</option></select></label>
-      <label>Model year<select id="ph-year" required disabled><option value="">Choose a model first</option></select></label>
-      <label>Sourced historical variant / trim<select id="ph-variant" disabled><option value="">Select a model year first</option></select></label>
-      <label>Historical ex-showroom price (₹)<input id="ph-old-price" type="number" min="1" step="1" inputmode="numeric" placeholder="Auto-fills only for a verified record"></label>
-      <label>Later/current ex-showroom price (₹)<input id="ph-new-price" type="number" min="1" step="1" inputmode="numeric" placeholder="Enter a dated price for this trim"></label>
-      <label>Later/current variant or trim<input id="ph-current-variant" type="text" maxlength="100" placeholder="Use the same trim where possible"></label>
-      <label>Later/current price date<input id="ph-current-date" type="date"></label>
-      <label>Later/current price source URL · optional<input id="ph-current-source" type="url" inputmode="url" placeholder="Manufacturer price list or dated source link"></label>
-      <p class="nf-note">Make/model choices follow the same curated India-market directory as Find a car. This is not an exhaustive government register, and historical price coverage is partial. Only individually dated manufacturer records are verified here; the later/current price is user-entered and is not independently checked. Compare the same trim, ex-showroom basis and market; taxes, discounts and on-road charges are excluded.</p>
-      <button class="nf-primary" type="submit">Compare dated prices <span aria-hidden="true">↗</span></button>
-    </form><div class="nf-card nf-output" id="price-history-result" role="status" aria-live="polite"><span class="nf-kicker">PRICE COMPARISON</span><h3>Select a make, model and year.</h3><p>All make/model selectors match the site's Find a car catalog. A price appears only when a dated source record exists or you enter values yourself.</p></div></div>
+      <label>Date to look up<input id="ph-date" type="date" required disabled></label>
+      <label>Historical variant / trim<select id="ph-variant" disabled><option value="">Choose a model and date first</option></select></label>
+      <label>Historical ex-showroom price (₹)<input id="ph-old-price" type="number" min="1" step="1" inputmode="numeric" placeholder="Auto-fills when a dated record exists"></label>
+      <label>Latest indexed ex-showroom price (₹)<input id="ph-new-price" type="number" min="1" step="1" inputmode="numeric" placeholder="Auto-fills when a current source record exists"></label>
+      <label>Latest indexed variant / trim<input id="ph-current-variant" type="text" maxlength="100" placeholder="Filled from the latest sourced record"></label>
+      <label>Latest price record date<input id="ph-current-date" type="date"></label>
+      <label>Additional price source URL · optional<input id="ph-current-source" type="url" inputmode="url" placeholder="Paste a dated manufacturer price source"></label>
+      <p class="nf-note">This is a source-backed archive, not a live price feed. The historical figure is the latest indexed price record dated on or before your chosen date; the archive cannot confirm that a price stayed unchanged between records. The comparison is nominal, ex-showroom and India-specific; taxes, discounts, city charges and inflation are excluded. Missing data stays clearly marked instead of being invented.</p>
+      <button class="nf-primary" type="submit">Show price comparison <span aria-hidden="true">↗</span></button>
+    </form><div class="nf-card nf-output" id="price-history-result" role="status" aria-live="polite"><span class="nf-kicker">PRICE COMPARISON</span><h3>Choose a car and date.</h3><p>When dated source records are available, the historical and latest indexed prices fill automatically and the nominal percentage change is calculated.</p></div></div>
   </section>`);
 
   put(`<section class="new-feature-panel section-wrap" id="ev-range-adventure" aria-labelledby="ev-range-title">
@@ -139,77 +139,117 @@
   const linkFor = key => SOURCES[key];
   const safeAnchor = (source, label) => `<a href="${source.url}" target="_blank" rel="noopener noreferrer">${label || source.title} ↗</a>`;
 
-  // All selector names and approximate year windows come from Find a car.
-  const make = document.getElementById('ph-make'), model = document.getElementById('ph-model'), year = document.getElementById('ph-year'), variant = document.getElementById('ph-variant');
+  // Vehicle choices come from Find a car. Prices are shown only when a dated
+  // source-backed archive point exists; the UI never estimates missing prices.
+  const make = document.getElementById('ph-make'), model = document.getElementById('ph-model'), priceDate = document.getElementById('ph-date'), variant = document.getElementById('ph-variant');
   const oldPriceInput = document.getElementById('ph-old-price'), newPriceInput = document.getElementById('ph-new-price');
   const currentVariantInput = document.getElementById('ph-current-variant'), currentDateInput = document.getElementById('ph-current-date'), currentSourceInput = document.getElementById('ph-current-source');
   const clearPriceInputs = () => { oldPriceInput.value = ''; newPriceInput.value = ''; currentVariantInput.value = ''; currentDateInput.value = ''; currentSourceInput.value = ''; };
   const resetSelect = (select, placeholder, disabled = true) => { select.replaceChildren(option(placeholder, '')); select.disabled = disabled; };
+  const todayLocal = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   DIRECTORY.forEach(entry => make.add(option(entry.make, entry.make)));
-  const getPriceRecord = (makeName, modelName, yearValue) => PRICE.find(item => item.make === makeName)?.models.find(item => item.name === modelName)?.years.find(item => String(item.year) === String(yearValue));
+  const getPriceRecords = (makeName, modelName) => (PRICE.find(item => item.make === makeName)?.models.find(item => item.name === modelName)?.years || [])
+    .flatMap(yearRecord => yearRecord.variants.map(item => ({ ...item, year: yearRecord.year, generation: yearRecord.generation, make: makeName, model: modelName })))
+    .sort((a, b) => b.valid.localeCompare(a.valid));
+  const historicalRecords = () => priceDate.value ? getPriceRecords(make.value, model.value).filter(item => item.valid <= priceDate.value) : [];
+  const latestPriceRecord = () => getPriceRecords(make.value, model.value).find(item => item.valid <= todayLocal()) || null;
+  function refreshHistoricalPricePoints() {
+    const records = historicalRecords();
+    resetSelect(variant, records.length ? 'Choose an archived price point' : 'No verified price record on or before this date', !records.length);
+    records.forEach((item, index) => variant.add(option(`${item.valid} · ${item.name} · ${fmtINR(item.amount)}`, String(index))));
+    if (records.length) {
+      variant.value = '0';
+      oldPriceInput.value = String(records[0].amount);
+    } else oldPriceInput.value = '';
+  }
+  function refreshLatestPrice() {
+    const latest = latestPriceRecord();
+    newPriceInput.value = latest ? String(latest.amount) : '';
+    newPriceInput.dataset.indexedAmount = latest ? String(latest.amount) : '';
+    currentVariantInput.value = latest?.name || '';
+    currentDateInput.value = latest?.valid || '';
+    currentSourceInput.value = '';
+  }
+  newPriceInput.addEventListener('input', () => {
+    const latest = latestPriceRecord();
+    const stillIndexed = latest && Number(newPriceInput.value) === latest.amount;
+    if (!stillIndexed) {
+      currentVariantInput.value = '';
+      currentDateInput.value = '';
+      currentSourceInput.value = '';
+    }
+  });
   make.addEventListener('change', () => {
     clearPriceInputs();
     const entry = DIRECTORY.find(item => item.make === make.value);
     resetSelect(model, entry ? 'Choose a model' : 'Choose a brand first', !entry);
     (entry?.models || []).forEach(item => model.add(option(item.name, item.name)));
-    resetSelect(year, 'Choose a model first'); resetSelect(variant, 'Choose a model year first');
+    priceDate.disabled = true; priceDate.value = ''; priceDate.removeAttribute('min'); priceDate.max = todayLocal();
+    resetSelect(variant, 'Choose a model and date first');
   });
   model.addEventListener('change', () => {
     clearPriceInputs();
     const entry = DIRECTORY.find(item => item.make === make.value)?.models.find(item => item.name === model.value);
-    resetSelect(year, entry ? 'Choose a model year' : 'Choose a model', !entry);
     if (entry) {
-      const end = Math.min(entry.to, new Date().getFullYear());
-      for (let y = end; y >= entry.from; y--) year.add(option(String(y), String(y)));
+      priceDate.disabled = false;
+      priceDate.min = `${entry.from}-01-01`;
+      priceDate.max = todayLocal();
+      priceDate.value = todayLocal();
+      refreshHistoricalPricePoints();
+      refreshLatestPrice();
+    } else {
+      priceDate.disabled = true; priceDate.value = ''; priceDate.removeAttribute('min');
+      resetSelect(variant, 'Choose a model and date first');
     }
-    resetSelect(variant, 'Choose a model year first');
   });
-  year.addEventListener('change', () => {
-    const record = getPriceRecord(make.value, model.value, year.value);
-    clearPriceInputs();
-    resetSelect(variant, record ? 'Choose a verified variant' : 'No verified archive for this model-year', !record);
-    (record?.variants || []).forEach((item, i) => variant.add(option(item.name, String(i))));
+  priceDate.addEventListener('change', () => {
+    oldPriceInput.value = '';
+    refreshHistoricalPricePoints();
   });
   variant.addEventListener('change', () => {
-    const selected = variant.value === '' ? null : getPriceRecord(make.value, model.value, year.value)?.variants[Number(variant.value)];
+    const selected = variant.value === '' ? null : historicalRecords()[Number(variant.value)];
     oldPriceInput.value = selected?.amount ? String(selected.amount) : '';
   });
   document.getElementById('price-history-form').addEventListener('submit', event => {
     event.preventDefault();
     const result = document.getElementById('price-history-result');
-    const chosenYear = Number(year.value), selectedRecord = getPriceRecord(make.value, model.value, year.value);
-    const selectedVariant = variant.value === '' ? null : selectedRecord?.variants[Number(variant.value)];
+    const requestedDate = priceDate.value;
+    const selectedVariant = variant.value === '' ? null : historicalRecords()[Number(variant.value)];
+    const latestRecord = latestPriceRecord();
     const manualOld = Number(oldPriceInput.value) || 0;
     const manualNew = Number(newPriceInput.value) || 0;
     const oldAmount = manualOld || selectedVariant?.amount || 0;
-    // Never substitute another trim's latest price for the user's selected
-    // historical configuration. Current prices require a dated user entry.
-    const newAmount = manualNew;
+    const newAmount = manualNew || latestRecord?.amount || 0;
     const makeRecord = DIRECTORY.find(item => item.make === make.value);
-    const archiveQuery = encodeURIComponent(`${make.value} ${model.value} ${chosenYear} India ex-showroom price original launch`);
+    const archiveQuery = encodeURIComponent(`${make.value} ${model.value} India ex-showroom price ${requestedDate}`);
     const searchLink = `https://www.google.com/search?q=${archiveQuery}`;
-    if (!make.value || !model.value || !chosenYear) {
-      result.innerHTML = '<span class="nf-kicker">SELECT A VEHICLE</span><h3>Choose a make, model and year.</h3><p>The lists use the same India-market car directory as Find a car.</p>'; return;
+    if (!make.value || !model.value || !requestedDate) {
+      result.innerHTML = '<span class="nf-kicker">SELECT A VEHICLE AND DATE</span><h3>Choose a make, model and date.</h3><p>Vehicle choices use the same India-market directory as Find a car.</p>'; return;
     }
     if (!(oldAmount > 0) || !(newAmount > 0)) {
       const source = makeRecord?.url ? safeAnchor({ url: makeRecord.url }, `${make.value} official site`) : '';
-      const missing = !(oldAmount > 0) && !(newAmount > 0) ? 'historical and later' : !(oldAmount > 0) ? 'historical' : 'later/current';
-      result.innerHTML = `<span class="nf-kicker">PRICE DATA NEEDED</span><h3>${htmlSafe(make.value)} ${htmlSafe(model.value)} · ${chosenYear}</h3><p>No dated, source-verified ${missing} price is indexed for this selection. No amount is guessed. Enter the matching ex-showroom amount${missing.includes('and') ? 's' : ''} above; the percentage calculator will then use those exact inputs.</p><p class="nf-source-line">${source} · <a href="${searchLink}" target="_blank" rel="noopener noreferrer">Search dated India-market price lists ↗</a></p>`; return;
+      const missing = !(oldAmount > 0) && !(newAmount > 0) ? 'historical and latest' : !(oldAmount > 0) ? 'historical' : 'latest';
+      const latestInfo = latestRecord ? `<p>Latest indexed point: ${htmlSafe(latestRecord.valid)} · ${htmlSafe(latestRecord.name)} · ${fmtINR(latestRecord.amount)} ${safeAnchor(linkFor(latestRecord.source))}</p>` : '';
+      result.innerHTML = `<span class="nf-kicker">PRICE DATA INCOMPLETE</span><h3>${htmlSafe(make.value)} ${htmlSafe(model.value)} · ${htmlSafe(requestedDate)}</h3><p>No verified ${missing} price is indexed for this selection. We do not interpolate or guess a price. If you supply the missing amount above, the result will be labelled user-entered and the percentage will use the exact values.</p>${latestInfo}<p class="nf-source-line">${source} · <a href="${searchLink}" target="_blank" rel="noopener noreferrer">Search India-market prices for this date ↗</a></p>`; return;
     }
     const change = newAmount - oldAmount, percent = change / oldAmount * 100;
     const oldIsManual = manualOld > 0 && (!selectedVariant || manualOld !== Number(selectedVariant.amount));
-    const oldMeta = oldIsManual ? '<small>User-entered or edited · not independently verified</small>' : `<small>${htmlSafe(selectedVariant.valid)} · manufacturer launch price</small>${safeAnchor(linkFor(selectedVariant.source))}`;
+    const selectedName = oldIsManual ? 'user-entered price' : selectedVariant?.name || 'user-entered configuration';
+    const oldMeta = oldIsManual ? '<small>User-entered or edited · not independently verified</small>' : `<small>Source price dated ${htmlSafe(selectedVariant.valid)} · ${htmlSafe(selectedVariant.year)} model year</small>${safeAnchor(linkFor(selectedVariant.source))}`;
     let suppliedSource = '';
     if (currentSourceInput.value.trim()) {
       try { const url = new URL(currentSourceInput.value.trim()); if (url.protocol === 'https:' || url.protocol === 'http:') suppliedSource = `<a href="${htmlSafe(url.href)}" target="_blank" rel="noopener noreferrer">User-supplied price source ↗</a>`; } catch { /* Invalid or unsupported link remains unlinked and unverified. */ }
     }
     const currentDetails = [currentVariantInput.value.trim(), currentDateInput.value].filter(Boolean).map(htmlSafe).join(' · ');
-    const newMeta = `<small>User-entered · not independently verified${currentDetails ? ` · ${currentDetails}` : ''}</small>${suppliedSource}`;
-    const oldName = selectedVariant?.name || `${chosenYear} model-year price`;
-    const compareNote = 'This is a nominal arithmetic comparison, not an inflation-adjusted value. Confirm the same trim, city/market, tax basis, and price dates before treating it as like-for-like.';
-    const trimMismatch = selectedVariant && currentVariantInput.value.trim() && selectedVariant.name.toLowerCase() !== currentVariantInput.value.trim().toLowerCase();
-    const mismatchNote = trimMismatch ? ' The current trim text differs from the historical trim; the percentage is arithmetic only and may not be a like-for-like vehicle comparison.' : '';
-    result.innerHTML = `<span class="nf-kicker">NOMINAL EX-SHOWROOM COMPARISON · INDIA</span><h3>${htmlSafe(make.value)} ${htmlSafe(model.value)}</h3><div class="nf-price-pair"><div><span>${chosenYear} · ${htmlSafe(oldName)}</span><strong>${fmtINR(oldAmount)}</strong>${oldMeta}</div><div><span>${currentDateInput.value ? htmlSafe(currentDateInput.value) : 'Later/current'} · ${htmlSafe(currentVariantInput.value || 'variant not specified')}</span><strong>${fmtINR(newAmount)}</strong>${newMeta}</div></div><div class="nf-change"><span>Nominal price change · not inflation-adjusted</span><strong>${change >= 0 ? '+' : '−'}${fmtINR(Math.abs(change))} · ${change >= 0 ? '+' : '−'}${Math.abs(percent).toFixed(1)}%</strong></div><p class="nf-note">${compareNote}${mismatchNote}${selectedVariant?.note ? ` ${htmlSafe(selectedVariant.note)}` : ''}</p>`;
+    const currentDetailsMatch = latestRecord && (!currentVariantInput.value.trim() || currentVariantInput.value.trim() === latestRecord.name) && (!currentDateInput.value || currentDateInput.value === latestRecord.valid);
+    const currentIsSourced = latestRecord && (!manualNew || manualNew === Number(latestRecord.amount)) && currentDetailsMatch;
+    const newMeta = currentIsSourced ? `<small>Latest indexed source price · ${htmlSafe(latestRecord.valid)}</small>${safeAnchor(linkFor(latestRecord.source))}` : `<small>User-entered · not independently verified${currentDetails ? ` · ${currentDetails}` : ''}</small>${suppliedSource}`;
+    const sameSourcePoint = selectedVariant && latestRecord && selectedVariant.valid === latestRecord.valid && Number(selectedVariant.amount) === Number(latestRecord.amount);
+    const compareNote = `This is a nominal ex-showroom arithmetic comparison, not inflation-adjusted. The selected date maps to the latest indexed source point on or before it (${selectedVariant ? htmlSafe(selectedVariant.valid) : 'user-entered'}); the archive cannot confirm whether the price stayed unchanged between source dates.${sameSourcePoint ? ` Both sides use the same latest indexed record (${htmlSafe(latestRecord.valid)}), so this archive has no later price point from which to establish a change.` : ''}`;
+    const trimMismatch = !oldIsManual && selectedVariant && currentVariantInput.value.trim() && selectedVariant.name.toLowerCase() !== currentVariantInput.value.trim().toLowerCase();
+    const mismatchNote = trimMismatch ? ' The historical and latest points are different trims, so the percentage is a model-level comparison and not a like-for-like trim increase.' : '';
+    const direction = change >= 0 ? 'increase' : 'decrease';
+    result.innerHTML = `<span class="nf-kicker">NOMINAL EX-SHOWROOM COMPARISON · INDIA</span><h3>${htmlSafe(make.value)} ${htmlSafe(model.value)}</h3><div class="nf-price-pair"><div><span>Requested date ${htmlSafe(requestedDate)} · ${htmlSafe(selectedName)}</span><strong>${fmtINR(oldAmount)}</strong>${oldMeta}</div><div><span>Latest indexed · ${htmlSafe(currentVariantInput.value || 'variant not specified')}</span><strong>${fmtINR(newAmount)}</strong>${newMeta}</div></div><div class="nf-change"><span>Nominal ${direction} · not inflation-adjusted</span><strong>${change >= 0 ? '+' : '−'}${fmtINR(Math.abs(change))} · ${Math.abs(percent).toFixed(1)}% ${direction}</strong></div><p class="nf-note">${compareNote}${mismatchNote}${selectedVariant?.note ? ` ${htmlSafe(selectedVariant.note)}` : ''}</p>`;
   });
 
   // EV picker is a cascade over the exact EV subset of the site's car directory.
@@ -357,4 +397,3 @@
   newRound(false);
 
 })();
-
