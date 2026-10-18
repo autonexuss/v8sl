@@ -1,6 +1,6 @@
 /* Editorial image placements requested for the ownership and charging features. */
-.feature-inline-media { position: relative; display: block; min-width: 0; margin: 0; overflow: hidden; border-radius: 16px; background: #15191d; isolation: isolate; }
-.feature-inline-media::after { position: absolute; inset: 0; content: ""; pointer-events: none; background: linear-gradient(180deg,transparent 55%,#05070838); }
+.feature-inline-media { position: relative; display: block; min-width: 0; margin: 0; overflow: hidden; border-radius: 16px; background: #1c1616; isolation: isolate; }
+.feature-inline-media::after { position: absolute; inset: 0; content: ""; pointer-events: none; background: linear-gradient(180deg,transparent 55%,#08050538); }
 .feature-inline-media img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .65s cubic-bezier(.2,.75,.25,1); }
 .feature-inline-media:hover img { transform: scale(1.025); }
 .ownership-story-visual { min-height: 390px; }
@@ -13,13 +13,13 @@
 .resale-feature-media img { object-position: center 58%; }
 .official-service-media { grid-column: 1 / -1; width: 100%; height: clamp(150px, 19vw, 230px); margin-top: 16px; border-radius: 13px; }
 .official-service-media img { object-position: center 54%; }
-.ev-charging-map-visual { width: 100%; grid-column: 1 / -1; margin: 24px 0 0; border-radius: 16px; box-shadow: 0 0 52px #70aee328, 0 18px 48px #0004; }
+.ev-charging-map-visual { width: 100%; grid-column: 1 / -1; margin: 24px 0 0; border-radius: 16px; box-shadow: 0 0 52px #b4414828, 0 18px 48px #0004; }
 .ev-charging-map-visual img { display: block; width: 100%; height: auto; max-height: none; object-fit: contain; object-position: center; }
 
 /* Four supplied photos fill the marked image spaces without covering controls. */
 .ownership-story-visual { align-self: center; width: 100%; min-height: 0; aspect-ratio: 1.5; border-radius: 0; background: transparent; }
 .ownership-story-visual img { min-height: 0; object-position: center; }
-.ownership-story-visual::after { background: linear-gradient(90deg, #13191b22, transparent 28%), linear-gradient(0deg, #0a0e0f2b, transparent 52%); }
+.ownership-story-visual::after { background: linear-gradient(90deg, #1a141422, transparent 28%), linear-gradient(0deg, #0e0b0b2b, transparent 52%); }
 .section-modal-active#loan-planner .loan-planner-photo,
 .section-modal-active#listing-draft .listing-draft-photo {
   position: absolute;
@@ -86,7 +86,7 @@
 
 /* Photos share the fixed close-control row without shifting modal content. */
 .section-modal-toolbar { position: fixed; z-index: 110; top: calc(var(--vel-nav-height, 78px) + 20px); right: clamp(22px, 4.5vw, 62px); display: flex; align-items: center; gap: 10px; }
-.section-modal-photo { width: clamp(92px, 11vw, 142px); height: 42px; margin: 0; overflow: hidden; border: 1px solid #ffffff50; border-radius: 11px; background: #101417; box-shadow: 0 8px 25px #0005; }
+.section-modal-photo { width: clamp(92px, 11vw, 142px); height: 42px; margin: 0; overflow: hidden; border: 1px solid #ffffff50; border-radius: 11px; background: #161111; box-shadow: 0 8px 25px #0005; }
 .section-modal-photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .section-modal-toolbar .section-modal-close { position: static !important; inset: auto !important; flex: 0 0 auto; }
 
