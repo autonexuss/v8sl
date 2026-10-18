@@ -207,7 +207,7 @@ body.section-panel-open { overflow: hidden !important; }
   margin: 0;
   padding: clamp(62px, 8vw, 112px) clamp(24px, 7.5vw, 118px) 24px;
   overflow: hidden;
-  background: #070505;
+  background: #000000;
   color: #f1f2f2;
   border-top: 1px solid #ffffff18;
 }
@@ -217,7 +217,7 @@ body.section-panel-open { overflow: hidden !important; }
   height: 340px;
   content: "";
   pointer-events: none;
-  background: radial-gradient(ellipse, #946f7222, transparent 70%);
+  background: none;
   filter: blur(22px);
 }
 .about-intro,
