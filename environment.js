@@ -202,14 +202,18 @@
     target.replaceChildren(loading);
 
     try {
-      const data = await Promise.all(selected.map(async car => {
+      // Load one car reference at a time. The public encyclopaedia endpoints used by the
+      // car finder can throttle simultaneous requests, which previously left later slots empty.
+      const data = [];
+      for (const car of selected) {
+        if (requestId !== compareRequestId) return;
         let lookup = null;
         if (!car.profile && typeof window.chassisLoadCarComparisonProfile === 'function') {
           try { lookup = await window.chassisLoadCarComparisonProfile(car.make.make, car.model.name, car.year); }
           catch { lookup = null; }
         }
-        return makeComparisonData(car, lookup);
-      }));
+        data.push(makeComparisonData(car, lookup));
+      }
       if (requestId !== compareRequestId) return;
 
       const wrap = document.createElement('div'); wrap.className = 'env-compare-table-wrap';

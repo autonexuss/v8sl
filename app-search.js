@@ -652,6 +652,30 @@ const curatedIndiaSpecProfiles = [{
       { name: 'Rear suspension', value: 'Torsion beam', source: 'https://www.marutisuzuki.com/content/dam/msil/arena/in/en/assets/cars/swift/document/Swift_SCNG_VerticalBrochure.pdf', sourceLabel: 'Maruti Suzuki India brochure' },
       { name: 'Brakes', value: 'Ventilated front disc · rear drum', source: 'https://www.marutisuzuki.com/content/dam/msil/arena/in/en/assets/cars/swift/document/Swift_SCNG_VerticalBrochure.pdf', sourceLabel: 'Maruti Suzuki India brochure' }
     ]
+  },
+  {
+    make: 'bmw', model: '7 series', fromYear: 2025, toYear: 2026, excludes: ['i7'],
+    sourceLabel: 'BMW India official technical data',
+    performanceLabel: 'Open BMW 7 Series technical data ↗',
+    brochureLabel: 'Open BMW 7 Series technical data ↗',
+    provenance: 'BMW India G70 technical data for the current 7 Series family. The listed 740 M Sport petrol and 740d M Sport diesel figures are shown together; exact model-year and trim availability should be confirmed with BMW.',
+    performance: 'https://www.bmw.in/en/all-models/7-series/7-series-sedan/7-series-sedan-2025-g70-technical-data.html',
+    brochure: 'https://www.bmw.in/en/all-models/7-series/7-series-sedan/7-series-sedan-2025-g70-technical-data.html',
+    engines: [
+      { name: '740 M Sport · 3.0L TwinPower Turbo inline-6 · 48V mild hybrid', fuel: 'Petrol · 48V mild hybrid', displacement: '2,998 cc', powerKW: 294, powerPS: 400, torque: '580 Nm', transmission: '8-speed automatic' },
+      { name: '740d M Sport · 3.0L TwinPower Turbo inline-6 · 48V mild hybrid', fuel: 'Diesel · 48V mild hybrid', displacement: '2,993 cc', powerKW: 210, powerPS: 286, torque: '650 Nm', transmission: '8-speed automatic' }
+    ],
+    rows: [
+      { name: 'Body style', value: 'Luxury sedan', source: 'https://www.bmw.in/en/all-models/7-series/7-series-sedan/7-series-sedan-2025-g70-technical-data.html', sourceLabel: 'BMW India' },
+      { name: 'Engine', value: '740 M Sport petrol: 2,998 cc inline-6; 740d M Sport diesel: 2,993 cc inline-6', source: 'https://www.bmw.in/en/all-models/7-series/7-series-sedan/7-series-sedan-2025-g70-technical-data.html', sourceLabel: 'BMW India' },
+      { name: 'Fuel type', value: 'Petrol or diesel · both with 48V mild-hybrid system', source: 'https://www.bmw.in/en/all-models/7-series/7-series-sedan/7-series-sedan-2025-g70-technical-data.html', sourceLabel: 'BMW India' },
+      { name: 'Length', value: '5,395 mm', source: 'https://www.bmw.in/content/bmw/marketIN/bmw_in/en/all-models/bmw-i/i7/bmw-i7-sedan-technical-data.html', sourceLabel: 'BMW India' },
+      { name: 'Width', value: '1,950 mm', source: 'https://www.bmw.in/content/bmw/marketIN/bmw_in/en/all-models/bmw-i/i7/bmw-i7-sedan-technical-data.html', sourceLabel: 'BMW India' },
+      { name: 'Height', value: '1,550 mm', source: 'https://www.bmw.in/content/bmw/marketIN/bmw_in/en/all-models/bmw-i/i7/bmw-i7-sedan-technical-data.html', sourceLabel: 'BMW India' },
+      { name: 'Wheelbase', value: '3,215 mm', source: 'https://www.bmw.in/content/bmw/marketIN/bmw_in/en/all-models/bmw-i/i7/bmw-i7-sedan-technical-data.html', sourceLabel: 'BMW India' },
+      { name: 'Drivetrain', value: 'Rear-wheel drive (740 M Sport powertrains)', source: 'https://www.bmw.in/en/all-models/7-series/7-series-sedan/7-series-sedan-2025-g70-technical-data.html', sourceLabel: 'BMW India' },
+      { name: 'Boot capacity', value: '540 L', source: 'https://www.bmw.in/content/bmw/marketIN/bmw_in/en/all-models/bmw-i/i7/bmw-i7-sedan-technical-data.html', sourceLabel: 'BMW India' }
+    ]
   }
 ];
 
@@ -669,26 +693,45 @@ function curatedSpecProfileFor(carRecord, requestedTerm) {
 window.chassisCuratedSpecProfileFor = curatedSpecProfileFor;
 window.chassisCuratedIndiaSpecProfiles = curatedIndiaSpecProfiles;
 window.chassisLoadCarComparisonProfile = async (makeName, modelName, year) => {
-  const vehicle = window.chassisResolveCar?.(String(makeName) + ' ' + String(modelName));
-  if (!vehicle) return null;
+  const directory = Array.isArray(window.CHASSIS_INDIA_DIRECTORY) ? window.CHASSIS_INDIA_DIRECTORY : [];
+  const makeRecord = directory.find(item => [item.make, ...(item.aliases || [])]
+    .some(name => normalized(name) === normalized(makeName)));
+  const modelRecord = makeRecord?.models.find(item => [item.name, ...(item.aliases || [])]
+    .some(name => normalized(name) === normalized(modelName)));
+  const resolved = makeRecord && modelRecord
+    ? { make: makeRecord, model: modelRecord, fullName: makeRecord.make + ' ' + modelRecord.name }
+    : window.chassisResolveCar?.(String(makeName) + ' ' + String(modelName));
+  if (!resolved) return null;
+
+  const vehicle = resolved;
   const requestedTerm = [year, vehicle.fullName].filter(Boolean).join(' ');
   const curatedProfile = curatedSpecProfileFor(vehicle, requestedTerm);
   if (curatedProfile) return { vehicle, article: null, curatedProfile, vehicleFacts: null, infoboxRows: [], requestedTerm };
 
+  const titleOf = value => normalized(value);
+  const modelNames = [vehicle.model.name, ...(vehicle.model.aliases || [])].map(titleOf).filter(value => value.length >= 2);
+  const makeNames = [vehicle.make.make, ...(vehicle.make.aliases || [])].map(titleOf).filter(value => value.length >= 2);
+  const containsName = (text, name) => (' ' + text + ' ').includes(' ' + name + ' ');
+  const matchesVehicle = item => {
+    const title = titleOf(item.title);
+    const extract = titleOf(item.extract).slice(0, 5000);
+    const hasModel = modelNames.some(name => containsName(title, name) || containsName(extract, name));
+    const hasMake = makeNames.some(name => containsName(title, name) || containsName(extract, name));
+    return hasModel && hasMake;
+  };
+
+  let articles = [];
   let article = null;
-  try {
-    const articles = await wikipediaOverview(vehicle.fullName);
-    const titleOf = value => normalized(value);
-    const modelNames = [vehicle.model.name, ...(vehicle.model.aliases || [])].map(titleOf).filter(value => value.length >= 2);
-    const makeNames = [vehicle.make.make, ...(vehicle.make.aliases || [])].map(titleOf).filter(value => value.length >= 2);
-    article = articles.find(item => {
-      const title = titleOf(item.title);
-      const extract = titleOf(item.extract).slice(0, 1800);
-      const hasModel = modelNames.some(name => (' ' + title + ' ').includes(' ' + name + ' ') || (' ' + extract + ' ').includes(' ' + name + ' '));
-      const hasMake = makeNames.some(name => (' ' + title + ' ').includes(' ' + name + ' ') || (' ' + extract + ' ').includes(' ' + name + ' '));
-      return hasModel && hasMake;
-    }) || null;
-  } catch { /* Keep the official make link available when public lookup is offline. */ }
+  for (const query of [vehicle.fullName, vehicle.fullName + ' car']) {
+    try {
+      const found = await wikipediaOverview(query);
+      for (const item of found) {
+        if (!articles.some(existing => titleOf(existing.title) === titleOf(item.title))) articles.push(item);
+      }
+      article = articles.find(matchesVehicle) || null;
+      if (article) break;
+    } catch { /* Continue with the next public lookup route. */ }
+  }
 
   const [vehicleFacts, infoboxRows] = await Promise.all([
     wikidataVehicle(article, vehicle.fullName).catch(() => null),

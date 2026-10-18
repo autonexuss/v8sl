@@ -77,14 +77,13 @@
 
 
   put(`<section class="new-feature-panel section-wrap" id="ev-range-adventure" aria-labelledby="ev-range-title">
-    ${panelHead('BATTERY-ELECTRIC CARS · INDIA DIRECTORY', 'EV Range Adventure', 'Choose a battery-electric make, model and model year. Source-checked battery and published-range figures are filled when available; enter the exact figures from the vehicle’s official brochure for other directory EVs. Trip-condition effects are illustrative, not live telemetry.')}
+    ${panelHead('BATTERY-ELECTRIC CARS · INDIA DIRECTORY', 'EV Range Adventure', 'Choose a battery-electric make, model and model year. Published battery options are filled when indexed; otherwise the trip uses a clearly labelled general planning estimate. You never need to enter battery or range figures. Trip-condition effects are illustrative, not live telemetry.')}
     <div class="nf-layout nf-ev-layout"><form class="nf-card nf-form" id="ev-range-form">
       <label>Brand / make<select id="ev-make" required><option value="">Choose an EV brand</option></select></label>
       <label>Electric car<select id="ev-model" required disabled><option value="">Choose a brand first</option></select></label>
       <label>Model year<select id="ev-year" required disabled><option value="">Choose a model first</option></select></label>
-      <label>Battery pack / indexed variant<select id="ev-variant" disabled><option value="">Choose a model year first</option></select></label>
-      <label>Battery pack capacity from the selected variant (kWh)<input id="ev-battery" type="number" min="1" max="300" step="0.1" inputmode="decimal" required placeholder="Choose a sourced variant or enter brochure data"></label>
-      <label>Published range for that exact battery variant (km)<input id="ev-certified-range" type="number" min="1" max="2000" step="1" inputmode="numeric" required placeholder="Use the matching source and range cycle"></label>
+      <label>Battery option<select id="ev-variant" disabled><option value="">Choose a model year first</option></select></label>
+      
       <p class="nf-source-line" id="ev-profile-source"></p>
       <label>Starting battery <output id="ev-start-output">80%</output><input id="ev-start" type="range" min="10" max="100" step="1" value="80"></label>
       <label>Trip distance <output id="ev-distance-output">120 km</output><input id="ev-distance" type="range" min="10" max="600" step="5" value="120"></label>
@@ -94,7 +93,7 @@
       <label>Air conditioning<select id="ev-ac"><option value="on">On</option><option value="off">Off</option></select></label>
       <label>Passenger and cargo load<select id="ev-load"><option value="light">Light</option><option value="medium" selected>Typical</option><option value="heavy">Heavy</option></select></label>
       <div class="nf-actions"><button class="nf-primary" id="ev-start-trip" type="button">Start adventure</button><button class="nf-secondary" id="ev-pause-trip" type="button" disabled>Pause</button><button class="nf-secondary" id="ev-reset-trip" type="button">Reset</button></div>
-    </form><div class="nf-card nf-output nf-ev-output"><span class="nf-kicker">TRIP ESTIMATE</span><h3 id="ev-trip-status" aria-live="polite">Ready when you are.</h3><div class="nf-progress"><i id="ev-trip-progress"></i></div><div class="nf-metrics"><div><span>Trip energy</span><strong id="ev-energy">—</strong></div><div><span>Arrival battery</span><strong id="ev-arrival">—</strong></div><div><span>Estimated remaining range</span><strong id="ev-remaining">—</strong></div></div><p id="ev-reachability" class="nf-reachability">Choose a battery-electric model and verify its published specifications.</p><p class="nf-note">Planning simulation, not a live vehicle forecast: it scales the selected pack/range ratio using illustrative speed, weather, hills, HVAC and payload factors. Manufacturer test-cycle figures do not predict a specific trip. EV choices are a maintained directory of battery-electric passenger-car families, not an official complete national sales register; model-year coverage is approximate.</p><p class="nf-source-line" id="ev-model-note"></p></div></div>
+    </form><div class="nf-card nf-output nf-ev-output"><span class="nf-kicker">TRIP ESTIMATE</span><h3 id="ev-trip-status" aria-live="polite">Ready when you are.</h3><div class="nf-progress"><i id="ev-trip-progress"></i></div><div class="nf-metrics"><div><span>Trip energy</span><strong id="ev-energy">—</strong></div><div><span>Arrival battery</span><strong id="ev-arrival">—</strong></div><div><span>Estimated remaining range</span><strong id="ev-remaining">—</strong></div></div><p id="ev-reachability" class="nf-reachability">Select a battery-electric car. Its published specification or labelled planning estimate will be used automatically.</p><p class="nf-note">Planning simulation, not a live vehicle forecast: it scales the selected pack/range ratio using illustrative speed, weather, hills, HVAC and payload factors. Manufacturer test-cycle figures do not predict a specific trip. If no source-checked battery option exists for the selected car and year, a generic 50 kWh / 350 km planning estimate is used and labelled; it is not a vehicle specification. EV choices are a maintained directory of battery-electric passenger-car families, not an official complete national sales register; model-year coverage is approximate.</p><p class="nf-source-line" id="ev-model-note"></p></div></div>
   </section>`);
 
   put(`<section class="new-feature-panel section-wrap" id="myth-or-fact" aria-labelledby="myth-title">
@@ -111,7 +110,6 @@
   const resetSelect = (select, placeholder, disabled = true) => { select.replaceChildren(option(placeholder, '')); select.disabled = disabled; };
 
   const evMake = document.getElementById('ev-make'), evModel = document.getElementById('ev-model'), evYear = document.getElementById('ev-year'), evVariant = document.getElementById('ev-variant');
-  const evBattery = document.getElementById('ev-battery'), evCertifiedRange = document.getElementById('ev-certified-range');
   const evSource = document.getElementById('ev-profile-source');
   const evDirectory = DIRECTORY.map(entry => ({ ...entry, models: entry.models.filter(car => EV_CARS.some(ev => ev.make === entry.make && ev.model === car.name)) })).filter(entry => entry.models.length);
   evDirectory.forEach(entry => evMake.add(option(entry.make, entry.make)));
@@ -119,16 +117,33 @@
   const profilesFor = (car, yearValue) => EV_PROFILES.filter(profile => profile.make === car?.make && profile.model === car?.model && String(profile.year) === String(yearValue));
   const selectedEVProfile = () => {
     const profiles = profilesFor(getEV(), evYear.value);
-    return evVariant.value === '' ? null : profiles[Number(evVariant.value)] || null;
+    return evVariant.value === '' || evVariant.value === 'estimate' ? null : profiles[Number(evVariant.value)] || null;
   };
-  let tripTimer = 0, tripProgress = 0, tripRunning = false;
+  const genericEVProfile = car => car && evYear.value ? {
+    make: car.make, model: car.model, year: Number(evYear.value),
+    battery: 50, range: 350, cycle: 'general planning estimate',
+    variant: 'General estimate · 50 kWh / 350 km',
+    fallback: true,
+    note: 'No source-checked battery and range profile is indexed for this model year. The simulator uses a generic 50 kWh / 350 km planning estimate, not the vehicle’s published specification.'
+  } : null;
+  const useEVProfile = profile => {
+    const car = getEV();
+    const activeProfile = profile || genericEVProfile(car);
+    if (!activeProfile) {
+      evSource.textContent = car ? 'Choose a model year.' : 'Select an electric make and model.';
+      return;
+    }
+    const source = activeProfile.source ? linkFor(activeProfile.source) : null;
+    evSource.innerHTML = activeProfile.fallback
+      ? `General planning estimate · 50 kWh / 350 km · not a verified vehicle specification. Check the official manufacturer information before relying on a trip estimate. ${evDirectory.find(item => item.make === car.make)?.url ? safeAnchor({ title: `${car.make} official website`, url: evDirectory.find(item => item.make === car.make).url }) : ''}`
+      : `${activeProfile.battery} kWh · ${activeProfile.range} km · ${htmlSafe(activeProfile.cycle)} · ${source ? safeAnchor(source) : ''}`;
+  };
   function setEVProfile() {
     const car = getEV();
     resetSelect(evYear, car ? 'Choose a model year' : 'Choose a model first', !car);
     if (car) for (let y = Math.min(car.to, new Date().getFullYear()); y >= car.from; y--) evYear.add(option(String(y), String(y)));
-    evBattery.value = ''; evCertifiedRange.value = '';
     resetSelect(evVariant, car ? 'Choose a model year first' : 'Choose a model first');
-    evSource.textContent = car ? 'Choose a model year. Brochure figures will be filled only where a source-checked profile is available; otherwise enter the exact manufacturer-published figures.' : 'Select an electric make, model and year.';
+    evSource.textContent = car ? 'Choose a model year. Available published battery options will load automatically.' : 'Select an electric make and model.';
     updateEV();
   }
   evMake.addEventListener('change', () => {
@@ -140,40 +155,42 @@
   evModel.addEventListener('change', setEVProfile);
   evYear.addEventListener('change', () => {
     const car = getEV(), profiles = profilesFor(car, evYear.value);
-    evBattery.value = ''; evCertifiedRange.value = '';
-    resetSelect(evVariant, profiles.length ? 'Choose a sourced battery variant' : car ? 'No sourced variant · enter below' : 'Choose a model year first', !profiles.length);
-    profiles.forEach((profile, index) => evVariant.add(option(profile.variant || `${profile.battery} kWh · ${profile.cycle}`, String(index))));
-    if (profiles.length === 1) {
+    if (!car || !evYear.value) {
+      resetSelect(evVariant, 'Choose a model year first');
+      useEVProfile(null);
+      updateEV();
+      return;
+    }
+    evVariant.replaceChildren();
+    if (profiles.length) {
+      profiles.forEach((profile, index) => evVariant.add(option(profile.variant || `${profile.battery} kWh · ${profile.cycle}`, String(index))));
+      // Preselect a sourced option so choosing the car and year is enough to run the trip.
       evVariant.value = '0';
-      applyEVProfile(profiles[0]);
-    } else if (profiles.length > 1) {
-      evSource.textContent = 'Choose the exact battery variant before using its published figures.';
+      evVariant.disabled = profiles.length < 2;
+      useEVProfile(profiles[0]);
     } else {
-      const makeURL = evDirectory.find(item => item.make === car?.make)?.url;
-      evSource.innerHTML = car ? `No source-checked figures are indexed for ${htmlSafe(car.make)} ${htmlSafe(car.model)} · ${htmlSafe(evYear.value)}. Enter matching battery and range figures from the official manufacturer brochure. ${makeURL ? safeAnchor({ title: `${car.make} official website`, url: makeURL }) : ''}` : 'Select an electric make, model and year.';
+      evVariant.add(option('General estimate · 50 kWh / 350 km', 'estimate'));
+      evVariant.value = 'estimate';
+      evVariant.disabled = true;
+      useEVProfile(null);
     }
     updateEV();
   });
-  function applyEVProfile(profile) {
-    evBattery.value = String(profile?.battery || '');
-    evCertifiedRange.value = String(profile?.range || '');
-    evSource.innerHTML = profile ? `${profile.battery} kWh · ${profile.range} km · ${htmlSafe(profile.cycle)} · ${safeAnchor(linkFor(profile.source))}` : 'Enter figures from an official source; manually entered figures are not independently verified.';
-  }
   evVariant.addEventListener('change', () => {
-    applyEVProfile(selectedEVProfile());
+    useEVProfile(selectedEVProfile());
     updateEV();
   });
-  const evIds = ['ev-start', 'ev-distance', 'ev-speed', 'ev-battery', 'ev-certified-range'];
   const evOut = id => document.getElementById(`${id}-output`);
   function updateEV() {
     const car = getEV();
-    const battery = Number(evBattery.value), range = Number(evCertifiedRange.value);
+    const profile = selectedEVProfile() || genericEVProfile(car);
+    const battery = Number(profile?.battery), range = Number(profile?.range);
     const start = Number(document.getElementById('ev-start').value), distance = Number(document.getElementById('ev-distance').value), speed = Number(document.getElementById('ev-speed').value);
     evOut('ev-start').textContent = `${start}%`; evOut('ev-distance').textContent = `${distance} km`; evOut('ev-speed').textContent = `${speed} km/h`;
     if (!car || !evYear.value || !Number.isFinite(battery) || battery < 1 || battery > 300 || !Number.isFinite(range) || range < 1 || range > 2000) {
       document.getElementById('ev-energy').textContent = '—'; document.getElementById('ev-arrival').textContent = '—'; document.getElementById('ev-remaining').textContent = '—';
-      document.getElementById('ev-reachability').textContent = car ? `Selected: ${car.make} ${car.model} · ${evYear.value || 'choose model year'}. Select the exact battery variant or enter battery capacity and its matching published range.` : 'Choose a battery-electric model and model year.';
-      document.getElementById('ev-model-note').textContent = 'The estimate uses published pack capacity and range as a simple ratio. Manufacturer test-cycle range is not a promise of real-world distance; capacity may be gross or usable depending on the source.';
+      document.getElementById('ev-reachability').textContent = car ? `Selected: ${car.make} ${car.model} · ${evYear.value || 'choose model year'}. Choose a model year to load its published battery option or planning estimate.` : 'Choose a battery-electric model and model year.';
+      document.getElementById('ev-model-note').textContent = 'The estimate uses a published pack and range where available; otherwise it uses the clearly labelled generic planning estimate. Real-world range depends on vehicle, route and conditions.';
       return null;
     }
     const weather = document.getElementById('ev-weather').value, terrain = document.getElementById('ev-terrain').value, ac = document.getElementById('ev-ac').value, load = document.getElementById('ev-load').value;
@@ -185,12 +202,11 @@
     document.getElementById('ev-arrival').textContent = arrival < 0 ? 'Below 0% · not reachable' : `${arrivalPct.toFixed(0)}%`;
     document.getElementById('ev-remaining').textContent = `${remaining.toFixed(0)} km`;
     document.getElementById('ev-reachability').textContent = arrival >= 0 ? `Planning estimate · modifiers: speed ×${factors.speed.toFixed(2)}, weather ×${factors.weather.toFixed(2)}, terrain ×${factors.terrain.toFixed(2)}, HVAC ×${factors.ac.toFixed(2)}, load ×${factors.load.toFixed(2)}.` : 'This scenario exceeds the starting energy estimate. Reduce distance or conditions that increase estimated use.';
-    const profile = selectedEVProfile();
-    const verifiedInputs = Boolean(profile && battery === Number(profile.battery) && range === Number(profile.range));
+    const verifiedInputs = Boolean(profile && !profile.fallback);
     const makeURL = evDirectory.find(item => item.make === car.make)?.url;
     const makerLink = makeURL ? safeAnchor({ title: `${car.make} official website`, url: makeURL }) : '';
-    document.getElementById('ev-model-note').innerHTML = verifiedInputs ? `${htmlSafe(profile.note)} ${safeAnchor(linkFor(profile.source))}` : `${htmlSafe(car.make)} ${htmlSafe(car.model)} · ${htmlSafe(evYear.value)}. The entered or edited figures have not been independently verified. ${makerLink}`;
-    evSource.innerHTML = verifiedInputs ? `${profile.battery} kWh · ${profile.range} km · ${htmlSafe(profile.cycle)} · ${safeAnchor(linkFor(profile.source))}` : `Figures are user-entered or edited; verify the exact model-year, variant and range cycle in the manufacturer source. ${makerLink}`;
+    document.getElementById('ev-model-note').innerHTML = verifiedInputs ? `${htmlSafe(profile.note)} ${safeAnchor(linkFor(profile.source))}` : `${htmlSafe(profile.note)} ${makerLink}`;
+    useEVProfile(verifiedInputs ? profile : null);
     return { distance, arrival, arrivalPct, verifiedInputs };
   }
   evIds.concat(['ev-weather', 'ev-terrain', 'ev-ac', 'ev-load']).forEach(id => document.getElementById(id).addEventListener('input', updateEV));
@@ -200,7 +216,7 @@
   document.getElementById('ev-start-trip').addEventListener('click', () => {
     if (tripRunning) return;
     const estimate = updateEV();
-    if (!estimate) { document.getElementById('ev-trip-status').textContent = 'Choose a model year and select a sourced variant or enter valid battery/range figures.'; return; }
+    if (!estimate) { document.getElementById('ev-trip-status').textContent = 'Choose an electric car and model year first.'; return; }
     if (tripProgress >= 1) tripProgress = 0;
     tripRunning = true;
     const status = document.getElementById('ev-trip-status'); status.textContent = 'Adventure in progress · illustrative trip estimate';
