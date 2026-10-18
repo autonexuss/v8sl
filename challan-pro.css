@@ -1,0 +1,82 @@
+.challan-pay { color: var(--chassis-text, #202725); }
+.challan-pay-heading { display: flex; justify-content: space-between; align-items: center; gap: 28px; margin-bottom: 30px; }
+.challan-pay-heading > div { max-width: 760px; }
+.challan-pay-heading h2 { margin: 14px 0 12px; font-size: clamp(30px, 4.2vw, 52px); line-height: 1.04; letter-spacing: -.045em; }
+.challan-pay-heading p { max-width: 650px; margin: 0; color: #aeb8b6; line-height: 1.75; }
+.challan-pay-mark { display: grid; width: clamp(68px, 10vw, 112px); aspect-ratio: 1; place-items: center; border: 1px solid #d9c5a05e; border-radius: 50%; background: radial-gradient(circle at 36% 28%, #d9c5a03b, #d9c5a008 68%); color: #e3cfaa; font-size: clamp(32px, 5vw, 58px); font-weight: 350; }
+.challan-pay-grid { display: grid; grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr); align-items: stretch; gap: clamp(22px, 5vw, 64px); }
+.challan-pay-details { align-self: center; padding: 20px 0; }
+.challan-pay-details h3 { max-width: 410px; margin: 16px 0 12px; font-size: clamp(23px, 2.7vw, 34px); line-height: 1.12; letter-spacing: -.035em; }
+.challan-pay-details p { max-width: 430px; margin: 0 0 24px; color: #aeb8b6; font-size: 14px; line-height: 1.75; }
+.challan-pay-card { padding: clamp(20px, 3.3vw, 36px); border: 1px solid #ffffff2c; border-radius: 22px; background: linear-gradient(145deg, #ffffff13, #ffffff08 72%); box-shadow: 0 18px 44px #0002, inset 0 1px #ffffff18; }
+.challan-pay-card-top { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 17px; border-bottom: 1px solid #ffffff20; color: #e1d0ad; font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+.challan-pay-card form { margin-top: 20px; }
+.challan-pay-card label { display: block; margin-bottom: 8px; color: #e7e7e1; font-size: 13px; font-weight: 650; }
+.challan-amount-row { display: flex; align-items: center; gap: 10px; padding: 7px; border: 1px solid #ffffff30; border-radius: 13px; background: #070a0b5c; }
+.challan-amount-row > span { padding-left: 10px; color: #d8c39b; font-size: 18px; }
+.challan-amount-row input { flex: 1; width: 70px; min-width: 0; height: 44px; border: 0; outline: 0; background: transparent; color: #fff; font: inherit; font-size: 16px; }
+.challan-amount-row input:focus-visible { outline: 2px solid #d9c5a0; outline-offset: 2px; border-radius: 5px; }
+.challan-amount-row .button { min-height: 42px; white-space: nowrap; }
+.challan-pay-result { display: grid; gap: 11px; min-height: 72px; margin-top: 18px; padding: 16px; border: 1px solid #ffffff1b; border-radius: 13px; background: #0507084f; color: #c5cfcb; font-size: 13px; }
+.challan-pay-result > span { align-self: center; }
+.challan-pay-result-row { display: flex; justify-content: space-between; gap: 20px; }
+.challan-pay-result-row strong { color: #f3f2ed; text-align: right; }
+.challan-pay-result-row.is-total { margin-top: 2px; padding-top: 11px; border-top: 1px solid #ffffff24; color: #e5d3af; font-weight: 700; }
+.challan-pay-disclosure { margin: 15px 0 0; color: #aeb8b6; font-size: 11px; line-height: 1.65; }
+.challan-pay-disclosure strong { color: #e2cea8; }
+:root[data-theme="light"] .challan-pay-heading p,
+:root[data-theme="light"] .challan-pay-details p { color: #66736e; }
+:root[data-theme="light"] .challan-pay-mark { color: #806d48; border-color: #8e784841; }
+:root[data-theme="light"] .challan-pay-card { border-color: #25302d25; background: linear-gradient(145deg, #ffffffc9, #edf1eea8); box-shadow: 0 18px 44px #27352c13, inset 0 1px #fff; }
+:root[data-theme="light"] .challan-pay-card-top { border-color: #26312d20; color: #7d6943; }
+:root[data-theme="light"] .challan-pay-card label { color: #25302d; }
+:root[data-theme="light"] .challan-amount-row { border-color: #26312d2d; background: #fff; }
+:root[data-theme="light"] .challan-amount-row input { color: #222927; }
+:root[data-theme="light"] .challan-pay-result { border-color: #26312d20; background: #f8faf8; color: #596661; }
+:root[data-theme="light"] .challan-pay-result-row strong { color: #222927; }
+:root[data-theme="light"] .challan-pay-result-row.is-total { border-color: #26312d20; color: #786543; }
+:root[data-theme="light"] .challan-pay-disclosure { color: #626f6a; }
+:root[data-theme="light"] .challan-pay-disclosure strong { color: #705b36; }
+
+.pro-access-dialog { position: fixed; width: min(530px, calc(100vw - 28px)); max-width: none; max-height: min(90vh, 760px); margin: auto; padding: clamp(26px, 5vw, 42px); overflow: auto; border: 1px solid #ffffff35; border-radius: 25px; background: radial-gradient(ellipse at 88% 4%, #7bb9cf28, transparent 38%), linear-gradient(145deg, #202729, #101516 76%); color: #f2f1ec; box-shadow: 0 32px 110px #0009, inset 0 1px #ffffff25; }
+.pro-access-dialog::backdrop { background: #050708b8; backdrop-filter: blur(12px); }
+.pro-access-close-form { position: absolute; top: 14px; right: 14px; }
+.pro-access-close { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #ffffff32; border-radius: 50%; background: #ffffff0e; color: inherit; font-size: 23px; cursor: pointer; }
+.pro-access-close:hover, .pro-access-close:focus-visible { border-color: #e2cea8; outline: 0; }
+.pro-access-eyebrow { display: flex; align-items: center; gap: 9px; color: #d9c5a0; font-size: 10px; font-weight: 700; letter-spacing: .14em; }
+.pro-access-eyebrow span { width: 7px; height: 7px; border-radius: 50%; background: #d9c5a0; box-shadow: 0 0 14px #d9c5a0a0; }
+.pro-access-dialog h2 { max-width: 400px; margin: 20px 30px 12px 0; font-size: clamp(29px, 7vw, 43px); line-height: 1.06; letter-spacing: -.045em; font-weight: 480; }
+.pro-access-dialog > p { margin: 0; color: #bac4c1; font-size: 14px; line-height: 1.75; }
+.pro-access-summary { display: grid; gap: 7px; margin: 22px 0; padding: 15px 17px; border: 1px solid #ffffff22; border-radius: 14px; background: #ffffff09; }
+.pro-access-summary strong { font-size: 13px; }
+.pro-access-summary span { color: #abb7b4; font-size: 11px; line-height: 1.6; }
+.pro-access-form > label { display: block; margin-bottom: 8px; color: #e4e5df; font-size: 12px; font-weight: 650; }
+.pro-access-entry { display: flex; gap: 8px; }
+.pro-access-entry input { flex: 1; width: 80px; min-width: 0; min-height: 46px; padding: 0 13px; border: 1px solid #ffffff30; border-radius: 10px; background: #090c0d8a; color: #fff; font: inherit; }
+.pro-access-entry input:focus-visible { outline: 2px solid #d9c5a0; outline-offset: 2px; }
+.pro-access-entry button { min-height: 46px; padding: 0 16px; border: 0; border-radius: 10px; background: #e6d4b0; color: #1c2221; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
+.pro-access-entry button:hover, .pro-access-entry button:focus-visible { background: #f2e6cc; outline: 2px solid #fff7; outline-offset: 2px; }
+.pro-access-status { min-height: 20px; margin: 9px 0 0; color: #d9c5a0; font-size: 12px; }
+.pro-access-note { display: block; margin-top: 7px; color: #93a09c; font-size: 10px; line-height: 1.55; }
+:root[data-theme="light"] .pro-access-dialog { border-color: #25302d2e; background: radial-gradient(ellipse at 88% 4%, #aac8df55, transparent 38%), linear-gradient(145deg, #fff, #f0f2ee 76%); color: #202725; box-shadow: 0 32px 110px #0004, inset 0 1px #fff; }
+:root[data-theme="light"] .pro-access-dialog > p { color: #64716d; }
+:root[data-theme="light"] .pro-access-summary { border-color: #26312d24; background: #ffffff8a; }
+:root[data-theme="light"] .pro-access-summary span,
+:root[data-theme="light"] .pro-access-note { color: #66736e; }
+:root[data-theme="light"] .pro-access-form > label { color: #25302d; }
+:root[data-theme="light"] .pro-access-entry input { border-color: #26312d2d; background: #fff; color: #202725; }
+
+@media (max-width: 720px) {
+  .challan-pay-grid { grid-template-columns: 1fr; gap: 16px; }
+  .challan-pay-details { padding: 0; }
+  .challan-pay-heading { align-items: flex-start; }
+  .challan-pay-mark { flex: 0 0 auto; }
+}
+@media (max-width: 460px) {
+  .challan-pay-heading { gap: 12px; }
+  .challan-pay-mark { width: 50px; font-size: 27px; }
+  .challan-amount-row { flex-wrap: wrap; }
+  .challan-amount-row input { flex-basis: calc(100% - 45px); }
+  .challan-amount-row .button { width: 100%; }
+  .pro-access-entry { flex-direction: column; }
+}

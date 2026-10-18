@@ -147,12 +147,12 @@
   background: transparent;
   cursor: grab;
   filter: drop-shadow(0 0 22px rgba(96, 172, 228, .2)) drop-shadow(0 24px 35px rgba(0, 0, 0, .36));
-  transform: scale(1);
-  transition: filter .75s ease, transform .75s cubic-bezier(.2, .8, .2, 1);
+  transform: none;
+  transition: filter .75s ease;
 }
 .ev-earth-model:active { cursor: grabbing; }
 .ev-map-earth:hover .ev-earth-model,
-.ev-map-earth:focus-within .ev-earth-model { filter: drop-shadow(0 0 34px rgba(115, 198, 252, .35)) drop-shadow(0 28px 42px rgba(0, 0, 0, .4)); transform: scale(1.065); }
+.ev-map-earth:focus-within .ev-earth-model { filter: drop-shadow(0 0 34px rgba(115, 198, 252, .35)) drop-shadow(0 28px 42px rgba(0, 0, 0, .4)); }
 .ev-earth-fallback {
   position: absolute;
   z-index: 0;
@@ -294,4 +294,4 @@
 .ev-map-earth:hover::before,
 .ev-map-earth:focus-within::before { filter: blur(26px) !important; transform: scale(1.045) !important; }
 .ev-map-earth:hover .ev-earth-model,
-.ev-map-earth:focus-within .ev-earth-model { transform: scale(1.025) !important; }
+.ev-map-earth:focus-within .ev-earth-model { transform: none !important; }
