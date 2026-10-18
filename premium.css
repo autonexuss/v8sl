@@ -198,6 +198,7 @@ body{background:var(--chassis-bg);color:var(--chassis-text);transition:backgroun
 .garage-section .section-head{margin-bottom:24px}.garage-shell{padding:clamp(20px,4vw,38px);border:1px solid #ffffff30;border-radius:25px;background:linear-gradient(135deg,#ffffff18,#ffffff07);box-shadow:0 24px 85px #0003;color:var(--chassis-text)}
 .garage-shell .tool-form{max-width:900px}.garage-shell .tool-form .button{justify-self:start}.garage-list{display:grid;gap:10px;margin-top:22px}
 .garage-empty,.saved-listing-empty{margin:0;padding:16px;border:1px dashed var(--line);border-radius:12px;color:var(--chassis-muted);font-size:10px}
+.garage-limit-status{margin:10px 0 0;color:var(--chassis-muted);font-size:10px;letter-spacing:.04em}.garage-shell .tool-form button:disabled{cursor:not-allowed;opacity:.55}
 .garage-car{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:16px;border:1px solid #ffffff20;border-radius:15px;background:#ffffff0a}
 .garage-car-name{display:grid;gap:5px}.garage-car-name strong{font:500 15px Manrope;color:var(--chassis-text)}.garage-car-name span{font-size:9px;letter-spacing:.12em;color:var(--chassis-muted)}
 .garage-car .button{padding:10px 12px;font-size:9px;white-space:nowrap}.garage-disclosure{margin:15px 0 0;color:var(--chassis-muted);font-size:8px;line-height:1.65}

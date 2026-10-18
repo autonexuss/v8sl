@@ -361,10 +361,19 @@ reminderNotifyButton.addEventListener('click', async () => {
 checkDueReminders(); window.setInterval(checkDueReminders, 60_000);
 
 const garageKey = 'chassis-personal-garage-v1';
+const MAX_GARAGE_VEHICLES = 4;
 const garageForm = document.getElementById('garage-form');
 const garageList = document.getElementById('garage-list');
+const garageLimitStatus = document.getElementById('garage-limit-status');
+const garageAddButton = garageForm.querySelector('button[type="submit"]');
+function updateGarageLimit(count) {
+  garageLimitStatus.textContent = `${count} of ${MAX_GARAGE_VEHICLES} vehicles saved`;
+  garageAddButton.disabled = count >= MAX_GARAGE_VEHICLES;
+  garageAddButton.textContent = count >= MAX_GARAGE_VEHICLES ? 'Garage full (4/4)' : 'Add to my garage +';
+}
 function renderGarage() {
   const entries = readLocalList(garageKey);
+  updateGarageLimit(entries.length);
   garageList.replaceChildren();
   if (!entries.length) { const empty = document.createElement('p'); empty.className = 'garage-empty'; empty.textContent = 'Add a car to create your private garage.'; garageList.append(empty); return; }
   entries.forEach((entry, index) => {
@@ -388,6 +397,11 @@ garageForm.addEventListener('submit', event => {
   if (!make || !model || !year || registration.length < 6 || registration.length > 13) { window.alert('Choose a make, model and year, then enter a valid registration number.'); return; }
   const entries = readLocalList(garageKey);
   if (entries.some(entry => entry.registration === registration)) { window.alert('This vehicle is already in your garage.'); return; }
+  if (entries.length >= MAX_GARAGE_VEHICLES) {
+    updateGarageLimit(entries.length);
+    window.alert('Your garage can hold up to four cars. Remove one before adding another.');
+    return;
+  }
   entries.unshift({ make, model, year, registration });
   if (!syncPrivateList('garage', entries)) { window.alert('Browser storage is unavailable. Your vehicle was not saved.'); return; }
   garageForm.reset(); document.getElementById('garage-model').disabled = true; document.getElementById('garage-year').disabled = true; renderGarage();

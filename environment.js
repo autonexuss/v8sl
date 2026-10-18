@@ -41,7 +41,9 @@
 
   function profileFor(makeName, modelName, year) {
     const yearNumber = Number(year) || new Date().getFullYear();
-    return profiles.find(profile => clean(profile.make) === clean(makeName) && clean(profile.model) === clean(modelName) && yearNumber >= profile.fromYear && yearNumber <= profile.toYear && !(profile.excludes || []).some(exclude => clean(modelName).includes(clean(exclude)))) || null;
+    const carRecord = { make: { make: makeName }, model: { name: modelName } };
+    const sharedProfile = window.chassisCuratedSpecProfileFor?.(carRecord, `${makeName} ${modelName} ${yearNumber}`);
+    return sharedProfile || profiles.find(profile => clean(profile.make) === clean(makeName) && clean(profile.model) === clean(modelName) && yearNumber >= profile.fromYear && yearNumber <= profile.toYear && !(profile.excludes || []).some(exclude => clean(modelName).includes(clean(exclude)))) || null;
   }
   function findEfficiency(profile, energy) {
     const text = profile?.rows?.find(row => /fuel economy|range|efficiency/i.test(row.name))?.value || '';
@@ -101,26 +103,54 @@
       const profile = car.profile;
       const engines = profile?.engines || [];
       const powers = engines.map(engine => Number(engine.powerPS)).filter(Number.isFinite);
-      const torques = engines.map(engine => Number.parseFloat(String(engine.torque).replace(',', ''))).filter(Number.isFinite);
-      const economy = profile?.rows?.find(row => /fuel economy|range|efficiency/i.test(row.name));
+      const torques = engines.map(engine => Number.parseFloat(String(engine.torque).replace(/,/g, ''))).filter(Number.isFinite);
+      const rowValue = pattern => profile?.rows?.find(row => pattern.test(row.name))?.value || 'Not available in the curated car-search profile';
+      const economyRow = profile?.rows?.find(row => /fuel economy|range|efficiency/i.test(row.name));
       const petrolEfficiency = findEfficiency(profile, 'petrol');
       const dieselEfficiency = findEfficiency(profile, 'diesel');
       const co2 = petrolEfficiency ? `${(2350 / petrolEfficiency).toFixed(0)} g/km petrol (estimate)` : dieselEfficiency ? `${(2690 / dieselEfficiency).toFixed(0)} g/km diesel (estimate)` : 'Not available';
+      const engineSummary = engines.length ? engines.map(engine => {
+        const details = [engine.displacement, Number.isFinite(Number(engine.powerPS)) ? `${engine.powerPS} PS` : '', engine.torque, engine.transmission].filter(Boolean).join(' · ');
+        return `${engine.name}${details ? ` — ${details}` : ''}`;
+      }).join('; ') : rowValue(/engine|powertrain/i);
+      const transmissions = [...new Set(engines.map(engine => engine.transmission).filter(Boolean))];
+      const tankAndBoot = [
+        rowValue(/fuel tank/i),
+        rowValue(/boot capacity|luggage capacity/i)
+      ].filter(value => value !== 'Not available in the curated car-search profile').join(' · ');
       return {
         car, engines, powers, torques,
-        fuel: engines.length ? [...new Set(engines.map(engine => engine.fuel))].join(' / ') : 'Not available',
+        engine: engineSummary,
+        fuel: engines.length ? [...new Set(engines.map(engine => engine.fuel).filter(Boolean))].join(' / ') : rowValue(/fuel type|energy type/i),
         power: powers.length ? `${Math.min(...powers)}–${Math.max(...powers)} PS across listed engines` : 'Not available',
         torque: torques.length ? `${Math.min(...torques)}–${Math.max(...torques)} Nm across listed engines` : 'Not available',
-        economy: economy ? `${economy.value}${economy.sourceLabel ? ` · ${economy.sourceLabel}` : ''}` : 'Not available',
+        transmission: transmissions.length ? transmissions.join(' / ') : rowValue(/transmission|gearbox/i),
+        economy: economyRow ? `${economyRow.value}${economyRow.sourceLabel ? ` · ${economyRow.sourceLabel}` : ''}` : 'Not available',
+        dimensions: rowValue(/dimensions?/i),
+        wheelbase: rowValue(/wheelbase/i),
+        body: rowValue(/body style|seating|seat capacity/i),
+        drive: rowValue(/drivetrain|\bdrive\b/i),
+        tankAndBoot: tankAndBoot || 'Not available',
         co2,
         source: profile?.performance || profile?.brochure || car.make.url,
         sourceLabel: profile?.sourceLabel || `${car.make.make} official site`,
-        sourceNote: profile?.provenance || 'No source-backed specifications for this exact make, model and year are curated in Autonexus.'
+        sourceNote: profile?.provenance || 'No source-backed specifications for this exact make, model and year are curated in the Autonexus car-search profiles.'
       };
     };
     const data = selected.map(getData);
     const rows = [
-      ['Fuel / energy', item => item.fuel], ['Published peak power', item => item.power], ['Published peak torque', item => item.torque], ['Published efficiency / range', item => item.economy], ['Tailpipe CO₂ per km', item => item.co2]
+      ['Engine / powertrain variants', item => item.engine],
+      ['Fuel / energy', item => item.fuel],
+      ['Published peak power', item => item.power],
+      ['Published peak torque', item => item.torque],
+      ['Transmission', item => item.transmission],
+      ['Published efficiency / range', item => item.economy],
+      ['Body and seating', item => item.body],
+      ['Dimensions', item => item.dimensions],
+      ['Wheelbase', item => item.wheelbase],
+      ['Drive', item => item.drive],
+      ['Fuel tank / boot capacity', item => item.tankAndBoot],
+      ['Tailpipe CO₂ per km', item => item.co2]
     ];
     const tbody = document.createElement('tbody');
     rows.forEach(([labelText, getter]) => {

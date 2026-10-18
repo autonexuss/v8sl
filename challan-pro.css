@@ -3,7 +3,6 @@
 .challan-pay-heading > div { max-width: 760px; }
 .challan-pay-heading h2 { margin: 14px 0 12px; font-size: clamp(30px, 4.2vw, 52px); line-height: 1.04; letter-spacing: -.045em; }
 .challan-pay-heading p { max-width: 650px; margin: 0; color: #aeb8b6; line-height: 1.75; }
-.challan-pay-mark { display: grid; width: clamp(68px, 10vw, 112px); aspect-ratio: 1; place-items: center; border: 1px solid #d9c5a05e; border-radius: 50%; background: radial-gradient(circle at 36% 28%, #d9c5a03b, #d9c5a008 68%); color: #e3cfaa; font-size: clamp(32px, 5vw, 58px); font-weight: 350; }
 .challan-pay-grid { display: grid; grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr); align-items: stretch; gap: clamp(22px, 5vw, 64px); }
 .challan-pay-details { align-self: center; padding: 20px 0; }
 .challan-pay-details h3 { max-width: 410px; margin: 16px 0 12px; font-size: clamp(23px, 2.7vw, 34px); line-height: 1.12; letter-spacing: -.035em; }
@@ -26,8 +25,7 @@
 .challan-pay-disclosure strong { color: #e2cea8; }
 :root[data-theme="light"] .challan-pay-heading p,
 :root[data-theme="light"] .challan-pay-details p { color: #66736e; }
-:root[data-theme="light"] .challan-pay-mark { color: #806d48; border-color: #8e784841; }
-:root[data-theme="light"] .challan-pay-card { border-color: #25302d25; background: linear-gradient(145deg, #ffffffc9, #edf1eea8); box-shadow: 0 18px 44px #27352c13, inset 0 1px #fff; }
+:root[data-theme="light"] :root[data-theme="light"] .challan-pay-card { border-color: #25302d25; background: linear-gradient(145deg, #ffffffc9, #edf1eea8); box-shadow: 0 18px 44px #27352c13, inset 0 1px #fff; }
 :root[data-theme="light"] .challan-pay-card-top { border-color: #26312d20; color: #7d6943; }
 :root[data-theme="light"] .challan-pay-card label { color: #25302d; }
 :root[data-theme="light"] .challan-amount-row { border-color: #26312d2d; background: #fff; }
@@ -70,11 +68,9 @@
   .challan-pay-grid { grid-template-columns: 1fr; gap: 16px; }
   .challan-pay-details { padding: 0; }
   .challan-pay-heading { align-items: flex-start; }
-  .challan-pay-mark { flex: 0 0 auto; }
-}
+  }
 @media (max-width: 460px) {
   .challan-pay-heading { gap: 12px; }
-  .challan-pay-mark { width: 50px; font-size: 27px; }
   .challan-amount-row { flex-wrap: wrap; }
   .challan-amount-row input { flex-basis: calc(100% - 45px); }
   .challan-amount-row .button { width: 100%; }

@@ -315,6 +315,8 @@ function renderKnownProfile(index) {
     const image = document.createElement('img');
     image.src = car.image;
     image.alt = car.alt || car.title;
+    image.loading = 'lazy';
+    image.decoding = 'async';
     card.append(image);
   }
   card.append(body);
@@ -664,6 +666,7 @@ function curatedSpecProfileFor(carRecord, requestedTerm) {
     return !year || (year >= profile.fromYear && year <= profile.toYear);
   }) || null;
 }
+window.chassisCuratedSpecProfileFor = curatedSpecProfileFor;
 
 function officialPhotoSources(vehicle, requestedTerm) {
   const profile = curatedSpecProfileFor(vehicle, requestedTerm);
@@ -968,6 +971,7 @@ function renderImageGallery(target, vehicle, requestedTerm) {
         image.src = item.image;
         image.alt = vehicle.fullName + ' ' + view.title + ': ' + item.title;
         image.loading = 'lazy';
+        image.decoding = 'async';
         image.addEventListener('error', () => figure.remove(), { once: true });
         anchor.append(image);
         const caption = document.createElement('figcaption');

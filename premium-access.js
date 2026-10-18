@@ -8,25 +8,34 @@
   if (!dialog || !form || !input || !status || !checkoutButton || !checkoutStatus) return;
 
   let pendingLink = null;
-
-  function isPreviewUnlocked() {
-    try { return sessionStorage.getItem('autonexus-pro-preview-unlocked') === '1'; }
-    catch { return false; }
-  }
+  let replayLink = null;
 
   function openAccess(link) {
     pendingLink = link;
     input.value = '';
     status.textContent = '';
     checkoutStatus.textContent = 'Secure checkout is not connected yet. No payment will be taken.';
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) {
+      try { dialog.showModal(); }
+      catch { dialog.setAttribute('open', ''); }
+    }
     requestAnimationFrame(() => checkoutButton.focus({ preventScroll: true }));
   }
 
   document.addEventListener('click', event => {
     const target = event.target;
-    const link = target instanceof Element ? target.closest('.premium-feature-grid a[href^="#"], .glass-nav-group--pro a[href^="#"]') : null;
-    if (!link || isPreviewUnlocked()) return;
+    const link = target instanceof Element
+      ? target.closest('.premium-feature-grid a[href^="#"], .glass-nav-group--pro a[href^="#"]')
+      : null;
+    if (!link) return;
+
+    // Replaying the selected link after a valid developer code should continue
+    // to that feature once; the next Pro entry always opens the access page.
+    if (link === replayLink) {
+      replayLink = null;
+      return;
+    }
+
     event.preventDefault();
     event.stopImmediatePropagation();
     openAccess(link);
@@ -43,12 +52,17 @@
       input.focus();
       return;
     }
-    try { sessionStorage.setItem('autonexus-pro-preview-unlocked', '1'); }
-    catch { status.textContent = 'This browser could not save preview access. Allow session storage and try again.'; return; }
     const linkToOpen = pendingLink;
-    status.textContent = 'Developer preview unlocked for this tab.';
+    pendingLink = null;
     dialog.close('unlocked');
-    if (linkToOpen?.isConnected) requestAnimationFrame(() => linkToOpen.click());
+    status.textContent = '';
+    if (linkToOpen?.isConnected) {
+      replayLink = linkToOpen;
+      requestAnimationFrame(() => {
+        if (linkToOpen.isConnected && replayLink === linkToOpen) linkToOpen.click();
+        else if (replayLink === linkToOpen) replayLink = null;
+      });
+    }
   });
 
   dialog.addEventListener('click', event => {
