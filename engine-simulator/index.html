@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Autonexus Engine Simulator | Autonexus</title><link rel="icon" type="image/png" sizes="512x512" href="../assets/autonexus-icon.png?v=1"><link rel="apple-touch-icon" href="../assets/autonexus-icon.png?v=1">
-<style>html,body{margin:0;background:#0f0808}#autonexus-sim{--anx-height:100vh}</style>
+<style>html,body{margin:0;background:#000}#autonexus-sim{--anx-height:100vh}</style>
 <style>/*!
  * Autonexus Engine Simulator v6.0.0 - stylesheet
  * Everything is scoped under .anx-sim. Re-theme by overriding the --anx-* tokens
@@ -14,10 +14,10 @@
 
 .anx-sim {
   /* ---- design tokens (override on the host element) ---- */
-  --anx-bg: #0f0808; --anx-panel: #1a0f0f; --anx-panel-2: #241415; --anx-line: #392022; --anx-line-2: #4c2e30;
-  --anx-text: #eae0e1; --anx-muted: #a48284; --anx-dim: #7a5c5e;
-  --anx-accent: #ca2631; --anx-green: #35e08a; --anx-amber: #ffb23e; --anx-red: #ff4d5a;
-  --anx-vp0: #271314; --anx-vp1: #0c0606;                    /* 3D viewport background (centre / edge) */
+  --anx-bg: #000000; --anx-panel: #050505; --anx-panel-2: #0a0a0a; --anx-line: #282828; --anx-line-2: #393939;
+  --anx-text: #ededed; --anx-muted: #a6a6a6; --anx-dim: #777777;
+  --anx-accent: #ae2530; --anx-green: #35e08a; --anx-amber: #ffb23e; --anx-red: #ff4d5a;
+  --anx-vp0: #050505; --anx-vp1: #000000;                    /* 3D viewport background (centre / edge) */
   --anx-radius: 10px; --anx-height: 880px;                    /* desktop layout height; use 100vh for full page */
   --anx-font-ui: "Autonexus Inter", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
@@ -43,7 +43,7 @@
 .anx-center { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--anx-bg); }
 
 /* ---------------------------------------------------------------- header */
-.anx-head { display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: linear-gradient(180deg, #201112, var(--anx-panel)); flex-wrap: wrap; }
+.anx-head { display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: linear-gradient(180deg, #050505, var(--anx-panel)); flex-wrap: wrap; }
 .anx-brand { display: flex; align-items: center; gap: 10px; margin-right: 4px; }
 .anx-brand-logo { display: block; width: 178px; max-width: 100%; height: auto; max-height: 36px; object-fit: contain; filter: brightness(0) invert(1); flex: none; }
 .anx-brand-text { display: flex; flex-direction: column; line-height: 1.05; }
@@ -64,7 +64,7 @@
 /* --------------------------------------------------------------- buttons */
 .anx-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 34px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--anx-line-2); background: var(--anx-panel-2); color: var(--anx-text);
   font-weight: 600; font-size: 12px; letter-spacing: .04em; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; transition: border-color .15s, background .15s, transform .08s, box-shadow .15s; }
-.anx-btn:hover { border-color: var(--anx-accent); background: #2c191a; }
+.anx-btn:hover { border-color: var(--anx-accent); background: #171717; }
 .anx-btn:active { transform: translateY(1px); }
 .anx-btn:disabled { opacity: .5; cursor: default; }
 .anx-btn svg, .anx-sim .anx-pedal svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
@@ -74,8 +74,8 @@
 .anx-block { width: 100%; margin-top: 8px; }
 .anx-go { background: linear-gradient(180deg, #14503a, #0e3a2a); border-color: rgba(53, 224, 138, .55); color: #b6ffd9; }
 .anx-go:hover { border-color: var(--anx-green); background: linear-gradient(180deg, #186049, #11452f); box-shadow: 0 0 0 3px rgba(53, 224, 138, .12); }
-.anx-stop { background: #2b1318; border-color: rgba(255, 77, 90, .5); color: #ffb3b9; }
-.anx-stop:hover { border-color: var(--anx-red); background: #371820; }
+.anx-stop { background: #1a080b; border-color: rgba(255, 77, 90, .5); color: #ffb3b9; }
+.anx-stop:hover { border-color: var(--anx-red); background: #290b10; }
 .anx-reset:hover { border-color: var(--anx-amber); color: var(--anx-amber); }
 .anx-primary { background: linear-gradient(180deg, #893339, #8b3238); border-color: rgba(202, 38, 49, .55); color: #e5d1d2; }
 .anx-btn:focus-visible, .anx-chip:focus-visible, .anx-segb:focus-visible, .anx-pedal:focus-visible, .anx-toggle:focus-visible, .anx-link:focus-visible, .anx-select:focus-visible, .anx-range:focus-visible, .anx-sec > summary:focus-visible {
@@ -146,7 +146,7 @@
 .anx-engchip-t b { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .anx-engchip-t small { font-size: 11px; color: var(--anx-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .anx-shift { display: flex; gap: 3px; padding: 8px 10px; border-radius: 10px; background: rgba(23, 12, 12, .6); border: 1px solid var(--anx-line); pointer-events: none !important; }
-.anx-shift i { width: 9px; height: 9px; border-radius: 50%; background: #2c1a1b; transition: background .06s, box-shadow .06s; }
+.anx-shift i { width: 9px; height: 9px; border-radius: 50%; background: #2b0d12; transition: background .06s, box-shadow .06s; }
 .anx-shift i.on.g { background: var(--anx-green); box-shadow: 0 0 8px var(--anx-green); }
 .anx-shift i.on.a { background: var(--anx-amber); box-shadow: 0 0 8px var(--anx-amber); }
 .anx-shift i.on.r { background: var(--anx-red); box-shadow: 0 0 9px var(--anx-red); }
@@ -201,7 +201,7 @@
 .anx-link { border: 0; background: none; color: var(--anx-accent); font-size: 11px; font-weight: 600; cursor: pointer; padding: 0; }
 .anx-gearbox { display: grid; grid-template-columns: 40px 1fr 40px; gap: 8px; margin-top: 8px; }
 .anx-gearbox .anx-btn { height: 46px; width: 100%; }
-.anx-gear { display: grid; place-items: center; height: 46px; border-radius: 9px; border: 1px solid var(--anx-line-2); background: #0f0708; font-weight: 700; font-size: 26px; color: var(--anx-accent); text-shadow: 0 0 14px rgba(202, 38, 49, .5); }
+.anx-gear { display: grid; place-items: center; height: 46px; border-radius: 9px; border: 1px solid var(--anx-line-2); background: #050505; font-weight: 700; font-size: 26px; color: var(--anx-accent); text-shadow: 0 0 14px rgba(202, 38, 49, .5); }
 .anx-pips { display: flex; gap: 4px; margin-top: 8px; }
 .anx-pips i { flex: 1; text-align: center; font-size: 10px; font-weight: 700; padding: 3px 0; border-radius: 5px; background: var(--anx-panel-2); color: var(--anx-dim); }
 .anx-pips i.is-on { background: rgba(202, 38, 49, .18); color: var(--anx-accent); }
@@ -1462,8 +1462,8 @@ function mount(target, userOpts) {
       if (state == 0) {
         // Use a power-independent coast-down when combustion is off. Otherwise,
         // low user-set torque also removes the modeled friction that slows RPM.
-        const coastTau = Math.max(.32, Math.min(.5, .32 + Math.sqrt(Math.max(.01, g.J)) * .1));
-        rpm = rpm <= 35 ? 0 : rpm * Math.exp(-dt / coastTau);
+        const coastTau = Math.max(.18, Math.min(.26, .18 + Math.sqrt(Math.max(.01, g.J)) * .04));
+        rpm = rpm <= 12 ? 0 : rpm * Math.exp(-dt / coastTau);
       } else {
         rpm = Math.max(0, rpm + (net - tc) / g.J * dt * 30 / Math.PI);
       }
@@ -1477,10 +1477,9 @@ function mount(target, userOpts) {
     if (state == 2 && rpm > g.rl * 1.12) { state = 0; msg = 'ENGINE DAMAGED: over-rev (wrong downshift?)'; }
     if (state == 2 && !AUTO && gear && !cp && v < .8 && pedal < .24 && thr < .24 && rpm < idl * 1.35) {
       state = 0;
-      rpm = 0;
       msg = 'STALLED: clutch released in gear at idle without enough throttle';
     }
-    if (state == 2 && rpm < g.idle * .3) { state = 0; rpm = gear && !cp && v > .8 ? ri : 0; msg = 'STALLED: ' + (gear && cl > .3 ? (gear > 2 ? 'gear too high for this speed: downshift or press the clutch' : 'clutch released too fast in gear, use throttle or slip the clutch') : uLoad > .5 ? 'dyno load too high for this rpm' : 'idle speed too low for these specs'); }
+    if (state == 2 && rpm < g.idle * .3) { state = 0; if (gear && !cp && v > .8) rpm = ri; msg = 'STALLED: ' + (gear && cl > .3 ? (gear > 2 ? 'gear too high for this speed: downshift or press the clutch' : 'clutch released too fast in gear, use throttle or slip the clutch') : uLoad > .5 ? 'dyno load too high for this rpm' : 'idle speed too low for these specs'); }
     if (state == 2 && Tc > 106) { state = 0; msg = 'OVERHEATED: engine shut down, let it cool'; }
     if (state == 2 && fuel <= 0) { state = 0; msg = 'OUT OF FUEL'; }
     if (state == 0) te = 0;
