@@ -2,6 +2,11 @@
   const form = document.getElementById('challan-pay-form');
   const amountInput = document.getElementById('challan-amount');
   const result = document.getElementById('challan-pay-result');
+  const lookupForm = document.getElementById('challan-lookup-form');
+  const challanReference = document.getElementById('challan-reference');
+  const vehicleRegistration = document.getElementById('challan-vehicle');
+  const lookupStatus = document.getElementById('challan-lookup-status');
+  const officialLink = document.getElementById('challan-official-link');
   if (!form || !amountInput || !result) return;
 
   const money = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -17,6 +22,19 @@
     result.append(row);
   }
 
+  if (lookupForm && challanReference && vehicleRegistration && lookupStatus && officialLink) {
+    lookupForm.addEventListener('submit', event => {
+      event.preventDefault();
+      if (!challanReference.value.trim() || !vehicleRegistration.value.trim()) {
+        lookupStatus.textContent = 'Enter both details, then continue to the official portal. Autonexus will not submit them.';
+        (!challanReference.value.trim() ? challanReference : vehicleRegistration).focus();
+        return;
+      }
+      lookupStatus.textContent = 'Opening the official portal. Your details remain in this tab and were not sent; enter them again there to check the challan and pay if one is due.';
+      officialLink.click();
+    });
+  }
+
   form.addEventListener('submit', event => {
     event.preventDefault();
     const challanAmount = Number(amountInput.value);
@@ -30,8 +48,8 @@
     }
     const fee = Math.round(challanAmount * 0.01 * 100) / 100;
     result.replaceChildren();
-    addRow('Challan amount entered', money.format(challanAmount));
-    addRow('Illustrative fee (1%)', money.format(fee));
-    addRow('Example total if that fee applied', money.format(challanAmount + fee), true);
+    addRow('Amount entered', money.format(challanAmount));
+    addRow('Illustrative convenience fee (₹10 per ₹1,000)', money.format(fee));
+    addRow('Illustrative total (not charged here)', money.format(challanAmount + fee), true);
   });
 })();

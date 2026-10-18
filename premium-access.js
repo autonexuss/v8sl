@@ -3,7 +3,9 @@
   const form = document.getElementById('pro-access-form');
   const input = document.getElementById('pro-access-code');
   const status = document.getElementById('pro-access-status');
-  if (!dialog || !form || !input || !status) return;
+  const checkoutButton = document.getElementById('pro-checkout-button');
+  const checkoutStatus = document.getElementById('pro-checkout-status');
+  if (!dialog || !form || !input || !status || !checkoutButton || !checkoutStatus) return;
 
   let pendingLink = null;
 
@@ -16,8 +18,9 @@
     pendingLink = link;
     input.value = '';
     status.textContent = '';
+    checkoutStatus.textContent = 'Secure checkout is not connected yet. No payment will be taken.';
     if (!dialog.open) dialog.showModal();
-    requestAnimationFrame(() => input.focus({ preventScroll: true }));
+    requestAnimationFrame(() => checkoutButton.focus({ preventScroll: true }));
   }
 
   document.addEventListener('click', event => {
@@ -28,6 +31,10 @@
     event.stopImmediatePropagation();
     openAccess(link);
   }, true);
+
+  checkoutButton.addEventListener('click', () => {
+    checkoutStatus.textContent = 'Secure payment is not configured yet. No charge was made; contact the site owner to activate checkout.';
+  });
 
   form.addEventListener('submit', event => {
     event.preventDefault();
