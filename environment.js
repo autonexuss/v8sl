@@ -2,7 +2,7 @@
   'use strict';
   const byId = id => document.getElementById(id);
   const directory = Array.isArray(window.CHASSIS_INDIA_DIRECTORY) ? window.CHASSIS_INDIA_DIRECTORY : [];
-  const profiles = typeof curatedIndiaSpecProfiles !== 'undefined' ? curatedIndiaSpecProfiles : [];
+  const profiles = window.chassisCuratedIndiaSpecProfiles || (typeof curatedIndiaSpecProfiles !== 'undefined' ? curatedIndiaSpecProfiles : []);
   const clean = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -52,7 +52,7 @@
     return match ? Number(match[1]) : null;
   }
 
-  // Compare 2–4 cars from the India-market directory; only the curated manufacturer data is rendered.
+  // Compare 2–4 cars from the India-market directory using shared curated profiles and public car-search references.
   const selectorHost = byId('env-compare-selectors');
   const compareCars = [];
   function addCompareCar() {
@@ -67,8 +67,17 @@
     [ ['Manufacturer', make], ['Model', model], ['Model year', year] ].forEach(([labelText, select]) => {
       const label = document.createElement('label'); label.append(document.createTextNode(labelText), select); fields.append(label);
     });
-    fillMake(make);
-    bindVehicleSelectors(make, model, year);
+    const onSelectionChange = () => {
+      compareRequestId += 1;
+      const results = byId('env-compare-results');
+      if (!results) return;
+      const runButton = byId('env-compare-run');
+      if (runButton) { runButton.disabled = false; runButton.textContent = 'Compare cars'; }
+      const notice = document.createElement('p');
+      notice.textContent = 'Your selection changed. Choose Compare cars to refresh the sourced comparison.';
+      results.replaceChildren(notice);
+    };
+    bindVehicleSelectors(make, model, year, onSelectionChange);
     fieldset.append(legend, fields);
     selectorHost.append(fieldset);
     compareCars.push({ make, model, year, fieldset });
@@ -83,104 +92,192 @@
     if (!url) { link.removeAttribute('target'); link.removeAttribute('rel'); }
     return link;
   }
-  function renderComparison() {
+  let compareRequestId = 0;
+  function comparisonPowerPS(value) {
+    const text = String(value || '');
+    const ps = text.match(/([\d,.]+)\s*(?:PS|CV)\b/i);
+    const hp = text.match(/([\d,.]+)\s*(?:bhp|hp)\b/i);
+    const kw = text.match(/([\d,.]+)\s*kW\b/i);
+    if (ps) return Number(ps[1].replace(/,/g, ''));
+    if (hp) return Number(hp[1].replace(/,/g, '')) * 1.01387;
+    if (kw) return Number(kw[1].replace(/,/g, '')) * 1.35962;
+    return null;
+  }
+  function comparisonTorqueNm(value) {
+    const text = String(value || '');
+    const amount = text.match(/([\d,.]+)\s*(?:Nm|N·m|newton.?met(?:er|re)s?)\b/i);
+    if (amount) return Number(amount[1].replace(/,/g, ''));
+    const knm = text.match(/([\d,.]+)\s*kN(?:m|·m)\b/i);
+    if (knm) return Number(knm[1].replace(/,/g, '')) * 1000;
+    return null;
+  }
+  function makeComparisonData(car, lookup) {
+    const profile = lookup?.curatedProfile || car.profile || null;
+    const publicRows = [...(lookup?.infoboxRows || []), ...(lookup?.vehicleFacts?.rows || [])];
+    const profileRows = profile?.rows || [];
+    const valueFor = pattern => {
+      const exact = profileRows.find(row => pattern.test(row.name));
+      if (exact?.value) return String(exact.value) + (exact.sourceLabel ? ' · ' + exact.sourceLabel : '');
+      const publicMatch = publicRows.find(row => pattern.test(row.name));
+      return publicMatch?.value || 'Not available in the matched search sources';
+    };
+    const engines = profile?.engines || [];
+    const powers = engines.map(engine => Number(engine.powerPS)).filter(value => Number.isFinite(value) && value > 0);
+    const torques = engines.map(engine => Number.parseFloat(String(engine.torque).replace(/,/g, ''))).filter(value => Number.isFinite(value) && value > 0);
+    const publicPower = valueFor(/nominal power|maximum power|engine power|power output|power/i);
+    const publicTorque = valueFor(/torque/i);
+    const parsedPower = comparisonPowerPS(publicPower);
+    const parsedTorque = comparisonTorqueNm(publicTorque);
+    if (!powers.length && parsedPower) powers.push(parsedPower);
+    if (!torques.length && parsedTorque) torques.push(parsedTorque);
+    const economy = valueFor(/fuel economy|fuel consumption|energy consumption|range|efficiency/i);
+    const fuel = engines.length ? [...new Set(engines.map(engine => engine.fuel).filter(Boolean))].join(' / ') : valueFor(/fuel type|fuel|energy source/i);
+    const engine = engines.length
+      ? engines.map(item => [item.name, item.displacement, item.powerPS ? item.powerPS + ' PS' : '', item.torque, item.transmission].filter(Boolean).join(' · ')).join('; ')
+      : [valueFor(/engine|powertrain/i), valueFor(/engine displacement|displacement/i)].filter(value => value !== 'Not available in the matched search sources').join(' · ') || 'Not available in the matched search sources';
+    const rowValue = pattern => valueFor(pattern);
+    const tailpipe = /electric|battery|bev/i.test(fuel)
+      ? '0 g/km tailpipe · electricity generation excluded'
+      : (() => {
+          const petrolEfficiency = findEfficiency(profile, 'petrol');
+          const dieselEfficiency = findEfficiency(profile, 'diesel');
+          if (petrolEfficiency) return (2350 / petrolEfficiency).toFixed(0) + ' g/km petrol (estimate)';
+          if (dieselEfficiency) return (2690 / dieselEfficiency).toFixed(0) + ' g/km diesel (estimate)';
+          return 'Not available';
+        })();
+    const sourceUrl = profile?.performance || profile?.brochure || lookup?.article?.url || lookup?.vehicleFacts?.source || car.make.url || '';
+    const sourceLabel = profile?.sourceLabel || (lookup?.article?.url ? 'Matched model overview' : lookup?.vehicleFacts?.source ? 'Wikidata vehicle record' : car.make.make + ' official site');
+    const sourceNote = profile?.provenance || (lookup?.article || lookup?.vehicleFacts || (lookup?.infoboxRows || []).length
+      ? 'Public reference data describes a model family and may not match the selected year, engine or trim.'
+      : 'No exact technical rows were returned by the car-search references. Use the manufacturer link to verify the selected year and trim.');
+    const dimensions = [
+      ['Length', rowValue(/^length/i)],
+      ['Width', rowValue(/^width/i)],
+      ['Height', rowValue(/^height/i)]
+    ].filter(([, value]) => value !== 'Not available in the matched search sources').map(([label, value]) => label + ': ' + value).join(' · ');
+    return {
+      title: car.make.make + ' ' + car.model.name + ' · ' + car.year,
+      powers, torques,
+      values: {
+        engine,
+        fuel,
+        power: powers.length > 1 ? Math.min(...powers).toLocaleString('en-IN', { maximumFractionDigits: 0 }) + '–' + Math.max(...powers).toLocaleString('en-IN', { maximumFractionDigits: 0 }) + ' PS across listed engines' : powers.length ? powers[0].toLocaleString('en-IN', { maximumFractionDigits: 0 }) + ' PS' : publicPower,
+        torque: torques.length > 1 ? Math.min(...torques).toLocaleString('en-IN', { maximumFractionDigits: 0 }) + '–' + Math.max(...torques).toLocaleString('en-IN', { maximumFractionDigits: 0 }) + ' Nm across listed engines' : torques.length ? torques[0].toLocaleString('en-IN', { maximumFractionDigits: 0 }) + ' Nm' : publicTorque,
+        transmission: engines.length ? [...new Set(engines.map(item => item.transmission).filter(Boolean))].join(' / ') : rowValue(/transmission|gearbox/i),
+        economy,
+        body: rowValue(/body style|seating|seat capacity|number of seats/i),
+        dimensions: dimensions || rowValue(/^dimensions?/i),
+        wheelbase: rowValue(/wheelbase/i),
+        drive: rowValue(/drivetrain|drive type/i),
+        tankAndBoot: [rowValue(/fuel tank/i), rowValue(/boot capacity|luggage capacity/i)].filter(value => value !== 'Not available in the matched search sources').join(' · ') || 'Not available',
+        co2: tailpipe
+      },
+      sourceUrl,
+      sourceLabel,
+      sourceNote
+    };
+  }
+  async function renderComparison() {
     const target = byId('env-compare-results');
+    const runButton = byId('env-compare-run');
     if (!target) return;
     const selected = compareCars.map(entry => {
       const make = selectedMake(entry.make.value);
       const model = make?.models.find(item => clean(item.name) === clean(entry.model.value));
-      return make && model ? { make, model, year: entry.year.value, profile: profileFor(make.make, model.name, entry.year.value) } : null;
+      return make && model && entry.year.value
+        ? { make, model, year: entry.year.value, profile: profileFor(make.make, model.name, entry.year.value) }
+        : null;
     }).filter(Boolean);
-    if (selected.length < 2) { target.replaceChildren(Object.assign(document.createElement('p'), { textContent: 'Choose at least two India-market cars before comparing.' })); return; }
-    const tableWrap = document.createElement('div'); tableWrap.className = 'env-compare-table-wrap';
-    const table = document.createElement('table'); table.className = 'env-compare-table';
-    const caption = document.createElement('caption'); caption.className = 'visually-hidden'; caption.textContent = 'Source-backed car comparison'; table.append(caption);
-    const head = document.createElement('thead'), headRow = document.createElement('tr');
-    const first = document.createElement('th'); first.scope = 'col'; first.textContent = 'DETAIL'; headRow.append(first);
-    selected.forEach(car => { const th = document.createElement('th'); th.scope = 'col'; th.textContent = `${car.make.make} ${car.model.name} · ${car.year || 'year not selected'}`; headRow.append(th); });
-    head.append(headRow); table.append(head);
-    const getData = car => {
-      const profile = car.profile;
-      const engines = profile?.engines || [];
-      const powers = engines.map(engine => Number(engine.powerPS)).filter(Number.isFinite);
-      const torques = engines.map(engine => Number.parseFloat(String(engine.torque).replace(/,/g, ''))).filter(Number.isFinite);
-      const rowValue = pattern => profile?.rows?.find(row => pattern.test(row.name))?.value || 'Not available in the curated car-search profile';
-      const economyRow = profile?.rows?.find(row => /fuel economy|range|efficiency/i.test(row.name));
-      const petrolEfficiency = findEfficiency(profile, 'petrol');
-      const dieselEfficiency = findEfficiency(profile, 'diesel');
-      const co2 = petrolEfficiency ? `${(2350 / petrolEfficiency).toFixed(0)} g/km petrol (estimate)` : dieselEfficiency ? `${(2690 / dieselEfficiency).toFixed(0)} g/km diesel (estimate)` : 'Not available';
-      const engineSummary = engines.length ? engines.map(engine => {
-        const details = [engine.displacement, Number.isFinite(Number(engine.powerPS)) ? `${engine.powerPS} PS` : '', engine.torque, engine.transmission].filter(Boolean).join(' · ');
-        return `${engine.name}${details ? ` — ${details}` : ''}`;
-      }).join('; ') : rowValue(/engine|powertrain/i);
-      const transmissions = [...new Set(engines.map(engine => engine.transmission).filter(Boolean))];
-      const tankAndBoot = [
-        rowValue(/fuel tank/i),
-        rowValue(/boot capacity|luggage capacity/i)
-      ].filter(value => value !== 'Not available in the curated car-search profile').join(' · ');
-      return {
-        car, engines, powers, torques,
-        engine: engineSummary,
-        fuel: engines.length ? [...new Set(engines.map(engine => engine.fuel).filter(Boolean))].join(' / ') : rowValue(/fuel type|energy type/i),
-        power: powers.length ? `${Math.min(...powers)}–${Math.max(...powers)} PS across listed engines` : 'Not available',
-        torque: torques.length ? `${Math.min(...torques)}–${Math.max(...torques)} Nm across listed engines` : 'Not available',
-        transmission: transmissions.length ? transmissions.join(' / ') : rowValue(/transmission|gearbox/i),
-        economy: economyRow ? `${economyRow.value}${economyRow.sourceLabel ? ` · ${economyRow.sourceLabel}` : ''}` : 'Not available',
-        dimensions: rowValue(/dimensions?/i),
-        wheelbase: rowValue(/wheelbase/i),
-        body: rowValue(/body style|seating|seat capacity/i),
-        drive: rowValue(/drivetrain|\bdrive\b/i),
-        tankAndBoot: tankAndBoot || 'Not available',
-        co2,
-        source: profile?.performance || profile?.brochure || car.make.url,
-        sourceLabel: profile?.sourceLabel || `${car.make.make} official site`,
-        sourceNote: profile?.provenance || 'No source-backed specifications for this exact make, model and year are curated in the Autonexus car-search profiles.'
-      };
-    };
-    const data = selected.map(getData);
-    const rows = [
-      ['Engine / powertrain variants', item => item.engine],
-      ['Fuel / energy', item => item.fuel],
-      ['Published peak power', item => item.power],
-      ['Published peak torque', item => item.torque],
-      ['Transmission', item => item.transmission],
-      ['Published efficiency / range', item => item.economy],
-      ['Body and seating', item => item.body],
-      ['Dimensions', item => item.dimensions],
-      ['Wheelbase', item => item.wheelbase],
-      ['Drive', item => item.drive],
-      ['Fuel tank / boot capacity', item => item.tankAndBoot],
-      ['Tailpipe CO₂ per km', item => item.co2]
-    ];
-    const tbody = document.createElement('tbody');
-    rows.forEach(([labelText, getter]) => {
-      const row = document.createElement('tr'); const th = document.createElement('th'); th.scope = 'row'; th.textContent = labelText; row.append(th);
-      data.forEach(item => { const td = document.createElement('td'); td.textContent = getter(item); row.append(td); });
-      tbody.append(row);
-    });
-    const sourcesRow = document.createElement('tr'); const sourcesHead = document.createElement('th'); sourcesHead.scope = 'row'; sourcesHead.textContent = 'Source and notes'; sourcesRow.append(sourcesHead);
-    data.forEach(item => {
-      const td = document.createElement('td');
-      td.append(safeLink(item.sourceLabel, item.source));
-      const note = document.createElement('p'); note.textContent = item.sourceNote; td.append(note); sourcesRow.append(td);
-    });
-    tbody.append(sourcesRow); table.append(tbody); tableWrap.append(table);
-    target.replaceChildren(tableWrap);
+    if (selected.length < 2) {
+      const message = document.createElement('p');
+      message.textContent = 'Choose a manufacturer, model and model year for at least two cars before comparing.';
+      target.replaceChildren(message);
+      return;
+    }
 
-    const scale = document.createElement('div'); scale.className = 'env-power-bars';
-    const powerMax = Math.max(1, ...data.flatMap(item => item.powers));
-    data.forEach(item => {
-      if (!item.powers.length) return;
-      const bar = document.createElement('div'); bar.className = 'env-power-bar';
-      const label = document.createElement('span'); label.textContent = `${item.car.make.make} ${item.car.model.name}`;
-      const track = document.createElement('span'); track.className = 'env-power-bar-track';
-      const fill = document.createElement('i'); fill.style.width = `${Math.max(3, Math.max(...item.powers) / powerMax * 100)}%`; track.append(fill);
-      const value = document.createElement('strong'); value.textContent = `${Math.max(...item.powers)} PS`;
-      bar.append(label, track, value); scale.append(bar);
-    });
-    if (scale.childElementCount) {
-      const note = document.createElement('p'); note.className = 'env-source-note'; note.textContent = 'Bars compare the maximum published power in each selected curated profile; equipment and engine variants differ.';
-      target.append(scale, note);
+    const requestId = ++compareRequestId;
+    if (runButton) { runButton.disabled = true; runButton.textContent = 'Matching car-search sources…'; }
+    const loading = document.createElement('p');
+    loading.textContent = 'Matching the selected year to the same curated profiles and public references used by Find a car…';
+    target.replaceChildren(loading);
+
+    try {
+      const data = await Promise.all(selected.map(async car => {
+        let lookup = null;
+        if (!car.profile && typeof window.chassisLoadCarComparisonProfile === 'function') {
+          try { lookup = await window.chassisLoadCarComparisonProfile(car.make.make, car.model.name, car.year); }
+          catch { lookup = null; }
+        }
+        return makeComparisonData(car, lookup);
+      }));
+      if (requestId !== compareRequestId) return;
+
+      const wrap = document.createElement('div'); wrap.className = 'env-compare-table-wrap';
+      const table = document.createElement('table'); table.className = 'env-compare-table';
+      const caption = document.createElement('caption'); caption.className = 'visually-hidden'; caption.textContent = 'India-market car comparison using shared search sources'; table.append(caption);
+      const head = document.createElement('thead'), header = document.createElement('tr');
+      const first = document.createElement('th'); first.scope = 'col'; first.textContent = 'DETAIL'; header.append(first);
+      data.forEach(item => { const th = document.createElement('th'); th.scope = 'col'; th.textContent = item.title; header.append(th); });
+      head.append(header); table.append(head);
+      const rows = [
+        ['Engine / powertrain', item => item.values.engine],
+        ['Fuel / energy', item => item.values.fuel],
+        ['Published peak power', item => item.values.power],
+        ['Published peak torque', item => item.values.torque],
+        ['Transmission', item => item.values.transmission],
+        ['Published efficiency / range', item => item.values.economy],
+        ['Body and seating', item => item.values.body],
+        ['Dimensions', item => item.values.dimensions],
+        ['Wheelbase', item => item.values.wheelbase],
+        ['Drive', item => item.values.drive],
+        ['Fuel tank / boot capacity', item => item.values.tankAndBoot],
+        ['Tailpipe CO₂', item => item.values.co2]
+      ];
+      const body = document.createElement('tbody');
+      rows.forEach(([labelText, getter]) => {
+        const row = document.createElement('tr'), heading = document.createElement('th');
+        heading.scope = 'row'; heading.textContent = labelText; row.append(heading);
+        data.forEach(item => { const cell = document.createElement('td'); cell.textContent = getter(item); row.append(cell); });
+        body.append(row);
+      });
+      const sources = document.createElement('tr'), sourceHeading = document.createElement('th');
+      sourceHeading.scope = 'row'; sourceHeading.textContent = 'Source and data notes'; sources.append(sourceHeading);
+      data.forEach(item => {
+        const cell = document.createElement('td');
+        cell.append(safeLink(item.sourceLabel, item.sourceUrl));
+        const note = document.createElement('p'); note.textContent = item.sourceNote; cell.append(note);
+        sources.append(cell);
+      });
+      body.append(sources); table.append(body); wrap.append(table); target.replaceChildren(wrap);
+
+      const scale = document.createElement('div'); scale.className = 'env-power-bars';
+      const powerMax = Math.max(1, ...data.flatMap(item => item.powers));
+      data.forEach(item => {
+        if (!item.powers.length) return;
+        const bar = document.createElement('div'); bar.className = 'env-power-bar';
+        const label = document.createElement('span'); label.textContent = item.title;
+        const track = document.createElement('div'); track.className = 'env-power-track';
+        const fill = document.createElement('i'); fill.style.width = Math.max(4, item.powers[0] / powerMax * 100) + '%';
+        track.append(fill);
+        const value = document.createElement('strong'); value.textContent = Math.round(item.powers[0]).toLocaleString('en-IN') + ' PS';
+        bar.append(label, track, value); scale.append(bar);
+      });
+      if (scale.childElementCount) {
+        const note = document.createElement('p'); note.className = 'env-source-note';
+        note.textContent = 'Bars compare published peak power from the selected car-search profile or matched public model references. Where only model-family data exists, exact year and trim figures need confirmation.';
+        target.append(scale, note);
+      } else {
+        const note = document.createElement('p'); note.className = 'env-source-note';
+        note.textContent = 'Rows without a matched value stay marked as unavailable. No figure is inferred from a nearby model or variant.';
+        target.append(note);
+      }
+    } catch (error) {
+      if (requestId !== compareRequestId) return;
+      const failure = document.createElement('p');
+      failure.textContent = 'The public reference lookup is unavailable right now. Try Compare cars again; selected cars and the manufacturer links remain available.';
+      target.replaceChildren(failure);
+    } finally {
+      if (requestId === compareRequestId && runButton) { runButton.disabled = false; runButton.textContent = 'Compare cars'; }
     }
   }
   byId('env-compare-run')?.addEventListener('click', renderComparison);

@@ -667,6 +667,36 @@ function curatedSpecProfileFor(carRecord, requestedTerm) {
   }) || null;
 }
 window.chassisCuratedSpecProfileFor = curatedSpecProfileFor;
+window.chassisCuratedIndiaSpecProfiles = curatedIndiaSpecProfiles;
+window.chassisLoadCarComparisonProfile = async (makeName, modelName, year) => {
+  const vehicle = window.chassisResolveCar?.(String(makeName) + ' ' + String(modelName));
+  if (!vehicle) return null;
+  const requestedTerm = [year, vehicle.fullName].filter(Boolean).join(' ');
+  const curatedProfile = curatedSpecProfileFor(vehicle, requestedTerm);
+  if (curatedProfile) return { vehicle, article: null, curatedProfile, vehicleFacts: null, infoboxRows: [], requestedTerm };
+
+  let article = null;
+  try {
+    const articles = await wikipediaOverview(vehicle.fullName);
+    const titleOf = value => normalized(value);
+    const modelNames = [vehicle.model.name, ...(vehicle.model.aliases || [])].map(titleOf).filter(value => value.length >= 2);
+    const makeNames = [vehicle.make.make, ...(vehicle.make.aliases || [])].map(titleOf).filter(value => value.length >= 2);
+    article = articles.find(item => {
+      const title = titleOf(item.title);
+      const extract = titleOf(item.extract).slice(0, 1800);
+      const hasModel = modelNames.some(name => (' ' + title + ' ').includes(' ' + name + ' ') || (' ' + extract + ' ').includes(' ' + name + ' '));
+      const hasMake = makeNames.some(name => (' ' + title + ' ').includes(' ' + name + ' ') || (' ' + extract + ' ').includes(' ' + name + ' '));
+      return hasModel && hasMake;
+    }) || null;
+  } catch { /* Keep the official make link available when public lookup is offline. */ }
+
+  const [vehicleFacts, infoboxRows] = await Promise.all([
+    wikidataVehicle(article, vehicle.fullName).catch(() => null),
+    wikipediaInfoboxSpecs(article).catch(() => [])
+  ]);
+  return { vehicle, article, curatedProfile: null, vehicleFacts, infoboxRows, requestedTerm };
+};
+
 
 function officialPhotoSources(vehicle, requestedTerm) {
   const profile = curatedSpecProfileFor(vehicle, requestedTerm);
