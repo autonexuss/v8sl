@@ -9,10 +9,8 @@
   border: 1px solid rgba(214, 188, 190, .2);
   border-radius: clamp(24px, 3vw, 40px);
   background:
-    radial-gradient(ellipse at 76% 53%, rgba(136, 53, 58, .24), transparent 35%),
-    radial-gradient(ellipse at 12% 100%, rgba(118, 69, 72, .19), transparent 39%),
-    linear-gradient(112deg, #15090a 0%, #1b090b 51%, #8d3036 100%) !important;
-  box-shadow: 0 34px 100px rgba(0, 0, 0, .48), inset 0 1px rgba(255, 255, 255, .08), 0 0 68px rgba(175, 71, 78, .1);
+    #000000 !important;
+  box-shadow: 0 34px 100px rgba(0, 0, 0, .48), inset 0 1px rgba(255, 255, 255, .08);
   isolation: isolate;
 }
 .ev-map-editorial::before {
@@ -21,7 +19,7 @@
   inset: -25%;
   content: "";
   border-radius: 50%;
-  background: radial-gradient(ellipse at 70% 52%, rgba(175, 70, 77, .2), transparent 38%), radial-gradient(ellipse at 22% 72%, rgba(189, 117, 121, .13), transparent 34%);
+  background: none;
   filter: blur(38px);
   opacity: .9;
   transform: translate3d(0, 1%, 0);
@@ -42,7 +40,7 @@
   z-index: -2;
   inset: 0;
   content: "";
-  background: radial-gradient(ellipse at 80% 50%, rgba(162, 72, 78, .13), transparent 37%);
+  background: none;
   pointer-events: none;
 }
 .ev-map-editorial-copy {
@@ -107,7 +105,7 @@
   aspect-ratio: 1;
   content: "";
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(172, 56, 64, .35) 0%, rgba(151, 55, 62, .2) 36%, rgba(153, 70, 76, .09) 57%, transparent 72%);
+  background: none;
   filter: blur(23px);
   transform: scale(1.08);
   transition: filter .8s ease, transform .8s cubic-bezier(.2, .8, .2, 1);
@@ -118,13 +116,13 @@
   width: min(82%, 455px);
   aspect-ratio: 1.9;
   content: "";
-  border: 1px solid rgba(185, 60, 68, .24);
+  border: 1px solid rgba(255, 255, 255, .14);
   border-radius: 50%;
   box-shadow: 0 0 22px rgba(172, 58, 66, .13), inset 0 0 20px rgba(201, 110, 116, .08);
   transform: rotate(-18deg);
   transition: opacity .5s ease, transform .8s ease;
   opacity: .65;
-}
+background:0 0 22px rgba(255, 255, 255, .04), inset 0 0 20px rgba(255, 255, 255, .03);}
 .ev-map-earth:hover::before,
 .ev-map-earth:focus-within::before { filter: blur(30px); transform: scale(1.18); }
 .ev-map-earth:hover::after,
@@ -134,10 +132,10 @@
   z-index: -1;
   width: min(68%, 360px);
   aspect-ratio: 1;
-  border: 1px solid rgba(198, 47, 57, .13);
+  border: 1px solid rgba(255, 255, 255, .10);
   border-radius: 50%;
   box-shadow: 0 0 48px rgba(189, 71, 79, .1), inset 0 0 28px rgba(177, 68, 75, .08);
-}
+background:0 0 48px rgba(255, 255, 255, .04), inset 0 0 28px rgba(255, 255, 255, .025);}
 .ev-earth-model {
   position: relative;
   z-index: 1;
@@ -146,7 +144,7 @@
   height: clamp(330px, 38vw, 510px);
   background: transparent;
   cursor: grab;
-  filter: drop-shadow(0 0 22px rgba(183, 62, 70, .2)) drop-shadow(0 24px 35px rgba(0, 0, 0, .36));
+  filter: drop-shadow(0 0 22px rgba(255, 255, 255, .08)) drop-shadow(0 24px 35px rgba(0, 0, 0, .36));
   transform: none;
   transition: filter .75s ease;
 }
@@ -159,7 +157,7 @@
   padding: 9px 13px;
   border: 1px solid rgba(219, 192, 194, .2);
   border-radius: 999px;
-  background: rgba(138, 50, 56, .74);
+  background: #111111;
   color: #eee1e2;
   font-size: 12px;
   backdrop-filter: blur(10px);
@@ -202,10 +200,8 @@
 :root[data-theme="light"] .ev-map-editorial {
   border-color: rgba(214, 188, 190, .2) !important;
   background:
-    radial-gradient(ellipse at 76% 53%, rgba(136, 53, 58, .24), transparent 35%),
-    radial-gradient(ellipse at 12% 100%, rgba(118, 69, 72, .19), transparent 39%),
-    linear-gradient(112deg, #15090a 0%, #1b090b 51%, #8d3036 100%) !important;
-  box-shadow: 0 34px 100px rgba(0, 0, 0, .48), inset 0 1px rgba(255, 255, 255, .08), 0 0 68px rgba(175, 71, 78, .1) !important;
+    #000000 !important;
+  box-shadow: 0 34px 100px rgba(0, 0, 0, .48), inset 0 1px rgba(255, 255, 255, .08) !important;
 }
 :root[data-theme="light"] .ev-map-editorial-copy h2 { color: #f5edee !important; }
 :root[data-theme="light"] .ev-map-editorial-copy p { color: #decfd0 !important; }
@@ -216,7 +212,7 @@
 }
 
 @media (max-width: 760px) {
-  .ev-map-editorial { width: calc(100% - 34px); margin: 50px auto 68px; border-radius: 25px; }
+  .ev-map-editorial { width: calc(100% - 34px); margin: 50px auto 68px; border-radius: 25px; background:#000000 !important;}
   .ev-map-space { grid-template-columns: minmax(0, 1fr); gap: 2px; min-height: 0; padding: 31px 25px 18px; }
   .ev-map-editorial-copy { padding: 10px 0 0; animation-duration: 8s; }
   .ev-map-editorial-copy h2 { font-size: clamp(36px, 9vw, 52px); }
@@ -225,7 +221,7 @@
   .ev-earth-model { height: clamp(310px, 88vw, 430px); }
 }
 @media (max-width: 420px) {
-  .ev-map-editorial { width: calc(100% - 24px); margin: 42px auto 56px; }
+  .ev-map-editorial { width: calc(100% - 24px); margin: 42px auto 56px; background:#000000 !important;}
   .ev-map-space { padding: 25px 19px 12px; }
   .ev-map-earth { min-height: 290px; }
   .ev-earth-model { height: 300px; }
@@ -244,16 +240,14 @@
   overflow: visible;
   border: 0 !important;
   border-radius: 0 !important;
-  background: transparent !important;
+  background: #000000 !important;
   box-shadow: none !important;
 }
 .ev-map-editorial::before {
   inset: -22% -9vw;
   border-radius: 0;
   background:
-    radial-gradient(ellipse at 77% 48%, rgba(161, 58, 65, .24) 0%, rgba(134, 49, 55, .13) 30%, transparent 59%),
-    radial-gradient(ellipse at 21% 72%, rgba(147, 90, 94, .18) 0%, rgba(125, 72, 76, .1) 34%, transparent 62%),
-    radial-gradient(ellipse at 50% 50%, rgba(43, 18, 19, .14), transparent 76%);
+    none;
   filter: blur(64px);
 }
 .ev-map-space {
@@ -263,34 +257,31 @@
 .ev-map-space::before {
   inset: -12% -5vw;
   background:
-    radial-gradient(ellipse at 78% 50%, rgba(163, 73, 79, .12), transparent 44%),
-    radial-gradient(ellipse at 20% 72%, rgba(160, 98, 102, .08), transparent 47%);
+    none;
 }
 .ev-space-stars { inset: -12% -5vw; }
 
 /* Keep the space palette legible in light mode while the aura fades into the page. */
 :root[data-theme="light"] .ev-map-editorial {
   border: 0 !important;
-  background: transparent !important;
+  background: #000000 !important;
   box-shadow: none !important;
 }
 :root[data-theme="light"] .ev-map-editorial::before {
   background:
-    radial-gradient(ellipse at 44% 52%, rgba(138, 50, 56, .91) 0%, rgba(138, 51, 57, .78) 35%, rgba(138, 50, 56, .4) 58%, transparent 79%),
-    radial-gradient(ellipse at 79% 48%, rgba(138, 50, 56, .28) 0%, transparent 53%),
-    radial-gradient(ellipse at 20% 76%, rgba(120, 73, 76, .18) 0%, transparent 54%);
+    none;
 }
 @media (max-width: 760px) {
-  .ev-map-editorial { margin: 42px 0 58px; }
+  .ev-map-editorial { margin: 42px 0 58px; background:#000000 !important;}
   .ev-map-space { min-height: 0; padding: 40px 7% 20px; }
 }
 @media (max-width: 420px) {
-  .ev-map-editorial { margin: 34px 0 48px; }
+  .ev-map-editorial { margin: 34px 0 48px; background:#000000 !important;}
   .ev-map-space { padding: 32px 7% 16px; }
 }
 
 /* The Earth is the only orbiting focal point; remove the old ground-line ring and keep hover restrained. */
-.ev-map-earth::after { display: none !important; }
+.ev-map-earth::after { display: none !important; background:0 0 22px rgba(255, 255, 255, .04), inset 0 0 20px rgba(255, 255, 255, .03);}
 .ev-map-earth:hover::before,
 .ev-map-earth:focus-within::before { filter: blur(26px) !important; transform: scale(1.045) !important; }
 .ev-map-earth:hover .ev-earth-model,
