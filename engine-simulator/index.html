@@ -1459,7 +1459,14 @@ function mount(target, userOpts) {
       let tc = 0;
       if (rt) { tc = cl * g.tq * 1.6 * Math.tanh((rpm - ri) * Math.PI / 30 * .1); v += (tc * dir * rt / RW - dr / RW) / mv * dt; }
       else v -= dr / RW / mv * dt;
-      rpm = Math.max(0, rpm + (net - tc) / g.J * dt * 30 / Math.PI);
+      if (state == 0) {
+        // Use a power-independent coast-down when combustion is off. Otherwise,
+        // low user-set torque also removes the modeled friction that slows RPM.
+        const coastTau = Math.max(.32, Math.min(.5, .32 + Math.sqrt(Math.max(.01, g.J)) * .1));
+        rpm = rpm <= 35 ? 0 : rpm * Math.exp(-dt / coastTau);
+      } else {
+        rpm = Math.max(0, rpm + (net - tc) / g.J * dt * 30 / Math.PI);
+      }
     }
     if (dyn) rpm = Math.min(dyn.r, g.rl - 1);
     const tmin = g.dsl ? -12 : -25;
