@@ -257,3 +257,7 @@
   .pro-access-dialog[open] { animation: none; }
   .pro-feature-cards article,.pro-checkout-button { transition: none; }
 }
+
+
+/* Keep the Pro price crisp and prominent against the light purchase panel. */
+:root[data-theme="light"] .pro-access-price strong { color: #141819; font-weight: 750; text-shadow: none; }

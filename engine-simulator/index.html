@@ -45,7 +45,7 @@
 /* ---------------------------------------------------------------- header */
 .anx-head { display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: linear-gradient(180deg, #0f1722, var(--anx-panel)); flex-wrap: wrap; }
 .anx-brand { display: flex; align-items: center; gap: 10px; margin-right: 4px; }
-.anx-logo { width: 30px; height: 30px; color: var(--anx-accent); filter: drop-shadow(0 0 8px rgba(53, 200, 255, .45)); flex: none; }
+.anx-brand-logo { display: block; width: 178px; max-width: 100%; height: auto; max-height: 36px; object-fit: contain; filter: brightness(0) invert(1); flex: none; }
 .anx-brand-text { display: flex; flex-direction: column; line-height: 1.05; }
 .anx-brand-name { font-weight: 700; font-size: 15px; letter-spacing: .22em; color: var(--anx-text); }
 .anx-brand-sub { font-weight: 600; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--anx-accent); margin-top: 3px; }
@@ -172,6 +172,7 @@
 .anx-card--fail .anx-eyebrow { color: var(--anx-red); }
 .anx-toast { position: absolute; left: 50%; top: 62px; transform: translate(-50%, -8px); padding: 8px 14px; border-radius: 999px; background: rgba(13, 19, 28, .92); border: 1px solid var(--anx-line-2); font-weight: 600; font-size: 12px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 5; white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis; }
 .anx-toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+.anx-toast.is-detail { width: max-content; max-width: min(560px, calc(100% - 32px)); white-space: normal; text-align: center; line-height: 1.45; border-radius: 12px; }
 .anx-nogl .anx-gl { cursor: default; }
 
 /* --------------------------------------------------------------- cluster */
@@ -1249,7 +1250,7 @@ const ICON = {
   down: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
   power: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8M6.3 6.5a8 8 0 1011.4 0"/></svg>'
 };
-const LOGO = '<svg class="anx-logo" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2.5 28 9.25v13.5L16 29.5 4 22.75V9.25z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.8 22 16 9.5 22.2 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="19.2" r="1.9" fill="currentColor"/></svg>';
+const LOGO = '<img class="anx-brand-logo" src="../assets/autonexus-wordmark.png?v=20261018-simulator-brand-1" alt="Autonexus">';
 
 const LIVE_ROWS = [['hp', 'Power', 'hp'], ['kw', 'Power', 'kW'], ['br', 'Brake torque', 'Nm'], ['ind', 'Indicated torque', 'Nm'], ['bm', 'BMEP', 'bar'], ['map', 'Manifold (MAP)', 'bar'],
   ['exh', 'Exhaust back-press.', 'bar'], ['pu', 'Pumping loss', 'bar'], ['ct', 'Coolant', '°C'], ['iat', 'Intake air', '°C'], ['egt', 'Exhaust gas', '°C'],
@@ -1259,7 +1260,7 @@ const LIVE_ROWS = [['hp', 'Power', 'hp'], ['kw', 'Power', 'kW'], ['br', 'Brake t
 const TEMPLATE = '' +
 '<div class="anx-app">' +
 ' <header class="anx-head">' +
-'  <div class="anx-brand">' + LOGO + '<div class="anx-brand-text"><span class="anx-brand-name">AUTONEXUS</span><span class="anx-brand-sub">Engine Simulator</span></div></div>' +
+'  <div class="anx-brand">' + LOGO + '<span class="anx-brand-sub">Engine Simulator</span></div>' +
 '  <div class="anx-status" data-ref="status" data-s="off" role="status" aria-live="polite"><i class="anx-dot"></i><span data-ref="statusText">Engine off</span></div>' +
 '  <div class="anx-actions">' +
 '   <button type="button" class="anx-btn anx-go" data-ref="start">' + ICON.power + '<span>Start</span></button>' +
@@ -1499,7 +1500,7 @@ function mount(target, userOpts) {
 
   /* ---------- helpers: toast, overlay ---------- */
   let toastT = 0;
-  function toast(t) { R.toast.textContent = t; R.toast.classList.add('is-on'); clearTimeout(toastT); toastT = setTimeout(() => R.toast.classList.remove('is-on'), 2600); }
+  function toast(t, duration = 2600, detail = false) { R.toast.textContent = t; R.toast.classList.toggle('is-detail', !!detail); R.toast.classList.add('is-on'); clearTimeout(toastT); toastT = setTimeout(() => { R.toast.classList.remove('is-on', 'is-detail'); }, duration); }
   let ovKind = '';
   function setOverlay(kind, title, detail) {
     const key2 = kind + '|' + title + '|' + detail; if (R.ovl._k === key2) return; R.ovl._k = key2;
@@ -1699,11 +1700,11 @@ function mount(target, userOpts) {
     if (kind !== lastStatus) {
       lastStatus = kind; R.status.dataset.s = kind;
       emit('state', { state: kind, message: msg });
-      if (kind === 'fail') emit('fail', { message: msg });
+      if (kind === 'fail') { emit('fail', { message: msg }); toast('Engine stopped: ' + msg, 6500, true); }
       if (kind === 'run' || kind === 'fail') R.vp.dataset.s = kind; else R.vp.dataset.s = kind;
     }
     setText(R.statusText, kind === 'run' ? 'Running' : kind === 'crank' ? 'Cranking' : kind === 'off' ? 'Engine off' : msg.split(':')[0]);
-    if (kind === 'fail') { const p = msg.indexOf(':'); setOverlay('fail', p > 0 ? msg.slice(0, p) : msg, p > 0 ? msg.slice(p + 1).trim() : ''); }
+    if (kind === 'fail') setOverlay('', '', '');
     else if (kind === 'off' && !everStarted) setOverlay('intro', '', ''); else setOverlay('', '', '');
     R.start.disabled = state == 1;
 
