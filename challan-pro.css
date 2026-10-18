@@ -146,6 +146,7 @@
 @media (max-width: 720px) {
   .pro-access-dialog { width: min(620px, calc(100vw - 22px)); }
   .pro-access-layout { grid-template-columns: 1fr; }
+  .pro-access-purchase { order: -1; }
   .pro-access-purchase { padding: 20px; }
   .pro-access-price { margin-top: 12px; }
 }
