@@ -1,17 +1,17 @@
 /* Chassis premium dark visual layer. The original styles.css remains the layout foundation. */
-:root{color-scheme:dark;--ink:#f2f0eb;--muted:#a4a6a5;--cream:#141011;--line:#ffffff20;--green:#b4c0b5;--deep:#161212;--chassis-bg:#0c0909;--chassis-panel:#181515;--chassis-raised:#1f1b1b;--chassis-accent:#d0b98e;--chassis-text:#f2f0eb;--chassis-muted:#a4a6a5;--chassis-faint:#777d7e}
+:root{color-scheme:dark;--ink:#f2f0eb;--muted:#a4a6a5;--cream:#000000;--line:#ffffff20;--green:#b4c0b5;--deep:#050505;--chassis-bg:#000000;--chassis-panel:#050505;--chassis-raised:#0b0b0b;--chassis-accent:#d0b98e;--chassis-text:#f2f0eb;--chassis-muted:#a4a6a5;--chassis-faint:#777d7e}
 :root[data-theme="light"]{color-scheme:light;--ink:#252121;--muted:#626a6b;--cream:#f4f3ef;--line:#19211d20;--green:#5e7769;--deep:#e9e8e2;--chassis-bg:#f4f3ef;--chassis-panel:#fffefa;--chassis-raised:#ebeae5;--chassis-accent:#876c42;--chassis-text:#252121;--chassis-muted:#626a6b;--chassis-faint:#82898a}
 body{background:var(--chassis-bg);color:var(--chassis-text)}
-.topbar{background:linear-gradient(180deg,#0c090955,transparent);border-color:#ffffff20}
+.topbar{background:rgba(0,0,0,.9);border-color:#ffffff20}
 .topbar-actions{display:flex;align-items:center;gap:17px}
 .theme-toggle{display:flex;align-items:center;gap:7px;border:1px solid #ffffff50;border-radius:30px;background:#ffffff0c;color:#fff;padding:8px 11px;font-size:9px;cursor:pointer;backdrop-filter:blur(12px)}
 .theme-toggle:hover{background:#ffffff20}
-.hero{height:min(940px,100svh);min-height:650px;background:#0b0808;color:#fff;isolation:isolate}
+.hero{height:min(940px,100svh);min-height:650px;background:#000000;color:#fff;isolation:isolate}
 .hero-image,.hero-shade{position:absolute;inset:0;width:100%;height:100%}
-.hero-image{overflow:hidden;background:#141011}
+.hero-image{overflow:hidden;background:#050505}
 .ambient-canvas{position:absolute;inset:-5%;width:110%;height:110%;filter:blur(55px) saturate(1.5) brightness(.77);opacity:.75;transform:scale(1.08)}
 .hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 54%;z-index:1;opacity:.94}
-.hero-shade{z-index:2;background:linear-gradient(90deg,#0b0808ef 0%,#0b0808bf 32%,#0b080850 60%,#0b08080a 100%),linear-gradient(0deg,#0b0808ce 0%,#0b080830 24%,transparent 59%,#0b080862 100%)}
+.hero-shade{z-index:2;background:linear-gradient(90deg,#000000ef 0%,#000000bf 32%,#00000050 60%,#0000000a 100%),linear-gradient(0deg,#000000ce 0%,#00000030 24%,transparent 59%,#00000062 100%)}
 .hero-copy{z-index:3;left:clamp(26px,10vw,155px);top:25%;max-width:660px}
 .hero h1{font:300 clamp(54px,7.2vw,106px)/.98 Manrope,'DM Sans',sans-serif;letter-spacing:-.075em}
 .hero h1 em{font-family:Georgia,serif;font-weight:400;letter-spacing:-.06em}
@@ -22,7 +22,7 @@ body{background:var(--chassis-bg);color:var(--chassis-text)}
 .hero-advance-hint{color:#ffffff78;font-size:7px;letter-spacing:.05em}
 .note-line{width:38px;height:1px;background:#ffffff7a}
 .hero-controls{right:clamp(24px,6vw,92px);gap:9px}
-.hero-control{width:38px;height:38px;border:1px solid #ffffff6a;border-radius:50%;background:#14101175;color:#fff;cursor:pointer;backdrop-filter:blur(14px);transition:background .2s,transform .2s}
+.hero-control{width:38px;height:38px;border:1px solid #ffffff6a;border-radius:50%;background:#00000075;color:#fff;cursor:pointer;backdrop-filter:blur(14px);transition:background .2s,transform .2s}
 .hero-control:hover{background:#ffffff25;transform:scale(1.04)}
 .hero-progress{width:clamp(60px,9vw,125px);height:2px;background:#ffffff50;margin-left:3px;overflow:hidden}
 .hero-progress i{display:block;height:100%;width:0;background:#ead7b1}
@@ -62,7 +62,7 @@ body{background:var(--chassis-bg);color:var(--chassis-text)}
 .market-card{border:1px solid var(--line);transition:transform .25s,border-color .25s,box-shadow .25s}
 .market-card:hover{transform:translateY(-4px);border-color:#d0b98e80;box-shadow:0 24px 60px #0003}
 .market-card-art{position:relative;aspect-ratio:16/10;background:linear-gradient(135deg,#2b2626,#151112);overflow:hidden}
-.market-card-art:after{content:'';position:absolute;inset:35% 0 0;background:linear-gradient(0deg,#0b0808dc,transparent);pointer-events:none}
+.market-card-art:after{content:'';position:absolute;inset:35% 0 0;background:linear-gradient(0deg,#000000dc,transparent);pointer-events:none}
 .market-card-art img.catalog-car-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s,transform .55s}
 .market-card-art img.catalog-car-image[src]{opacity:1}
 .market-card:hover .market-card-art img.catalog-car-image{transform:scale(1.035)}
@@ -76,7 +76,7 @@ body{background:var(--chassis-bg);color:var(--chassis-text)}
 .market-card-actions button:hover,.market-card-actions .compare-model[aria-pressed="true"]{border-color:var(--chassis-accent);color:var(--chassis-accent)}
 .button-dark{background:var(--chassis-text);color:var(--chassis-bg);border-color:var(--chassis-text)}
 .button-dark:hover{background:var(--chassis-accent);border-color:var(--chassis-accent)}
-.lookup{background:#161212;color:#f4f1eb;border-color:var(--line)}
+.lookup{background:#050505;color:#f4f1eb;border-color:var(--line)}
 .lookup-copy>p,.lookup-list>p{color:#ffffff9c}.lookup-list{border-color:#ffffff2b}.lookup-list>div{border-color:#ffffff2b}
 .service-report{background:radial-gradient(ellipse at 14% 50%,#9a80531c,transparent 42%),var(--chassis-bg);color:var(--chassis-text)}
 .service-report>*{max-width:unset;margin:0}
@@ -86,25 +86,25 @@ body{background:var(--chassis-bg);color:var(--chassis-text)}
 .report-card.glass{background:linear-gradient(135deg,#ffffff15,#ffffff08);border-color:#ffffff2a;color:#f4f1eb;box-shadow:0 25px 75px #0004}
 .report-card-top{border-color:#ffffff2b;color:#ffffffa8}.report-status{color:#ead5aa;border-color:#d0b98e70}
 .report-card>p,.report-disclosure{color:#ffffffa4}.report-card label{color:#ffffffd2}
-.registration-control{background:#0b080888;border-color:#ffffff3b}.registration-control input{background:transparent;color:#fff;border:0}.registration-control input::placeholder{color:#ffffff69}
+.registration-control{background:#00000088;border-color:#ffffff3b}.registration-control input{background:transparent;color:#fff;border:0}.registration-control input::placeholder{color:#ffffff69}
 .report-fee-row{border-color:#ffffff2b;color:#ffffffb7}
 .report-demo-result{background:#ffffff12;border-color:#ffffff2d;color:#ffffffd4}
 .fees-content>p{color:var(--chassis-muted)}.fee-row{color:var(--chassis-muted)}.fee-row strong{color:var(--chassis-text)}
 .fees>*{max-width:unset;margin:0}
 .lookup>*{max-width:unset;margin:0}
-footer{background:#090707;color:#fff;border-color:#ffffff20}
+footer{background:#000000;color:#fff;border-color:#ffffff20}
 .toast{background:#eee6d6;color:#171819}
-:root[data-theme="light"] .topbar{background:linear-gradient(180deg,#0c080950,transparent)}
+:root[data-theme="light"] .topbar{background:linear-gradient(180deg,#00000050,transparent)}
 :root[data-theme="light"] .theme-toggle{background:#ffffff12}
 :root[data-theme="light"] .identify,:root[data-theme="light"] .car-finder,:root[data-theme="light"] .ownership{background:#ebeae5}
 :root[data-theme="light"] .upload-panel,:root[data-theme="light"] .preview-panel,:root[data-theme="light"] .profile-card,:root[data-theme="light"] .car-search-form,:root[data-theme="light"] .wiki-result-card,:root[data-theme="light"] .wiki-related-card,:root[data-theme="light"] .dynamic-detail-panel,:root[data-theme="light"] .video-card,:root[data-theme="light"] .youtube-key-form,:root[data-theme="light"] .market-note,:root[data-theme="light"] .market-filters,:root[data-theme="light"] .market-card,:root[data-theme="light"] .model-detail,:root[data-theme="light"] .catalog-compare,:root[data-theme="light"] .compare-panel,:root[data-theme="light"] .own-card,:root[data-theme="light"] .tool-card,:root[data-theme="light"] .nearby-panel{background:#fffefa}
 :root[data-theme="light"] .market-card-content{background:#fffefa}
 :root[data-theme="light"] .market-card-art{background:linear-gradient(135deg,#d7d7d1,#b7bbb7)}
-:root[data-theme="light"] .lookup,:root[data-theme="light"] footer{background:#21191a;color:#f4f1eb}
+:root[data-theme="light"] .lookup,:root[data-theme="light"] footer{background:#000000;color:#f4f1eb}
 :root[data-theme="light"] .service-report{background:radial-gradient(ellipse at 14% 50%,#9a80531c,transparent 42%),#f4f3ef}
 :root[data-theme="light"] .registration-control input{color:#fff}
 :root[data-theme="light"] .spec-graphic,:root[data-theme="light"] .spec-table thead th,:root[data-theme="light"] .preview-frame,:root[data-theme="light"] .vehicle-gallery-image,:root[data-theme="light"] .vehicle-gallery-image>a{background:#ebeae5}
-@media(max-width:790px){.topbar{gap:14px}.topbar nav{display:none;position:absolute;top:68px;left:0;right:0;padding:16px 23px 20px;background:#141011f5;backdrop-filter:blur(18px);border-bottom:1px solid #ffffff25;align-items:stretch;gap:0}.topbar nav.open{display:grid}.topbar nav a{padding:11px 0;border-bottom:1px solid #ffffff18}.menu-toggle{display:block}.nav-cta{display:none}.hero-card{right:5vw;bottom:104px}}
+@media(max-width:790px){.topbar{gap:14px}.topbar nav{display:none;position:absolute;top:68px;left:0;right:0;padding:16px 23px 20px;background:#050505f5;backdrop-filter:blur(18px);border-bottom:1px solid #ffffff25;align-items:stretch;gap:0}.topbar nav.open{display:grid}.topbar nav a{padding:11px 0;border-bottom:1px solid #ffffff18}.menu-toggle{display:block}.nav-cta{display:none}.hero-card{right:5vw;bottom:104px}}
 @media(max-width:620px){.hero{height:88svh;min-height:610px}.hero-copy{top:25%;left:7vw;right:22px}.hero h1{font-size:clamp(49px,12vw,73px);letter-spacing:-.075em}.hero-card{display:none}.hero-note{left:20px;bottom:23px;gap:8px;font-size:6.5px}.hero-advance-hint{display:none}#hero-video-title{max-width:105px}.note-line{width:22px}.hero-controls{right:20px;bottom:15px;gap:6px}.hero-control{width:33px;height:33px}.hero-progress{width:43px}.topbar-actions{gap:9px}.theme-toggle{padding:7px 9px}.theme-toggle span{font-size:8px}.market-card-art{aspect-ratio:1.25}.market-image-source{font-size:6px}}
 @media(max-width:390px){#hero-video-title,.hero-progress{display:none}.hero-note{gap:6px}}
 @media(prefers-reduced-motion:reduce){.hero-video{transition:none}.market-card,.market-card-art img{transition:none}}
@@ -125,17 +125,17 @@ body{background:var(--chassis-bg);color:var(--chassis-text);transition:backgroun
 .nav-cta{color:#fff;font-size:10px;white-space:nowrap}
 .menu-toggle{display:none;cursor:pointer}
 .hero{min-height:650px}
-.hero-image{z-index:0;background:#080606}
+.hero-image{z-index:0;background:#000000}
 .hero-video{position:absolute;inset:0;display:block;width:100%;height:100%;min-width:100%;min-height:100%;object-fit:cover!important;object-position:center center;transform:scale(1.16);transform-origin:center;backface-visibility:hidden}
 .ambient-canvas{z-index:0;pointer-events:none}
 .hero-shade{z-index:2;pointer-events:none}
 .hero-copy,.hero-card,.hero-note,.hero-controls{z-index:3}
-.glass-controls{padding:7px;border:1px solid #ffffff40;border-radius:999px;background:#0c080972;box-shadow:0 9px 32px #0004;backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3)}
+.glass-controls{padding:7px;border:1px solid #ffffff40;border-radius:999px;background:#00000072;box-shadow:0 9px 32px #0004;backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3)}
 .hero-controls{gap:6px;bottom:29px}
 .hero-control{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:auto;min-width:38px;height:38px;padding:0 12px;border-color:#ffffff4f;background:#ffffff0e;border-radius:999px;font-size:11px}
 .hero-control .control-word{font-size:9px;letter-spacing:.03em}
-.hero-next-control{background:#e5d4b5;color:#181515;border-color:#e5d4b5;font-weight:700;padding:0 14px}
-.hero-next-control:hover{background:#f0e2c8;color:#141011}
+.hero-next-control{background:#e5d4b5;color:#050505;border-color:#e5d4b5;font-weight:700;padding:0 14px}
+.hero-next-control:hover{background:#f0e2c8;color:#050505}
 .hero-progress{margin-left:3px}
 .hero-note{z-index:4}
 .report-highlights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
@@ -175,7 +175,7 @@ body{background:var(--chassis-bg);color:var(--chassis-text);transition:backgroun
 .identify,.car-finder,.ownership,.ownership-tools,.profile,.intro,.service-report,.fees{background:var(--chassis-bg);color:var(--chassis-text)}
 .identify,.car-finder,.ownership{background:var(--chassis-raised)}
 :root[data-theme="light"] .service-report{background:radial-gradient(ellipse at 12% 40%,#92764c1c,transparent 44%),var(--chassis-bg)}
-:root[data-theme="light"] .report-card.glass{background:linear-gradient(135deg,#252121,#161212);color:#f4f1eb}
+:root[data-theme="light"] .report-card.glass{background:linear-gradient(135deg,#252121,#050505);color:#f4f1eb}
 :root[data-theme="light"] .report-intro h2,:root[data-theme="light"] .report-intro>p{color:var(--chassis-text)}
 :root[data-theme="light"] .identify,:root[data-theme="light"] .car-finder,:root[data-theme="light"] .ownership{background:#ebeae5}
 :root[data-theme="light"] .ownership-tools,:root[data-theme="light"] .intro,:root[data-theme="light"] .profile,:root[data-theme="light"] .fees{background:#f4f3ef}
