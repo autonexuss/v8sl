@@ -17,8 +17,8 @@
 .ev-charging-map-visual img { display: block; width: 100%; height: auto; max-height: none; object-fit: contain; object-position: center; }
 
 /* Four supplied photos fill the marked image spaces without covering controls. */
-.ownership-story-visual { min-height: 0; aspect-ratio: 1.38; border-radius: 0; background: transparent; }
-.ownership-story-visual img { min-height: 0; object-position: 52% 48%; }
+.ownership-story-visual { align-self: center; width: 100%; min-height: 0; aspect-ratio: 1.5; border-radius: 0; background: transparent; }
+.ownership-story-visual img { min-height: 0; object-position: center; }
 .ownership-story-visual::after { background: linear-gradient(90deg, #13191b22, transparent 28%), linear-gradient(0deg, #0a0e0f2b, transparent 52%); }
 .section-modal-active#loan-planner .loan-planner-photo,
 .section-modal-active#listing-draft .listing-draft-photo {
@@ -34,6 +34,17 @@
 .section-modal-active#loan-planner .loan-planner-photo img { object-position: 55% center; }
 .section-modal-active#listing-draft .listing-draft-photo { top: 43%; height: clamp(280px, 47vh, 470px); }
 .section-modal-active#listing-draft .listing-draft-photo img { object-position: 54% center; }
+.section-modal-active#mileage-planner .mileage-planner-photo {
+  position: absolute;
+  top: 35%;
+  right: 4%;
+  width: min(25%, 440px);
+  height: clamp(220px, 36vh, 350px);
+  margin: 0;
+  border-radius: 18px;
+  box-shadow: 0 24px 58px #1114, 0 0 0 1px #ffffff85;
+}
+.section-modal-active#mileage-planner .mileage-planner-photo img { object-position: center; }
 .section-modal-active#personal-garage .garage-shell { position: relative; }
 .section-modal-active#personal-garage .garage-shell .tool-form { max-width: 70%; }
 .section-modal-active#personal-garage .personal-garage-photo {
@@ -88,6 +99,7 @@
   .ownership-story-visual { min-height: 260px; aspect-ratio: 1.55; }
   .section-modal-active#loan-planner .loan-planner-photo,
   .section-modal-active#listing-draft .listing-draft-photo,
+  .section-modal-active#mileage-planner .mileage-planner-photo,
   .section-modal-active#personal-garage .personal-garage-photo {
     position: relative;
     inset: auto;
