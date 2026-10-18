@@ -261,3 +261,7 @@
 
 /* Keep the Pro price crisp and prominent against the light purchase panel. */
 :root[data-theme="light"] .pro-access-price strong { color: #141819; font-weight: 750; text-shadow: none; }
+
+
+/* The purchase panel stays light in every site theme; keep its price dark and legible. */
+.pro-access-dialog .pro-access-purchase .pro-access-price strong { color: #141819; font-weight: 750; text-shadow: none; }
