@@ -1521,14 +1521,72 @@ function mount(target, userOpts) {
   /* ---------- engine selection + specs ---------- */
   const cats = []; for (const k in ENG) { if (cats.indexOf(ENG[k].cat) < 0) cats.push(ENG[k].cat); }
   cats.forEach(c => { const og = document.createElement('optgroup'); og.label = c; for (const k in ENG) if (ENG[k].cat === c) { const op = document.createElement('option'); op.value = k; op.textContent = ENG[k].name; og.appendChild(op); } R.eng.appendChild(og); });
-  const SP = [['Cylinders', 'n', 1, 12, 1, ''], ['Bank angle', 'V', 0, 180, 5, '°'], ['Bore', 'bore', 50, 130, 1, ' mm'], ['Stroke', 'stroke', 50, 130, 1, ' mm'], ['Compression', 'cr', 7, 20, .1, ':1'], ['Idle', 'idle', 500, 1500, 10, ' rpm'], ['Redline', 'rl', 3000, 12000, 100, ' rpm']];
+  const SP = [
+    ['Cylinders', 'n', 1, 12, 1, ''], ['Bank angle', 'V', 0, 180, 5, '°'],
+    ['Bore', 'bore', 50, 130, 1, ' mm'], ['Stroke', 'stroke', 50, 130, 1, ' mm'],
+    ['Compression', 'cr', 7, 20, .1, ':1'], ['Idle', 'idle', 500, 1500, 10, ' rpm'],
+    ['Redline', 'rl', 3000, 12000, 100, ' rpm'],
+    ['Peak power', 'hp', 0, 0, 0, ' hp'], ['Peak torque', 'tq', 0, 0, 0, ' Nm'],
+    ['Torque peak RPM', 'pk', 0, 0, 0, ' rpm'], ['Flywheel inertia', 'J', 0, 0, 0, ' kg·m²']
+  ];
+  function specBounds(k, a, b, s) {
+    const stock = ENG[engKey], ratio = E.disp / stock.d0;
+    if (k === 'hp') {
+      const base = Math.max(1, (E.stockHP || estimate().hp) * ratio), lo = Math.max(1, base * .2), hi = Math.max(lo + 1, base * 3);
+      return [lo, hi, Math.max(.1, (hi - lo) / 240)];
+    }
+    if (k === 'tq') {
+      const base = Math.max(1, stock.tq * ratio), lo = Math.max(1, base * .25), hi = Math.max(lo + 1, base * 2.5);
+      return [lo, hi, Math.max(.1, (hi - lo) / 240)];
+    }
+    if (k === 'pk') {
+      const lo = Math.max(500, E.idle), hi = Math.max(lo + 50, E.rl * .8);
+      return [lo, hi, 50];
+    }
+    if (k === 'J') {
+      const base = stock.J * Math.max(.3, ratio), lo = Math.max(.005, base * .25), hi = Math.max(lo + .01, base * 3);
+      return [lo, hi, Math.max(.001, (hi - lo) / 240)];
+    }
+    return [a, b, s];
+  }
+  function specValue(k) {
+    if (k === 'hp') return estimate().hp;
+    return E[k];
+  }
+  function specLabel(k) {
+    const value = specValue(k);
+    return k === 'J' ? (+value).toFixed(3) : String(Math.round(value));
+  }
+  function syncSpecs() {
+    const rows = R.spec.querySelectorAll('.anx-spec');
+    SP.forEach(([l, k, a, b, s, u], i) => {
+      const row = rows[i]; if (!row) return;
+      const inp = row.querySelector('input'), out = row.querySelector('b'), bounds = specBounds(k, a, b, s);
+      inp.min = bounds[0]; inp.max = bounds[1]; inp.step = bounds[2]; inp.value = specValue(k);
+      out.textContent = specLabel(k) + u; paint(inp);
+    });
+  }
   function buildSpecs() {
     R.spec.innerHTML = '';
     SP.forEach(([l, k, a, b, s, u], i) => {
+      const bounds = specBounds(k, a, b, s), value = specValue(k);
       const w = document.createElement('div'), iid = 'anx-sp' + id + '-' + i;
-      w.className = 'anx-spec'; w.innerHTML = '<div class="anx-row"><label for="' + iid + '">' + l + '</label><b>' + (+E[k]) + u + '</b></div><input class="anx-range" id="' + iid + '" type="range" min="' + a + '" max="' + b + '" step="' + s + '" value="' + E[k] + '">';
-      const inp = w.querySelector('input'), out = w.querySelector('b'); paint(inp);
-      inp.oninput = e => { const n0 = E.n; E[k] = +e.target.value; if (k == 'n' && E.n != n0) E.fo = ev(E.n); if (E.n == 2 && E.V >= 0) E.fo = [0, 360 - E.V]; recompute(); out.textContent = (+E[k]) + u; paint(inp); };
+      w.className = 'anx-spec'; w.innerHTML = '<div class="anx-row"><label for="' + iid + '">' + l + '</label><b>' + specLabel(k) + u + '</b></div><input class="anx-range" id="' + iid + '" type="range" min="' + bounds[0] + '" max="' + bounds[1] + '" step="' + bounds[2] + '" value="' + value + '">';
+      const inp = w.querySelector('input'); paint(inp);
+      inp.oninput = e => {
+        const selected = +e.target.value, n0 = E.n;
+        if (k === 'hp') E.tqL *= selected / Math.max(1, estimate().hp);
+        else if (k === 'tq') E.tqL = selected / E.disp;
+        else if (k === 'J') {
+          const stock = ENG[engKey], baseJ = stock.J * Math.max(.3, E.disp / stock.d0);
+          E.JScale = selected / baseJ;
+        } else {
+          E[k] = selected;
+          if (k === 'n' && E.n != n0) E.fo = ev(E.n);
+          if (E.n === 2 && E.V >= 0) E.fo = [0, 360 - E.V];
+        }
+        recompute(); syncSpecs();
+      };
       on(inp, 'change', () => inp.blur());
       R.spec.appendChild(w);
     });
@@ -1549,14 +1607,15 @@ function mount(target, userOpts) {
   }
   function recompute() {
     E.disp = E.n * PI / 4 * E.bore * E.bore * E.stroke / 1e6; E.tq = E.tqL * E.disp;
-    E.J = ENG[engKey].J * Math.max(.3, E.disp / ENG[engKey].d0); E.pk = Math.min(E.pk, E.rl * .8);
+    E.J = ENG[engKey].J * Math.max(.3, E.disp / ENG[engKey].d0) * (E.JScale || 1);
+    E.pk = Math.max(Math.max(500, E.idle), Math.min(E.pk, E.rl * .8));
     if (R.dsp) R.dsp.textContent = E.disp.toFixed(2) + ' L';
     updateInfo(); pushEngine(); if (view) view.setEngine(E); dynoDirty = true;
   }
   function setEngine(k, quiet) {
     if (!ENG[k]) return;
-    engKey = k; E = { ...ENG[k] }; state = 0; knk = 0; rpm = 0; v = 0; gear = 0; bst = 0; msg = 'OFF'; dyn = null; cut = 0; hist.length = 0; spMax = 200; R.eng.value = k;
-    buildSpecs(); recompute(); buildPips(); store.set({ engine: k }); setText(R.pkP, '-'); setText(R.pkT, '-');
+    engKey = k; E = { ...ENG[k], JScale: 1 }; state = 0; knk = 0; rpm = 0; v = 0; gear = 0; bst = 0; msg = 'OFF'; dyn = null; cut = 0; hist.length = 0; spMax = 200; R.eng.value = k;
+    E.stockHP = estimate().hp; buildSpecs(); recompute(); buildPips(); store.set({ engine: k }); setText(R.pkP, '-'); setText(R.pkT, '-');
     if (!quiet) emit('engine', { key: k, name: ENG[k].name });
   }
   on(R.eng, 'change', () => { setEngine(R.eng.value); R.eng.blur(); });
