@@ -8,4 +8,4 @@ The Environment driving simulator uses these CC0 1.0 Universal recordings from F
   - `diesel-rev-loop.wav` — matching acceleration/rev excerpt, loop-smoothed at the boundary.
 - `diesel-stop.mp3` — “SFX_Car_Engine_Outside_Stop.wav”, by GiocoSound: https://freesound.org/people/GiocoSound/sounds/401557/
 
-The simulator holds the idle excerpt at a fixed playback rate, then layers in the rev excerpt only while the accelerator is pressed. Its volume and a small pitch range follow the simulated throttle and RPM. It is illustrative, not a physical engine sound synthesizer or a vehicle-specific recording.
+The simulator plays the idle excerpt at a fixed rate after startup. While the accelerator is pressed, it layers the separate rev excerpt; rev-layer volume and playback rate follow simulated throttle and RPM. Releasing the accelerator returns the mix to idle. These are generic CC0 diesel recordings, not a Fortuner recording or a physical engine synthesizer. Toyota figures shown in the simulator are limited to the published peak power and torque; idle, ratios, RPM response and all audio behavior are estimates.

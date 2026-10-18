@@ -39,7 +39,7 @@
 .env-subhead h4 { margin: 0; color: #fff; font-size: 16px; }
 .env-subhead > span { color: #aebbc1; font-size: 10px; }
 .env-pedals { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); align-items: end; gap: clamp(6px, 1.3vw, 14px); }
-.env-pedals--imt { grid-template-columns: repeat(2,minmax(0,1fr)); max-width: 340px; margin: 0 auto; }
+.env-pedals--manual { grid-template-columns: repeat(3,minmax(0,1fr)); max-width: 100%; margin: 0; }
 .env-pedal-unit { display: grid; justify-items: center; gap: 7px; }
 .env-pedal { position: relative; display: grid; width: min(100%, 100px); height: 100px; place-items: center; overflow: hidden; border: 1px solid #ffffff3b; border-bottom: 5px solid #89939a; border-radius: 15px 15px 9px 9px; background: linear-gradient(145deg,#38434b,#111a20 65%); color: #f7f8f8; box-shadow: inset 0 1px #ffffff3c, 0 8px 18px #0005; cursor: pointer; touch-action: none; transition: transform .09s ease, border-color .15s ease, box-shadow .15s ease; }
 .env-pedal::before { position: absolute; inset: 12px 11px; border-radius: 8px; content: ""; background: repeating-linear-gradient(0deg,transparent 0 7px,#ffffff38 7px 9px); opacity: .52; }
@@ -50,6 +50,11 @@
 .env-pedal:focus-visible,.env-action-button:focus-visible,.env-reverse-control button:focus-visible,.env-shifter:focus-visible { outline: 2px solid #e8d5aa; outline-offset: 3px; }
 .env-pedal-unit output { color: #f0f2f3; font-size: 11px; font-variant-numeric: tabular-nums; }
 .env-pedal-unit input[type="range"] { width: 100%; accent-color: #87cdb8; }
+.env-audio-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; padding: 10px 12px; border: 1px solid #ffffff24; border-radius: 11px; background: #00000020; color: #d7dfe1; font-size: 10px; }
+.env-audio-controls > span { margin-right: auto; color: #aebbc1; font-size: 9px; font-weight: 800; letter-spacing: .13em; }
+.env-audio-controls button { min-height: 30px; padding: 4px 11px; border: 1px solid #ffffff38; border-radius: 999px; background: #ffffff12; color: #f7f8f8; font: inherit; cursor: pointer; }
+.env-audio-controls label { color: #d7dfe1; }
+.env-audio-controls input[type="range"] { width: min(130px, 30vw); accent-color: #87cdb8; }
 .env-shift-board { position: relative; width: min(100%, 520px); height: clamp(190px, 28vw, 245px); margin: 4px auto 10px; overflow: hidden; border: 1px solid #ffffff22; border-radius: 17px; background: radial-gradient(ellipse at 50% 8%,#ffffff0d,transparent 60%),linear-gradient(145deg,#0a1118,#101a21); touch-action: pan-y; }
 .env-gate-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .env-gate-lines path { fill: none; stroke: #c9d0d449; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }

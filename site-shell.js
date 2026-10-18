@@ -26,7 +26,9 @@
   });
 
   function owningSection(target) {
-    return sections.find(section => section.contains(target)) || null;
+    let section = target;
+    while (section && section.parentElement !== main) section = section.parentElement;
+    return section?.tagName === 'SECTION' ? section : null;
   }
 
   function panelFor(target) {

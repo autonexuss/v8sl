@@ -7,48 +7,66 @@
   const feature = $('environment-feature');
   if (!board || !knob || !feature) return;
 
-  const idle = 780;
-  const redline = 4500;
+  const idle = 780; // estimated warm-idle reference; not supplied by Toyota for this profile
+  const redline = 4500; // illustrative ceiling, not a verified Fortuner rev limiter
   const lanes = [38, 63, 88];
-  const speedCaps = { '-1': 12, 1: 34, 2: 58, 3: 88, 4: 125, 5: 165, 6: 205 };
-  const gearPull = { '-1': .3, 1: 1, 2: .76, 3: .56, 4: .43, 5: .34, 6: .28 };
-  const sim = { engine: false, gear: 0, lane: 1, speed: 0, rpm: 0, fuel: 0, brakeWear: 0, throttle: 0, brake: 0, paused: false, pointer: null, dragOrigin: null, dragStart: null, dragMoved: false, shifting: false, lastFrame: 0, raf: 0 };
+  const speedCaps = { '-1': 8, 1: 32, 2: 52, 3: 78, 4: 112, 5: 148, 6: 176 }; // estimated display caps, not Toyota gearing data
+  const gearPull = { '-1': .3, 1: 1, 2: .76, 3: .56, 4: .43, 5: .34, 6: .28 }; // illustrative relative ratios
+  const sim = { engine: false, gear: 0, lane: 1, speed: 0, rpm: 0, fuel: 0, brakeWear: 0, throttle: 0, brake: 0, clutch: 0, paused: false, pointer: null, dragOrigin: null, dragStart: null, dragMoved: false, shifting: false, lastFrame: 0, raf: 0, masterVolume: .65, muted: false };
   const startSfx = $('env-engine-start-audio');
   const idleAudio = $('env-engine-idle-audio');
   const revAudio = $('env-engine-rev-audio');
   const stopSfx = $('env-engine-stop-audio');
+  const audioVolume = $('env-audio-volume');
+  const audioMute = $('env-audio-mute');
   let startSfxTimer = 0;
   let idleLoopStarted = false;
   let idleLoopGain = .42;
   const idleLoopStart = 0;
   const revLoopStart = 0;
+  function effectiveVolume() { return sim.muted ? 0 : sim.masterVolume; }
+  function applyAudioVolume() {
+    const volume = effectiveVolume();
+    if (idleAudio) idleAudio.volume = Math.min(1, idleLoopGain * volume);
+    if (revAudio) revAudio.volume = Math.min(1, Number(revAudio.dataset.targetVolume || 0) * volume);
+    if (startSfx) startSfx.volume = volume;
+    if (stopSfx) stopSfx.volume = volume;
+    if (audioMute) {
+      audioMute.setAttribute('aria-pressed', String(sim.muted));
+      audioMute.textContent = sim.muted ? 'Unmute' : 'Mute';
+    }
+  }
   function beginIdleLoop() {
     if (!sim.engine || !idleAudio || idleLoopStarted) return;
     idleLoopStarted = true;
     idleAudio.loop = true;
     idleAudio.currentTime = idleLoopStart;
     idleAudio.playbackRate = 1;
-    idleAudio.volume = idleLoopGain;
+    applyAudioVolume();
     idleAudio.play().catch(() => { idleLoopStarted = false; });
   }
   const releaseIdleLoop = () => { if (sim.engine && idleLoopStarted) idleLoopGain = .42; };
-  function setRevAudio(throttle, rpm) {
+  function setRevAudio(rpm, engineLoad) {
     if (!revAudio) return;
-    const amount = sim.engine && !sim.paused ? clamp(throttle, 0, 1) : 0;
+    const running = sim.engine && !sim.paused;
+    const rpmRatio = clamp((rpm - idle) / (redline - idle), 0, 1);
+    const load = running ? clamp(engineLoad, 0, 1) : 0;
+    const throttle = sim.throttle / 100;
+    const revving = running && throttle > .01;
+    const target = revving ? clamp(.08 + rpmRatio * .2 + load * .36, .08, .56) : 0;
+    revAudio.dataset.targetVolume = String(target);
     revAudio.loop = true;
-    revAudio.volume = amount < .025 ? 0 : clamp(amount * .56, 0, .56);
-    // This is a short, matching rev segment from the same CC0 diesel recording.
-    // A restrained pitch change follows the instrument reading without speeding up idle.
-    revAudio.playbackRate = clamp(.96 + (rpm - idle) / (redline - idle) * .12, .96, 1.08);
-    if (amount >= .025) {
-      if (revAudio.paused) {
-        revAudio.currentTime = revLoopStart;
-        revAudio.play().catch(() => {});
-      }
-    } else if (!revAudio.paused) {
+    // This layer is the matching rev crop of a generic CC0 diesel recording.
+    // Pitch follows the simulated RPM and load continuously; sparse samples mean this remains illustrative.
+    revAudio.playbackRate = clamp(.82 + rpmRatio * .36 + load * .06, .82, 1.24);
+    if (revving && revAudio.paused) {
+      revAudio.currentTime = revLoopStart;
+      revAudio.play().catch(() => {});
+    } else if (!revving && !revAudio.paused) {
       revAudio.pause();
       revAudio.currentTime = revLoopStart;
     }
+    applyAudioVolume();
   }
 
   const position = gear => gear === -1 ? { x: 12, y: 22 } : gear === 0 ? { x: lanes[1], y: 50 } : { x: lanes[Math.floor((gear - 1) / 2)], y: gear % 2 ? 22 : 78 };
@@ -106,6 +124,7 @@
   }
   async function selectGear(target) {
     if (!sim.engine || sim.shifting || target === sim.gear) return;
+    if (sim.clutch < 65) { renderGear(); setStatus('Press and hold the clutch before moving the gear lever.'); return; }
     if (target === -1 && Math.abs(sim.speed) > .2) { renderGear(); setStatus('Stop fully before selecting reverse.'); return; }
     if (target > 0 && Math.abs(sim.speed) > (speedCaps[target] || 0) + 10) { renderGear(); setStatus('Slow down before selecting that lower gear.'); return; }
     const from = sim.gear;
@@ -137,6 +156,7 @@
     const amount = clamp(Number(value) || 0, 0, 100);
     if (name === 'accelerator') sim.throttle = amount;
     if (name === 'brake') sim.brake = amount;
+    if (name === 'clutch') sim.clutch = amount;
     const output = $(`env-${name}-output`);
     if (output) output.textContent = `${Math.round(amount)}%`;
     const button = document.querySelector(`.env-pedal[data-pedal="${name}"]`);
@@ -157,10 +177,16 @@
     button.addEventListener('keyup', event => { if ([' ', 'Enter'].includes(event.key)) setPedal(key, 0); });
   });
   document.querySelectorAll('[data-pedal-range]').forEach(input => input.addEventListener('input', () => { if (sim.engine) setPedal(input.dataset.pedalRange, input.value); }));
+  audioVolume?.addEventListener('input', () => {
+    sim.masterVolume = clamp(Number(audioVolume.value) / 100, 0, 1);
+    applyAudioVolume();
+  });
+  audioMute?.addEventListener('click', () => { sim.muted = !sim.muted; applyAudioVolume(); });
 
   knob.addEventListener('pointerdown', event => {
     if (event.button !== undefined && event.button !== 0) return;
     if (!sim.engine) { setStatus('Start the engine before shifting.'); return; }
+    if (sim.clutch < 65) { setStatus('Press and hold the clutch before moving the gear lever.'); return; }
     event.preventDefault();
     sim.pointer = event.pointerId;
     sim.dragMoved = false;
@@ -228,6 +254,7 @@
     if (stopSfx) { stopSfx.pause(); stopSfx.currentTime = 0; }
     if (startSfx) {
       startSfx.pause(); startSfx.currentTime = 0;
+      startSfx.volume = effectiveVolume();
       startSfx.play().catch(releaseIdleLoop);
       clearTimeout(startSfxTimer);
       startSfx.onended = releaseIdleLoop;
@@ -243,7 +270,7 @@
     if (!sim.engine) return;
     sim.engine = false;
     sim.speed = 0; sim.rpm = idle; sim.gear = 0; sim.lane = 1; sim.fuel = 0; sim.brakeWear = 0;
-    setPedal('accelerator', 0); setPedal('brake', 0);
+    setPedal('accelerator', 0); setPedal('brake', 0); setPedal('clutch', 0);
     clearTimeout(startSfxTimer);
     idleLoopStarted = false;
     idleLoopGain = .42;
@@ -258,14 +285,14 @@
     $('env-drive-status') && ($('env-drive-status').textContent = 'Engine off · neutral.');
     if ($('env-sim-status')) $('env-sim-status').textContent = 'Engine off · simulated readings remain visible.';
     updateScreen(1 / 60);
-    if (stopSfx) { stopSfx.currentTime = 0; stopSfx.play().catch(() => {}); }
+    if (stopSfx) { stopSfx.volume = effectiveVolume(); stopSfx.currentTime = 0; stopSfx.play().catch(() => {}); }
     stopLoop();
   }
   $('env-engine-toggle')?.addEventListener('click', () => sim.engine ? engineStop() : engineStart());
   $('env-engine-stop')?.addEventListener('click', engineStop);
   $('env-sim-reset')?.addEventListener('click', () => {
     sim.speed = 0; sim.fuel = 0; sim.brakeWear = 0; sim.paused = false;
-    setPedal('accelerator', 0); setPedal('brake', 0); snapNeutral('Drive reset · centered neutral.');
+    setPedal('accelerator', 0); setPedal('brake', 0); setPedal('clutch', 0); snapNeutral('Drive reset · centered neutral.');
     const pause = $('env-sim-pause'); if (pause) pause.textContent = 'Pause simulation';
   });
   $('env-sim-pause')?.addEventListener('click', event => {
@@ -280,12 +307,17 @@
     const absSpeed = Math.abs(sim.speed);
     const throttle = sim.throttle / 100;
     const brake = sim.brake / 100;
+    const clutch = sim.clutch / 100;
     const cap = speedCaps[sim.gear] || 0;
-    const wheelRpm = cap ? idle + absSpeed / cap * (redline - idle) : idle;
-    const throttleRpm = idle + throttle * (redline - idle - 350);
-    const targetRpm = sim.engine ? clamp(throttle > .02 ? Math.max(wheelRpm, throttleRpm) : idle, idle, redline) : 0;
-    sim.rpm += (targetRpm - sim.rpm) * clamp(dt * 4, .025, 1);
-    const torque = sim.engine ? Math.round((25 + 225 * throttle) * clamp(1 - Math.max(0, sim.rpm - 2800) / 3300, .45, 1)) : 0;
+    const coupled = sim.gear !== 0 && clutch < .65;
+    const wheelRpm = coupled && cap ? idle + absSpeed / cap * (redline - idle) : idle;
+    const pedalCurve = throttle > 0 ? Math.pow(throttle, .8) : 0;
+    const throttleRpm = idle + pedalCurve * (redline - idle - 280) * (coupled ? .82 : 1);
+    const targetRpm = sim.engine ? clamp(Math.max(coupled ? wheelRpm : idle, throttle > .005 ? throttleRpm : idle), idle, redline) : 0;
+    sim.rpm += (targetRpm - sim.rpm) * clamp(dt * (clutch >= .65 || !coupled ? 3.3 : 2.5), .02, 1);
+    const curve = sim.rpm < 1400 ? .68 + .32 * clamp((sim.rpm - idle) / 620, 0, 1) : sim.rpm <= 3400 ? 1 : 1 - .22 * clamp((sim.rpm - 3400) / (redline - 3400), 0, 1);
+    const engineLoad = sim.engine && !sim.paused ? throttle * (coupled ? clamp(.48 + .42 * (1 - absSpeed / Math.max(cap, 1)), .45, .9) : .58) : 0;
+    const torque = sim.engine ? Math.round(420 * curve * pedalCurve * (coupled ? .9 : .76)) : 0;
     const kw = torque * sim.rpm / 9549;
     const set = (id, value) => { if ($(id)) $(id).textContent = value; };
     set('env-speed', String(Math.round(absSpeed)));
@@ -297,25 +329,30 @@
     set('env-brake-wear', `${Math.round(sim.brakeWear)} / 100`);
     const dust = brake * (.45 + Math.min(1, absSpeed / 120) * .55);
     set('env-brake-dust', brake === 0 ? 'None' : dust >= .65 ? 'High · relative' : dust >= .25 ? 'Moderate · relative' : 'Low · relative');
-    const speedArc = $('env-speed-arc'); if (speedArc) speedArc.style.width = `${clamp(absSpeed / 205 * 100, 0, 100)}%`;
+    const speedArc = $('env-speed-arc'); if (speedArc) speedArc.style.width = `${clamp(absSpeed / 176 * 100, 0, 100)}%`;
     const rpmArc = $('env-rpm-arc'); if (rpmArc) rpmArc.style.width = `${clamp(sim.rpm / redline * 100, 0, 100)}%`;
     if ($('env-drive-status') && !sim.paused) $('env-drive-status').textContent = sim.gear === 0 && throttle > .03 ? 'In neutral · engine speed rises while the wheels remain still.' : 'Illustrative simulation · no live vehicle data.';
-    if (idleAudio && sim.engine) idleAudio.volume = idleLoopGain * (1 - throttle * .13);
-    setRevAudio(throttle, sim.rpm);
+    if (idleAudio && sim.engine) {
+      const starterPlaying = startSfx && !startSfx.paused && !startSfx.ended;
+      const starterProgress = starterPlaying ? clamp(startSfx.currentTime / Math.max(.1, startSfx.duration || 1), 0, 1) : 1;
+      idleLoopGain = .08 + .34 * starterProgress;
+    }
+    setRevAudio(sim.rpm, engineLoad);
   }
   function frame(now) {
     let dt = 1 / 60;
     if (sim.lastFrame && !sim.paused && sim.engine) {
       dt = Math.min(.05, (now - sim.lastFrame) / 1000);
       const throttle = sim.throttle / 100, brake = sim.brake / 100, speed = Math.abs(sim.speed);
+      const clutchOpen = sim.clutch >= 65;
       if (sim.gear === -1) {
-        if (throttle) sim.speed -= throttle * gearPull[-1] * 9 * dt * clamp(1 - speed / 12, 0, 1);
+        if (throttle && !clutchOpen) sim.speed -= throttle * gearPull[-1] * 9 * dt * clamp(1 - speed / 8, 0, 1);
         if (brake) sim.speed = Math.min(0, sim.speed + brake * (7 + speed * .03) * dt);
-        sim.speed = Math.max(-12, sim.speed);
+        sim.speed = Math.max(-8, sim.speed);
       } else {
         if (sim.speed < 0) sim.speed = Math.min(0, sim.speed + (brake ? 8 : 1.4) * dt);
         else {
-          if (sim.gear > 0 && throttle) sim.speed += throttle * gearPull[sim.gear] * 9 * dt;
+          if (sim.gear > 0 && throttle && !clutchOpen) sim.speed += throttle * gearPull[sim.gear] * 9 * dt;
           if (brake) sim.speed = Math.max(0, sim.speed - brake * (8 + speed * .035) * dt);
           if (sim.gear > 0) sim.speed = Math.min(speedCaps[sim.gear], sim.speed);
           else sim.speed = Math.max(0, sim.speed - .3 * dt);
@@ -332,7 +369,7 @@
   function stopLoop() { if (sim.raf) cancelAnimationFrame(sim.raf); sim.raf = 0; sim.lastFrame = 0; }
   new MutationObserver(() => {
     if (feature.classList.contains('section-modal-active')) startLoop();
-    else { if (sim.engine) engineStop(); stopLoop(); setPedal('accelerator', 0); setPedal('brake', 0); }
+    else { if (sim.engine) engineStop(); stopLoop(); setPedal('accelerator', 0); setPedal('brake', 0); setPedal('clutch', 0); }
   }).observe(feature, { attributes: true, attributeFilter: ['class'] });
   if (feature.classList.contains('section-modal-active')) startLoop();
 
@@ -341,21 +378,24 @@
     if (!feature.classList.contains('section-modal-active') || !sim.engine || isTyping(event.target)) return;
     if (sim.shifting) return;
     const key = event.key.toLowerCase();
-    if (['w', 's', ' ', 'a', 'd', 'r', 'n', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) event.preventDefault();
+    if (event.repeat && ['arrowup','arrowdown','arrowleft','arrowright','a','d'].includes(key)) return;
+    if (['w', 's', ' ', 'a', 'd', 'r', 'n', 'c', 'shift', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) event.preventDefault();
     if (key === 'w') setPedal('accelerator', 100);
     else if (key === 's' || key === ' ') setPedal('brake', 100);
-    else if (key === 'n') snapNeutral('Centered neutral selected.');
+    else if (key === 'c' || key === 'shift') setPedal('clutch', 100);
+    else if (key === 'n') { if (sim.gear === 0) snapNeutral('Centered neutral selected.'); else selectGear(0); }
     else if (key === 'r') selectGear(-1);
     else if (key === 'a' || key === 'd' || key === 'arrowleft' || key === 'arrowright') {
+      if (sim.gear !== 0 && sim.clutch < 65) { setStatus('Press and hold the clutch before changing gear lanes.'); return; }
       const currentLane = sim.gear > 0 ? Math.floor((sim.gear - 1) / 2) : sim.lane;
-      if (sim.gear !== 0) snapNeutral('Centered neutral selected · choose a lane next.');
+      if (sim.gear !== 0) { sim.gear = 0; renderGear(); setStatus('Centered neutral selected · choose a lane next.'); }
       sim.lane = clamp(currentLane + (key === 'a' || key === 'arrowleft' ? -1 : 1), 0, 2);
       sim.gear = 0;
       renderGear();
       setStatus('Neutral gate · choose an upper or lower gear.');
     }
     else if (key === 'arrowup' || key === 'arrowdown') {
-      if (sim.gear !== 0) snapNeutral('Centered neutral selected · press an arrow again to engage a gear.');
+      if (sim.gear !== 0) selectGear(0);
       else selectGear(sim.lane * 2 + (key === 'arrowup' ? 1 : 2));
     }
   });
@@ -363,8 +403,9 @@
     if (!feature.classList.contains('section-modal-active')) return;
     if (event.key.toLowerCase() === 'w') setPedal('accelerator', 0);
     if (event.key.toLowerCase() === 's' || event.key === ' ') setPedal('brake', 0);
+    if (event.key.toLowerCase() === 'c' || event.key === 'Shift') setPedal('clutch', 0);
   });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { setPedal('accelerator', 0); setPedal('brake', 0); } });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { setPedal('accelerator', 0); setPedal('brake', 0); setPedal('clutch', 0); } });
   renderGear();
   updateScreen();
 })();

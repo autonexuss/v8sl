@@ -1,0 +1,225 @@
+/* Reserved toggle-model area for new features: keep it blank until the owner supplies GLBs. */
+.showroom-model-slot {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  right: 3px;
+  width: clamp(118px, 11vw, 150px);
+  height: clamp(118px, 11vw, 150px);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* The homepage editorial image stays inside the journey card, on its right. */
+.ownership-story {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .95fr) !important;
+  align-items: stretch;
+  min-height: clamp(390px, 38vw, 560px) !important;
+}
+.ownership-story-copy { grid-column: 1; grid-row: 1; }
+.ownership-story-visual { grid-column: 2; grid-row: 1; min-width: 0; min-height: 0 !important; height: 100%; aspect-ratio: auto !important; }
+.ownership-story-visual img { min-height: 0 !important; height: 100%; object-position: 52% 58%; }
+.ownership-story-visual::after { background: linear-gradient(90deg, #13191b75 0%, transparent 36%), linear-gradient(0deg, #0a0e0f24, transparent 50%); }
+:root[data-theme="light"] .ownership-story-visual::after { background: linear-gradient(90deg, #f1f1ec88 0%, transparent 30%), linear-gradient(0deg, #0a0e0f18, transparent 50%); }
+
+/* New feature panels share Autonexus' existing modal shell and scroll behavior. */
+.new-feature-panel {
+  --nf-bg: #111719;
+  --nf-card: #192123;
+  --nf-card-raised: #202a2c;
+  --nf-text: #f1f3f0;
+  --nf-muted: #b4c0bd;
+  --nf-soft: #8f9e9b;
+  --nf-border: #ffffff24;
+  --nf-accent: #d7c39c;
+  width: min(1440px, calc(100% - clamp(28px, 8vw, 128px)));
+  margin: 28px auto 64px;
+  padding: clamp(22px, 4vw, 52px);
+  border: 1px solid var(--nf-border);
+  border-radius: clamp(20px, 2.5vw, 32px);
+  background: radial-gradient(ellipse at 88% 0%, #98c4d019, transparent 32%), var(--nf-bg);
+  color: var(--nf-text);
+  box-shadow: 0 24px 72px #0003, inset 0 1px #ffffff12;
+}
+:root[data-theme="light"] .new-feature-panel {
+  --nf-bg: #f3f3ef;
+  --nf-card: #fff;
+  --nf-card-raised: #edf1ef;
+  --nf-text: #202827;
+  --nf-muted: #5f6d69;
+  --nf-soft: #75817d;
+  --nf-border: #26312d24;
+  --nf-accent: #8b7044;
+  background: radial-gradient(ellipse at 88% 0%, #9abbd525, transparent 35%), var(--nf-bg);
+  box-shadow: 0 22px 60px #26332a12, inset 0 1px #fff;
+}
+.new-feature-panel .nf-heading { max-width: 920px; margin: 0 0 clamp(22px, 3vw, 38px); }
+.new-feature-panel .nf-heading .eyebrow { color: var(--nf-muted); }
+.new-feature-panel .nf-heading h2 { margin: 16px 0 12px; color: var(--nf-text); font-size: clamp(34px, 4.2vw, 54px); line-height: 1.06; letter-spacing: -.045em; }
+.new-feature-panel .nf-heading > p { max-width: 780px; margin: 0; color: var(--nf-muted); font-size: 15px; line-height: 1.7; }
+.nf-layout { display: grid; grid-template-columns: minmax(270px, .82fr) minmax(0, 1.18fr); align-items: start; gap: clamp(14px, 2vw, 24px); }
+.nf-card { min-width: 0; padding: clamp(17px, 2.2vw, 27px); border: 1px solid var(--nf-border); border-radius: 19px; background: var(--nf-card); color: var(--nf-text); box-shadow: inset 0 1px #ffffff08; }
+.nf-card h3 { color: var(--nf-text); }
+.nf-form { display: grid; align-content: start; gap: 15px; }
+.nf-form > label { display: grid; gap: 7px; color: var(--nf-muted); font-size: 13px; font-weight: 650; line-height: 1.4; }
+.nf-form select, .nf-game-toolbar select, .nf-quiz-controls select {
+  width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid var(--nf-border); border-radius: 10px;
+  background: var(--nf-card-raised); color: var(--nf-text); font: inherit; font-size: 14px;
+}
+.nf-form select:focus-visible, .nf-game-toolbar select:focus-visible, .nf-quiz-controls select:focus-visible,
+.nf-card button:focus-visible, #parking-canvas:focus-visible { outline: 2px solid var(--nf-accent); outline-offset: 3px; }
+.nf-form select:disabled { opacity: .55; cursor: not-allowed; }
+.nf-form input[type="range"] { width: 100%; accent-color: var(--nf-accent); }
+.nf-form output { justify-self: end; margin-top: -27px; color: var(--nf-text); font-variant-numeric: tabular-nums; }
+.nf-coverage { display: grid; gap: 5px; padding: 12px 14px; border-left: 3px solid var(--nf-accent); border-radius: 8px; background: var(--nf-card-raised); }
+.nf-coverage strong { color: var(--nf-text); font-size: 13px; }
+.nf-coverage span, .nf-note, .nf-source-line { color: var(--nf-soft); font-size: 12px; line-height: 1.65; }
+.nf-note { margin: 0; }
+.nf-kicker { color: var(--nf-accent); font-size: 10px; font-weight: 750; letter-spacing: .14em; }
+.nf-primary, .nf-secondary {
+  display: inline-flex; min-height: 43px; align-items: center; justify-content: center; gap: 8px; padding: 9px 15px;
+  border: 1px solid var(--nf-border); border-radius: 999px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 700;
+  transition: transform .18s ease, background-color .18s ease, border-color .18s ease;
+}
+.nf-primary { border-color: var(--nf-accent); background: var(--nf-accent); color: #171a19; }
+.nf-secondary { background: transparent; color: var(--nf-text); }
+.nf-primary:hover, .nf-secondary:hover { transform: translateY(-1px); }
+.nf-secondary:hover { background: var(--nf-card-raised); }
+.nf-primary:disabled, .nf-secondary:disabled { cursor: not-allowed; opacity: .55; transform: none; }
+.nf-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.nf-output { display: grid; align-content: start; gap: 15px; }
+.nf-output > h3 { margin: 0; font-size: clamp(20px, 2.2vw, 28px); line-height: 1.2; }
+.nf-output > p { margin: 0; color: var(--nf-muted); font-size: 13px; line-height: 1.7; }
+.nf-output a, .nf-feedback a { color: var(--nf-accent); text-decoration: underline; text-underline-offset: 3px; }
+.nf-price-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.nf-price-pair > div { display: grid; align-content: start; gap: 8px; padding: 15px; border: 1px solid var(--nf-border); border-radius: 13px; background: var(--nf-card-raised); }
+.nf-price-pair span, .nf-price-pair small { color: var(--nf-muted); font-size: 12px; line-height: 1.5; }
+.nf-price-pair strong { color: var(--nf-text); font-size: clamp(20px, 2vw, 28px); font-variant-numeric: tabular-nums; }
+.nf-change { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 13px 0; border-top: 1px solid var(--nf-border); border-bottom: 1px solid var(--nf-border); }
+.nf-change span { color: var(--nf-muted); font-size: 12px; }
+.nf-change strong { color: var(--nf-text); font-size: 17px; font-variant-numeric: tabular-nums; }
+.nf-ev-layout { grid-template-columns: minmax(280px, .84fr) minmax(0, 1.16fr); }
+.nf-source-line { margin: 0; }
+.nf-ev-output { position: sticky; top: 20px; }
+.nf-progress { height: 10px; overflow: hidden; border: 1px solid var(--nf-border); border-radius: 99px; background: var(--nf-card-raised); }
+.nf-progress i { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #86bddb, var(--nf-accent)); transition: width .12s linear; }
+.nf-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.nf-metrics > div { display: grid; gap: 7px; padding: 13px; border: 1px solid var(--nf-border); border-radius: 12px; background: var(--nf-card-raised); }
+.nf-metrics span { color: var(--nf-soft); font-size: 11px; line-height: 1.45; }
+.nf-metrics strong { color: var(--nf-text); font-size: clamp(16px, 1.7vw, 22px); font-variant-numeric: tabular-nums; }
+.nf-reachability { padding: 12px 14px; border-radius: 10px; background: var(--nf-card-raised); }
+.nf-game-card { display: grid; gap: 15px; }
+.nf-game-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+.nf-game-toolbar > label, .nf-quiz-controls > label { display: grid; min-width: 150px; gap: 7px; color: var(--nf-muted); font-size: 13px; font-weight: 650; }
+.nf-game-stats { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 17px; color: var(--nf-muted); font-size: 12px; }
+.nf-game-stats b { color: var(--nf-text); font-variant-numeric: tabular-nums; }
+#parking-canvas { display: block; width: 100%; height: auto; aspect-ratio: 9 / 5; border: 1px solid var(--nf-border); border-radius: 14px; background: #172127; outline-offset: 4px; touch-action: none; }
+.nf-game-help { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 18px; }
+.nf-game-help p { margin: 0; color: var(--nf-muted); font-size: 12px; line-height: 1.65; }
+.nf-game-help strong { color: var(--nf-text); }
+.nf-touch-controls { display: none; grid-template-columns: repeat(5, minmax(42px, 58px)); justify-content: center; gap: 9px; }
+.nf-touch-controls button { width: 100%; min-height: 50px; border: 1px solid var(--nf-border); border-radius: 14px; background: var(--nf-card-raised); color: var(--nf-text); font-size: 20px; touch-action: none; }
+.nf-game-result { min-height: 1.4em; color: var(--nf-accent); font-size: 14px; font-weight: 700; }
+.nf-quiz-layout { grid-template-columns: minmax(240px, .75fr) minmax(0, 1.25fr); }
+.nf-quiz-controls { display: grid; align-content: start; gap: 14px; }
+.nf-check-label { display: flex !important; grid-template-columns: auto 1fr; align-items: center; gap: 9px !important; }
+.nf-check-label input { accent-color: var(--nf-accent); }
+.nf-score { margin: 0; color: var(--nf-accent); font-size: 13px; font-weight: 750; }
+.nf-question { display: grid; align-content: start; gap: 18px; }
+.nf-question-top { display: flex; justify-content: space-between; gap: 14px; color: var(--nf-muted); font-size: 12px; }
+.nf-question-top span:last-child { color: var(--nf-accent); font-weight: 750; }
+.nf-question h3 { min-height: 3.2em; margin: 0; font-size: clamp(22px, 2.7vw, 35px); line-height: 1.22; }
+.nf-answer-actions .nf-primary, .nf-answer-actions .nf-secondary { min-width: 118px; }
+.nf-feedback { padding: 15px; border: 1px solid var(--nf-border); border-radius: 13px; background: var(--nf-card-raised); color: var(--nf-muted); font-size: 13px; line-height: 1.7; }
+.nf-feedback strong { display: block; margin-bottom: 6px; color: var(--nf-text); }
+.nf-feedback p { margin: 5px 0; }
+
+/* Supplied modal photos occupy the empty right-hand spaces shown in the marked screenshots. */
+.section-modal-active#find-cars,
+.section-modal-active#resale-market,
+.section-modal-active#service-report,
+.section-modal-active#vehicle-services { position: fixed !important; }
+.section-modal-active#find-cars { position: fixed !important; }
+.section-modal-active#find-cars .section-head,
+.section-modal-active#find-cars .car-search-form,
+.section-modal-active#find-cars .search-shortcuts,
+.section-modal-active#find-cars .finder-status,
+.section-modal-active#find-cars .finder-result,
+.section-modal-active#find-cars .finder-videos,
+.section-modal-active#find-cars .compare-panel { max-width: 62%; }
+.section-modal-active#find-cars .section-head > p { max-width: 560px; }
+.section-modal-active#find-cars .find-car-photo { position: absolute !important; top: 30%; right: 4%; width: 31%; height: clamp(250px, 42vh, 440px); margin: 0; }
+.section-modal-active#find-cars .find-car-photo img { object-position: center 54%; }
+.section-modal-active#vehicle-services { position: fixed !important; }
+.section-modal-active#vehicle-services > .ownership-card-media { position: absolute !important; top: 20%; right: 5%; width: 34%; height: clamp(220px, 39vh, 370px); margin: 0; border-radius: 16px; }
+.section-modal-active#vehicle-services > :not(.ownership-card-media):not(.section-modal-close) { max-width: 58%; }
+.section-modal-active#resale-market > .resale-feature-media { position: absolute !important; top: 30%; right: 5%; width: 29%; height: clamp(230px, 40vh, 380px); margin: 0; aspect-ratio: auto; }
+.section-modal-active#resale-market > :not(.resale-feature-media):not(.section-modal-close) { max-width: 63%; }
+.section-modal-active#service-report { padding-top: 70px !important; }
+.section-modal-active#service-report .report-intro { max-width: 56%; }
+.section-modal-active#service-report .service-report-photo { position: absolute !important; top: 17%; right: 5%; width: 35%; height: clamp(230px, 40vh, 390px); margin: 0; }
+.section-modal-active#service-report .report-card { position: relative; margin-top: 30px; }
+.section-modal-active#official-services {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, .95fr) minmax(230px, .78fr) !important;
+  align-items: start !important;
+  gap: clamp(18px, 3vw, 44px) !important;
+  padding-top: 70px !important;
+}
+.section-modal-active#official-services > .lookup-copy { grid-column: 1; grid-row: 1; max-width: none; }
+.section-modal-active#official-services > .lookup-list { grid-column: 2; grid-row: 1; max-width: none; margin-top: 92px; }
+.section-modal-active#official-services > .official-services-photo { grid-column: 3; grid-row: 1; width: 100%; height: clamp(230px, 39vh, 380px); margin: 108px 0 0; }
+:root[data-theme="light"] .section-modal-active#official-services,
+:root[data-theme="light"] .section-modal-active#official-services .lookup-copy h2,
+:root[data-theme="light"] .section-modal-active#official-services .lookup-copy p,
+:root[data-theme="light"] .section-modal-active#official-services .lookup-copy .eyebrow,
+:root[data-theme="light"] .section-modal-active#official-services .lookup-list,
+:root[data-theme="light"] .section-modal-active#official-services .lookup-list b,
+:root[data-theme="light"] .section-modal-active#official-services .lookup-list span,
+:root[data-theme="light"] .section-modal-active#official-services .lookup-list p { color: #202827 !important; }
+:root[data-theme="light"] .section-modal-active#official-services .lookup-list > div { border-color: #2028272c; }
+
+@media (max-width: 800px) {
+  .ownership-story { grid-template-columns: 1fr !important; min-height: 0 !important; }
+  .ownership-story-copy, .ownership-story-visual { grid-column: 1; }
+  .ownership-story-copy { grid-row: 1; }
+  .ownership-story-visual { grid-row: 2; aspect-ratio: 1.65 !important; }
+  .nf-layout, .nf-ev-layout, .nf-quiz-layout { grid-template-columns: minmax(0, 1fr); }
+  .nf-ev-output { position: static; }
+  .section-modal-active#find-cars .section-head,
+  .section-modal-active#find-cars .car-search-form,
+  .section-modal-active#find-cars .search-shortcuts,
+  .section-modal-active#find-cars .finder-status,
+  .section-modal-active#find-cars .finder-result,
+  .section-modal-active#find-cars .finder-videos,
+  .section-modal-active#find-cars .compare-panel,
+  .section-modal-active#vehicle-services > :not(.ownership-card-media):not(.section-modal-close),
+  .section-modal-active#resale-market > :not(.resale-feature-media):not(.section-modal-close),
+  .section-modal-active#service-report .report-intro { max-width: none; width: 100%; }
+  .section-modal-active#find-cars .find-car-photo,
+  .section-modal-active#vehicle-services > .ownership-card-media,
+  .section-modal-active#resale-market > .resale-feature-media,
+  .section-modal-active#service-report .service-report-photo { position: relative !important; inset: auto !important; width: 100%; height: clamp(170px, 52vw, 280px); margin: 16px 0 20px; }
+  .section-modal-active#find-cars .find-car-photo { order: 0; }
+  .section-modal-active#official-services { display: grid !important; grid-template-columns: 1fr !important; gap: 22px !important; }
+  .section-modal-active#official-services > .lookup-copy,
+  .section-modal-active#official-services > .lookup-list,
+  .section-modal-active#official-services > .official-services-photo { grid-column: 1; grid-row: auto; margin: 0; }
+  .section-modal-active#official-services > .official-services-photo { height: clamp(170px, 52vw, 280px); }
+}
+@media (max-width: 580px) {
+  .new-feature-panel { width: calc(100% - 20px); margin: 10px auto 34px; padding: 18px 14px 24px; border-radius: 18px; }
+  .new-feature-panel .nf-heading h2 { font-size: clamp(30px, 9vw, 40px); }
+  .new-feature-panel .nf-heading > p { font-size: 14px; }
+  .nf-card { padding: 16px 13px; border-radius: 15px; }
+  .nf-price-pair, .nf-metrics, .nf-game-help { grid-template-columns: 1fr; }
+  .nf-game-toolbar { align-items: stretch; flex-direction: column; }
+  .nf-game-stats { justify-content: flex-start; }
+  .nf-touch-controls { display: grid; }
+  .section-modal-active#service-report .report-card { margin-top: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nf-primary, .nf-secondary, .nf-progress i { transition: none !important; }
+  .nf-primary:hover, .nf-secondary:hover { transform: none; }
+}
