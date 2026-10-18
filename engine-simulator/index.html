@@ -1479,6 +1479,13 @@ function mount(target, userOpts) {
       state = 0;
       msg = 'STALLED: clutch released in gear at idle without enough throttle';
     }
+    // With the manual clutch fully engaged, road speed fixes the engine speed
+    // for the selected ratio. Stall when that coupled RPM falls below idle,
+    // even if the idle controller would otherwise keep the engine running.
+    if (state == 2 && !AUTO && gear && !cp && Math.abs(v) >= .8 && ri > 0 && ri < idl && rpm < idl * 1.45) {
+      state = 0;
+      msg = 'STALLED: gear too high for current speed; downshift or press the clutch';
+    }
     if (state == 2 && rpm < g.idle * .3) { state = 0; if (gear && !cp && v > .8) rpm = ri; msg = 'STALLED: ' + (gear && cl > .3 ? (gear > 2 ? 'gear too high for this speed: downshift or press the clutch' : 'clutch released too fast in gear, use throttle or slip the clutch') : uLoad > .5 ? 'dyno load too high for this rpm' : 'idle speed too low for these specs'); }
     if (state == 2 && Tc > 106) { state = 0; msg = 'OVERHEATED: engine shut down, let it cool'; }
     if (state == 2 && fuel <= 0) { state = 0; msg = 'OUT OF FUEL'; }
