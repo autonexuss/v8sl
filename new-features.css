@@ -92,13 +92,6 @@
 .nf-output > h3 { margin: 0; font-size: clamp(20px, 2.2vw, 28px); line-height: 1.2; }
 .nf-output > p { margin: 0; color: var(--nf-muted); font-size: 13px; line-height: 1.7; }
 .nf-output a, .nf-feedback a { color: var(--nf-accent); text-decoration: underline; text-underline-offset: 3px; }
-.nf-price-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.nf-price-pair > div { display: grid; align-content: start; gap: 8px; padding: 15px; border: 1px solid var(--nf-border); border-radius: 13px; background: var(--nf-card-raised); }
-.nf-price-pair span, .nf-price-pair small { color: var(--nf-muted); font-size: 12px; line-height: 1.5; }
-.nf-price-pair strong { color: var(--nf-text); font-size: clamp(20px, 2vw, 28px); font-variant-numeric: tabular-nums; }
-.nf-change { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 13px 0; border-top: 1px solid var(--nf-border); border-bottom: 1px solid var(--nf-border); }
-.nf-change span { color: var(--nf-muted); font-size: 12px; }
-.nf-change strong { color: var(--nf-text); font-size: 17px; font-variant-numeric: tabular-nums; }
 .nf-ev-layout { grid-template-columns: minmax(280px, .84fr) minmax(0, 1.16fr); }
 .nf-source-line { margin: 0; }
 .nf-ev-output { position: sticky; top: 20px; }
@@ -213,7 +206,7 @@
   .new-feature-panel .nf-heading h2 { font-size: clamp(30px, 9vw, 40px); }
   .new-feature-panel .nf-heading > p { font-size: 14px; }
   .nf-card { padding: 16px 13px; border-radius: 15px; }
-  .nf-price-pair, .nf-metrics, .nf-game-help { grid-template-columns: 1fr; }
+  .nf-metrics, .nf-game-help { grid-template-columns: 1fr; }
   .nf-game-toolbar { align-items: stretch; flex-direction: column; }
   .nf-game-stats { justify-content: flex-start; }
   .nf-touch-controls { display: grid; }

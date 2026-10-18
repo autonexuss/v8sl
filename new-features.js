@@ -3,9 +3,6 @@
 
   const REVIEWED = '2026-10-18';
   const SOURCES = {
-    fortuner2021: { title: 'Toyota India · 2021 Fortuner launch', url: 'https://www.toyotabharat.com/news/2021/tkm-ushers-in-the-new-year-with-new-fortuner-and-legender.html' },
-    fortuner2026: { title: 'Toyota India · 2026 Fortuner Leader Edition', url: 'https://www.toyotabharat.com/news/2026/tkm-introduces-the-2026-fortuner-leader-edition.html' },
-    fortunerSpecs: { title: 'Toyota India · Fortuner specifications', url: 'https://www.toyotabharat.com/showroom/fortuner/index-fortuner.html' },
     mg: { title: 'MG Motor India · ZS EV specifications', url: 'https://www.mgmotor.co.in/vehicles/mgzsev-electric-car-in-india' },
     mahindra: { title: 'Mahindra Electric SUV · BE 6 brochure', url: 'https://www.mahindraelectricsuv.com/on/demandware.static/-/Library-Sites-eSUVSharedLibrary/default/dw9d7f448a/Be-6e/BE6-Digital-Leaflet.pdf' },
     hyundaiIoniq: { title: 'Hyundai India · IONIQ 5 specifications', url: 'https://www.hyundai.com/in/en/find-a-car/ioniq-5/specification' },
@@ -24,17 +21,6 @@
   };
 
   const DIRECTORY = window.CHASSIS_INDIA_DIRECTORY || [];
-  // Only dated, source-checked launch prices belong here. The form below still
-  // exposes every make/model in the site's directory and never invents a price.
-  const PRICE = [{
-    make: 'Toyota', models: [{
-      name: 'Fortuner', years: [
-        { year: 2021, generation: '2021 launch facelift', variants: [{ name: '2.8 L 2WD Diesel Manual', amount: 3248000, valid: '2021-01-06', source: 'fortuner2021', note: 'Toyota launch ex-showroom price; same nationally except Kerala.' }] },
-        { year: 2026, generation: '2026 Leader Edition', variants: [{ name: '2.8 L 4x2 Diesel Manual · Leader Edition', amount: 3651000, valid: '2026-10-09', source: 'fortuner2026', note: 'Toyota launch ex-showroom price; Leader Edition equipment differs from the 2021 standard Fortuner.' }] }
-      ]
-    }]
-  }];
-
   const BEV_IDS = window.CHASSIS_INDIA_BEV_IDS || [];
   const EV_CARS = BEV_IDS.flatMap(([makeName, modelName]) => {
     const make = DIRECTORY.find(item => item.make === makeName);
@@ -84,27 +70,11 @@
   ].map((q, i) => ({ ...q, id: i + 1, reviewed: REVIEWED }));
 
   const main = document.querySelector('main');
-  if (!main || document.getElementById('car-price-history')) return;
+  if (!main || document.getElementById('ev-range-adventure')) return;
   const before = document.getElementById('about');
   const put = html => { const box = document.createElement('template'); box.innerHTML = html.trim(); const node = box.content.firstElementChild; node.classList.add('shell-section-closed'); main.insertBefore(node, before || null); return node; };
   const panelHead = (eyebrow, title, text) => `<header class="nf-heading"><div class="eyebrow"><i></i>${eyebrow}</div><h2>${title}</h2><p>${text}</p></header>`;
 
-  put(`<section class="new-feature-panel section-wrap" id="car-price-history" aria-labelledby="price-history-title">
-    ${panelHead('INDIA · DATED, SOURCE-CHECKED PRICE POINTS', 'Car Price History', 'Choose a make, model and date. Where a verified dated price record exists, the calculator compares the latest record available on or before that date with the latest indexed price point and calculates the nominal change.')}
-    <div class="nf-layout nf-price-layout"><form class="nf-card nf-form" id="price-history-form"><div class="nf-coverage"><strong>India-market directory · dated price coverage is partial</strong><span>Vehicle choices follow Find a car. Prices auto-fill only from source-checked records; unsupported dates or models are identified instead of guessed.</span></div>
-      <label>Brand / make<select id="ph-make" required><option value="">Choose a brand</option></select></label>
-      <label>Model<select id="ph-model" required disabled><option value="">Choose a brand first</option></select></label>
-      <label>Date to look up<input id="ph-date" type="date" required disabled></label>
-      <label>Historical variant / trim<select id="ph-variant" disabled><option value="">Choose a model and date first</option></select></label>
-      <label>Historical ex-showroom price (₹)<input id="ph-old-price" type="number" min="1" step="1" inputmode="numeric" placeholder="Auto-fills when a dated record exists"></label>
-      <label>Latest indexed ex-showroom price (₹)<input id="ph-new-price" type="number" min="1" step="1" inputmode="numeric" placeholder="Auto-fills when a current source record exists"></label>
-      <label>Latest indexed variant / trim<input id="ph-current-variant" type="text" maxlength="100" placeholder="Filled from the latest sourced record"></label>
-      <label>Latest price record date<input id="ph-current-date" type="date"></label>
-      <label>Additional price source URL · optional<input id="ph-current-source" type="url" inputmode="url" placeholder="Paste a dated manufacturer price source"></label>
-      <p class="nf-note">This is a source-backed archive, not a live price feed. The historical figure is the latest indexed price record dated on or before your chosen date; the archive cannot confirm that a price stayed unchanged between records. The comparison is nominal, ex-showroom and India-specific; taxes, discounts, city charges and inflation are excluded. Missing data stays clearly marked instead of being invented.</p>
-      <button class="nf-primary" type="submit">Show price comparison <span aria-hidden="true">↗</span></button>
-    </form><div class="nf-card nf-output" id="price-history-result" role="status" aria-live="polite"><span class="nf-kicker">PRICE COMPARISON</span><h3>Choose a car and date.</h3><p>When dated source records are available, the historical and latest indexed prices fill automatically and the nominal percentage change is calculated.</p></div></div>
-  </section>`);
 
   put(`<section class="new-feature-panel section-wrap" id="ev-range-adventure" aria-labelledby="ev-range-title">
     ${panelHead('BATTERY-ELECTRIC CARS · INDIA DIRECTORY', 'EV Range Adventure', 'Choose a battery-electric make, model and model year. Source-checked battery and published-range figures are filled when available; enter the exact figures from the vehicle’s official brochure for other directory EVs. Trip-condition effects are illustrative, not live telemetry.')}
@@ -133,127 +103,13 @@
       <article class="nf-card nf-question" aria-live="polite"><div class="nf-question-top"><span id="quiz-counter">Question 1</span><span id="quiz-timer" hidden>15</span></div><h3 id="quiz-claim"></h3><div class="nf-actions nf-answer-actions"><button class="nf-primary" id="quiz-fact" type="button">Fact</button><button class="nf-secondary" id="quiz-myth" type="button">Myth</button></div><div id="quiz-feedback" class="nf-feedback" hidden></div><button class="nf-secondary" id="quiz-next" type="button" hidden>Next question</button></article></div>
   </section>`);
 
-  const fmtINR = n => `₹${Number(n).toLocaleString('en-IN')}`;
   const htmlSafe = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
   const option = (label, value = label) => { const o = document.createElement('option'); o.textContent = label; o.value = value; return o; };
   const linkFor = key => SOURCES[key];
   const safeAnchor = (source, label) => `<a href="${source.url}" target="_blank" rel="noopener noreferrer">${label || source.title} ↗</a>`;
 
-  // Vehicle choices come from Find a car. Prices are shown only when a dated
-  // source-backed archive point exists; the UI never estimates missing prices.
-  const make = document.getElementById('ph-make'), model = document.getElementById('ph-model'), priceDate = document.getElementById('ph-date'), variant = document.getElementById('ph-variant');
-  const oldPriceInput = document.getElementById('ph-old-price'), newPriceInput = document.getElementById('ph-new-price');
-  const currentVariantInput = document.getElementById('ph-current-variant'), currentDateInput = document.getElementById('ph-current-date'), currentSourceInput = document.getElementById('ph-current-source');
-  const clearPriceInputs = () => { oldPriceInput.value = ''; newPriceInput.value = ''; currentVariantInput.value = ''; currentDateInput.value = ''; currentSourceInput.value = ''; };
   const resetSelect = (select, placeholder, disabled = true) => { select.replaceChildren(option(placeholder, '')); select.disabled = disabled; };
-  const todayLocal = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  DIRECTORY.forEach(entry => make.add(option(entry.make, entry.make)));
-  const getPriceRecords = (makeName, modelName) => (PRICE.find(item => item.make === makeName)?.models.find(item => item.name === modelName)?.years || [])
-    .flatMap(yearRecord => yearRecord.variants.map(item => ({ ...item, year: yearRecord.year, generation: yearRecord.generation, make: makeName, model: modelName })))
-    .sort((a, b) => b.valid.localeCompare(a.valid));
-  const historicalRecords = () => priceDate.value ? getPriceRecords(make.value, model.value).filter(item => item.valid <= priceDate.value) : [];
-  const latestPriceRecord = () => getPriceRecords(make.value, model.value).find(item => item.valid <= todayLocal()) || null;
-  function refreshHistoricalPricePoints() {
-    const records = historicalRecords();
-    resetSelect(variant, records.length ? 'Choose an archived price point' : 'No verified price record on or before this date', !records.length);
-    records.forEach((item, index) => variant.add(option(`${item.valid} · ${item.name} · ${fmtINR(item.amount)}`, String(index))));
-    if (records.length) {
-      variant.value = '0';
-      oldPriceInput.value = String(records[0].amount);
-    } else oldPriceInput.value = '';
-  }
-  function refreshLatestPrice() {
-    const latest = latestPriceRecord();
-    newPriceInput.value = latest ? String(latest.amount) : '';
-    newPriceInput.dataset.indexedAmount = latest ? String(latest.amount) : '';
-    currentVariantInput.value = latest?.name || '';
-    currentDateInput.value = latest?.valid || '';
-    currentSourceInput.value = '';
-  }
-  newPriceInput.addEventListener('input', () => {
-    const latest = latestPriceRecord();
-    const stillIndexed = latest && Number(newPriceInput.value) === latest.amount;
-    if (!stillIndexed) {
-      currentVariantInput.value = '';
-      currentDateInput.value = '';
-      currentSourceInput.value = '';
-    }
-  });
-  make.addEventListener('change', () => {
-    clearPriceInputs();
-    const entry = DIRECTORY.find(item => item.make === make.value);
-    resetSelect(model, entry ? 'Choose a model' : 'Choose a brand first', !entry);
-    (entry?.models || []).forEach(item => model.add(option(item.name, item.name)));
-    priceDate.disabled = true; priceDate.value = ''; priceDate.removeAttribute('min'); priceDate.max = todayLocal();
-    resetSelect(variant, 'Choose a model and date first');
-  });
-  model.addEventListener('change', () => {
-    clearPriceInputs();
-    const entry = DIRECTORY.find(item => item.make === make.value)?.models.find(item => item.name === model.value);
-    if (entry) {
-      priceDate.disabled = false;
-      priceDate.min = `${entry.from}-01-01`;
-      priceDate.max = todayLocal();
-      priceDate.value = todayLocal();
-      refreshHistoricalPricePoints();
-      refreshLatestPrice();
-    } else {
-      priceDate.disabled = true; priceDate.value = ''; priceDate.removeAttribute('min');
-      resetSelect(variant, 'Choose a model and date first');
-    }
-  });
-  priceDate.addEventListener('change', () => {
-    oldPriceInput.value = '';
-    refreshHistoricalPricePoints();
-  });
-  variant.addEventListener('change', () => {
-    const selected = variant.value === '' ? null : historicalRecords()[Number(variant.value)];
-    oldPriceInput.value = selected?.amount ? String(selected.amount) : '';
-  });
-  document.getElementById('price-history-form').addEventListener('submit', event => {
-    event.preventDefault();
-    const result = document.getElementById('price-history-result');
-    const requestedDate = priceDate.value;
-    const selectedVariant = variant.value === '' ? null : historicalRecords()[Number(variant.value)];
-    const latestRecord = latestPriceRecord();
-    const manualOld = Number(oldPriceInput.value) || 0;
-    const manualNew = Number(newPriceInput.value) || 0;
-    const oldAmount = manualOld || selectedVariant?.amount || 0;
-    const newAmount = manualNew || latestRecord?.amount || 0;
-    const makeRecord = DIRECTORY.find(item => item.make === make.value);
-    const archiveQuery = encodeURIComponent(`${make.value} ${model.value} India ex-showroom price ${requestedDate}`);
-    const searchLink = `https://www.google.com/search?q=${archiveQuery}`;
-    if (!make.value || !model.value || !requestedDate) {
-      result.innerHTML = '<span class="nf-kicker">SELECT A VEHICLE AND DATE</span><h3>Choose a make, model and date.</h3><p>Vehicle choices use the same India-market directory as Find a car.</p>'; return;
-    }
-    if (!(oldAmount > 0) || !(newAmount > 0)) {
-      const source = makeRecord?.url ? safeAnchor({ url: makeRecord.url }, `${make.value} official site`) : '';
-      const missing = !(oldAmount > 0) && !(newAmount > 0) ? 'historical and latest' : !(oldAmount > 0) ? 'historical' : 'latest';
-      const latestInfo = latestRecord ? `<p>Latest indexed point: ${htmlSafe(latestRecord.valid)} · ${htmlSafe(latestRecord.name)} · ${fmtINR(latestRecord.amount)} ${safeAnchor(linkFor(latestRecord.source))}</p>` : '';
-      result.innerHTML = `<span class="nf-kicker">PRICE DATA INCOMPLETE</span><h3>${htmlSafe(make.value)} ${htmlSafe(model.value)} · ${htmlSafe(requestedDate)}</h3><p>No verified ${missing} price is indexed for this selection. We do not interpolate or guess a price. If you supply the missing amount above, the result will be labelled user-entered and the percentage will use the exact values.</p>${latestInfo}<p class="nf-source-line">${source} · <a href="${searchLink}" target="_blank" rel="noopener noreferrer">Search India-market prices for this date ↗</a></p>`; return;
-    }
-    const change = newAmount - oldAmount, percent = change / oldAmount * 100;
-    const oldIsManual = manualOld > 0 && (!selectedVariant || manualOld !== Number(selectedVariant.amount));
-    const selectedName = oldIsManual ? 'user-entered price' : selectedVariant?.name || 'user-entered configuration';
-    const oldMeta = oldIsManual ? '<small>User-entered or edited · not independently verified</small>' : `<small>Source price dated ${htmlSafe(selectedVariant.valid)} · ${htmlSafe(selectedVariant.year)} model year</small>${safeAnchor(linkFor(selectedVariant.source))}`;
-    let suppliedSource = '';
-    if (currentSourceInput.value.trim()) {
-      try { const url = new URL(currentSourceInput.value.trim()); if (url.protocol === 'https:' || url.protocol === 'http:') suppliedSource = `<a href="${htmlSafe(url.href)}" target="_blank" rel="noopener noreferrer">User-supplied price source ↗</a>`; } catch { /* Invalid or unsupported link remains unlinked and unverified. */ }
-    }
-    const currentDetails = [currentVariantInput.value.trim(), currentDateInput.value].filter(Boolean).map(htmlSafe).join(' · ');
-    const currentDetailsMatch = latestRecord && (!currentVariantInput.value.trim() || currentVariantInput.value.trim() === latestRecord.name) && (!currentDateInput.value || currentDateInput.value === latestRecord.valid);
-    const currentIsSourced = latestRecord && (!manualNew || manualNew === Number(latestRecord.amount)) && currentDetailsMatch;
-    const newMeta = currentIsSourced ? `<small>Latest indexed source price · ${htmlSafe(latestRecord.valid)}</small>${safeAnchor(linkFor(latestRecord.source))}` : `<small>User-entered · not independently verified${currentDetails ? ` · ${currentDetails}` : ''}</small>${suppliedSource}`;
-    const sameSourcePoint = selectedVariant && latestRecord && selectedVariant.valid === latestRecord.valid && Number(selectedVariant.amount) === Number(latestRecord.amount);
-    const compareNote = `This is a nominal ex-showroom arithmetic comparison, not inflation-adjusted. The selected date maps to the latest indexed source point on or before it (${selectedVariant ? htmlSafe(selectedVariant.valid) : 'user-entered'}); the archive cannot confirm whether the price stayed unchanged between source dates.${sameSourcePoint ? ` Both sides use the same latest indexed record (${htmlSafe(latestRecord.valid)}), so this archive has no later price point from which to establish a change.` : ''}`;
-    const trimMismatch = !oldIsManual && selectedVariant && currentVariantInput.value.trim() && selectedVariant.name.toLowerCase() !== currentVariantInput.value.trim().toLowerCase();
-    const mismatchNote = trimMismatch ? ' The historical and latest points are different trims, so the percentage is a model-level comparison and not a like-for-like trim increase.' : '';
-    const direction = change >= 0 ? 'increase' : 'decrease';
-    result.innerHTML = `<span class="nf-kicker">NOMINAL EX-SHOWROOM COMPARISON · INDIA</span><h3>${htmlSafe(make.value)} ${htmlSafe(model.value)}</h3><div class="nf-price-pair"><div><span>Requested date ${htmlSafe(requestedDate)} · ${htmlSafe(selectedName)}</span><strong>${fmtINR(oldAmount)}</strong>${oldMeta}</div><div><span>Latest indexed · ${htmlSafe(currentVariantInput.value || 'variant not specified')}</span><strong>${fmtINR(newAmount)}</strong>${newMeta}</div></div><div class="nf-change"><span>Nominal ${direction} · not inflation-adjusted</span><strong>${change >= 0 ? '+' : '−'}${fmtINR(Math.abs(change))} · ${Math.abs(percent).toFixed(1)}% ${direction}</strong></div><p class="nf-note">${compareNote}${mismatchNote}${selectedVariant?.note ? ` ${htmlSafe(selectedVariant.note)}` : ''}</p>`;
-  });
 
-  // EV picker is a cascade over the exact EV subset of the site's car directory.
-  // Missing range/battery values stay blank until an official brochure is supplied.
   const evMake = document.getElementById('ev-make'), evModel = document.getElementById('ev-model'), evYear = document.getElementById('ev-year'), evVariant = document.getElementById('ev-variant');
   const evBattery = document.getElementById('ev-battery'), evCertifiedRange = document.getElementById('ev-certified-range');
   const evSource = document.getElementById('ev-profile-source');

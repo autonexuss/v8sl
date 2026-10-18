@@ -6,8 +6,6 @@
   const clean = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
-  // The interactive diesel iMT simulator lives in simulator.js.
-
   // Directory-backed vehicle controls. Unsupported specifications remain explicitly unavailable.
   function fillMake(select, placeholder = 'Choose a make') {
     if (!select) return;

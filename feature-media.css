@@ -17,14 +17,8 @@
 .ev-charging-map-visual img { display: block; width: 100%; height: auto; max-height: none; object-fit: contain; object-position: center; }
 
 /* The engine control is a compact push-button start/stop affordance. */
-.environment-simulator .env-engine-off { display: grid; grid-template-columns: minmax(0,1fr) 76px auto; align-items: center; gap: 14px 18px; min-height: 0; }
-.environment-simulator .env-engine-off > p { grid-column: 1 / -1; flex: initial; }
-.environment-simulator .env-engine-toggle { display: grid; width: 76px; height: 76px; min-height: 76px; place-content: center; justify-items: center; gap: 2px; padding: 0; border: 1px solid #f0dcae; border-radius: 50%; background: radial-gradient(circle at 35% 24%,#45515a,#11181d 67%); color: #fff; box-shadow: inset 0 1px #ffffff45, 0 8px 22px #0006; }
-.environment-simulator .env-engine-toggle:hover { transform: translateY(-1px) scale(1.035); border-color: #fff0ca; background: radial-gradient(circle at 35% 24%,#5c6870,#172027 67%); }
 .engine-button-icon { font-size: 26px; line-height: 1; }
 .engine-button-label { font-size: 9px; font-weight: 800; letter-spacing: .12em; }
-.environment-simulator .env-engine-off #env-sim-status { min-width: 0; }
-.env-gear-n { left: 63% !important; }
 
 /* Improve contrast through text colors only; retain each section's original surface and palette. */
 :root[data-theme="light"] #care > h2,
@@ -60,10 +54,6 @@
 
 @media (max-width: 760px) {
   .ownership-story-visual { min-height: 260px; }
-  .environment-simulator .env-engine-off { grid-template-columns: 64px minmax(0,1fr); gap: 12px; }
-  .environment-simulator .env-engine-off > p { grid-column: 1 / -1; }
-  .environment-simulator .env-engine-toggle { width: 64px; height: 64px; min-height: 64px; grid-column: 1; grid-row: 2 / span 2; }
-  .environment-simulator .env-engine-off #env-sim-status { grid-column: 2; }
   .section-modal-toolbar { top: 84px; right: 17px; gap: 8px; }
   .section-modal-photo { width: clamp(72px, 24vw, 94px); height: 35px; border-radius: 9px; }
   .section-modal-active#vehicle-services,
@@ -72,5 +62,4 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .feature-inline-media img { transition: none; }
-  .environment-simulator .env-engine-toggle { transition: none; }
 }
