@@ -1593,7 +1593,7 @@ function mount(target, userOpts) {
     // Any sub-zero ambient requires warming to 0°C before ignition.
     const startTemp = Tamb < 0 ? 0 : tmin;
     const crankReady = crkT >= .5;
-    if (state == 1 && crankReady && Tc >= startTemp - .05 && fuel > 0 && (!g.dsl || g.cr >= 13)) {
+    if (state == 1 && crankReady && Number(Tc.toFixed(0)) >= startTemp && fuel > 0 && (!g.dsl || g.cr >= 13)) {
       state = 2;
       // Preserve the real cranking RPM at ignition, then ease up to idle smoothly.
       startCatchFrom = rpm;
@@ -1636,7 +1636,7 @@ function mount(target, userOpts) {
     const crankSpeed = state === 1 ? clamp(rpm / (Math.max(160, g.idle * .3) * 1.8), 0, 1) : 0;
     const coldLoad = clamp(-Tc / 40, 0, 1);
     // Cranking warms the engine slowly; higher cranking RPM adds more heat.
-    const crankWarmRate = state === 1 && Tc < 0 ? (.03 + .37 * crankSpeed) * (.85 + .15 * coldLoad) : 0;
+    const crankWarmRate = state === 1 && Tc < 0 ? 2 * (.03 + .37 * crankSpeed) * (.85 + .15 * coldLoad) : 0;
     const crankHeat = crankWarmRate
       ? Math.max(0, kc * (Tc - Tamb)) + crankWarmRate * 14 / (6 * Math.max(.1, TS))
       : 0;
@@ -1800,7 +1800,7 @@ function mount(target, userOpts) {
       const requiredStartTemp = Tamb < 0 ? 0 : tmin;
       // A quick tap can complete a normal-temperature start; in extreme cold,
       // releasing E stops the starter so the user can choose to keep cranking.
-      if (Tc < requiredStartTemp - .05) {
+      if (Number(Tc.toFixed(0)) < requiredStartTemp) {
         state = 0;
         msg = 'CRANKING STOPPED: hold E to warm and start';
       }
@@ -2005,7 +2005,7 @@ function mount(target, userOpts) {
     const zn = ZONE(); setText(R.zone, zn[0]); R.zone.dataset.z = zn[1];
     const S = (k, t) => setText(SX[k], t);
     S('hp', fmt1(kw * 1.341)); S('kw', fmt1(kw)); S('br', Math.round(sig.brake || 0) + ''); S('ind', Math.round(sig.ind || 0) + ''); S('bm', bm.toFixed(2)); S('map', (g.dsl ? 1 + 1.2 * te : .35 + .65 * te).toFixed(2)); S('exh', (1.05 + .3 * te).toFixed(2));
-    S('pu', ((sig.pump || 0) * 4 * PI / (g.disp * 1e-3) / 1e5).toFixed(2)); S('ct', Tc.toFixed(0)); S('iat', (Tamb + (Tc - Tamb) * .15).toFixed(0)); S('egt', Math.round(egt)); S('th', Math.round(thr * 100)); S('cr', Math.round(ca) + '');
+    S('pu', ((sig.pump || 0) * 4 * PI / (g.disp * 1e-3) / 1e5).toFixed(2)); S('ct', Number(Tc.toFixed(0)) === 0 ? '0' : Tc.toFixed(0)); S('iat', (Tamb + (Tc - Tamb) * .15).toFixed(0)); S('egt', Math.round(egt)); S('th', Math.round(thr * 100)); S('cr', Math.round(ca) + '');
     S('tk', fuel.toFixed(1)); S('lh', lh.toFixed(1)); S('rg', lh > .1 ? (fuel / lh).toFixed(1) : '-'); S('rl', g.dsl ? Math.round(500 + 1300 * (.4 + .6 * f)) + '' : '3.0'); S('inj', Math.round(te * (.3 + .7 * f) * 100) + ''); S('am', Tamb + ''); S('bo', g.tb ? Math.round(bst * 100) + '' : '-');
     // launch timer
     if (arm == 1 && v > .1) { arm = 2; t0 = T; }
