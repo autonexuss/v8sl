@@ -1551,8 +1551,8 @@ function mount(target, userOpts) {
       // Starter speed is independent of engine torque and flywheel settings, so every
       // engine can sustain a realistic crank even at extreme cold or reduced power.
       const coldStartFloor = g.dsl ? -12 : -25;
-      // All sub-zero starts require sustained cranking until the engine reaches 0°C.
-      const crankTargetTemp = Tamb < 0 ? 0 : coldStartFloor;
+      // Cranking targets this engine's minimum start temperature.
+      const crankTargetTemp = coldStartFloor;
       const crankWarmProgress = crankTargetTemp > Tamb ? clamp((Tc - Tamb) / (crankTargetTemp - Tamb), 0, 1) : 1;
       const crankTargetRpm = crk * (.9 + .25 * crankWarmProgress);
       const crankResponse = 1 - Math.exp(-dt / .28);
@@ -1590,8 +1590,8 @@ function mount(target, userOpts) {
     if (autoGearbox && gear > 0 && autoShiftTarget > gear && autoShiftRpmCeiling > 0) rpm = Math.min(rpm, autoShiftRpmCeiling);
     if (dyn) rpm = Math.min(dyn.r, g.rl - 1);
     const tmin = g.dsl ? -12 : -25;
-    // Any sub-zero ambient requires warming to 0°C before ignition.
-    const startTemp = Tamb < 0 ? 0 : tmin;
+    // Use the engine's own cold-start threshold, regardless of ambient temperature.
+    const startTemp = tmin;
     const crankReady = crkT >= .5;
     if (state == 1 && crankReady && Number(Tc.toFixed(0)) >= startTemp && fuel > 0 && (!g.dsl || g.cr >= 13)) {
       state = 2;
@@ -1797,7 +1797,7 @@ function mount(target, userOpts) {
   function releaseEngineKey() {
     if (eKeyHeld && state === 1) {
       const tmin = E.dsl ? -12 : -25;
-      const requiredStartTemp = Tamb < 0 ? 0 : tmin;
+      const requiredStartTemp = tmin;
       // A quick tap can complete a normal-temperature start; in extreme cold,
       // releasing E stops the starter so the user can choose to keep cranking.
       if (Number(Tc.toFixed(0)) < requiredStartTemp) {
