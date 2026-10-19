@@ -1573,7 +1573,7 @@ function mount(target, userOpts) {
       } else {
         // The 0.45L single has a small crank inertia and raised torque specs.
         // Add flywheel-like inertia only while it free-revs in neutral.
-        const neutralRevInertia = engKey === 'sg' && gear === 0 ? Math.max(g.J, .16) : g.J;
+        const neutralRevInertia = engKey === 'sg' && (gear === 0 || cp) ? Math.max(g.J, .16) : g.J;
         rpm = Math.max(0, rpm + (net - tc) / neutralRevInertia * dt * 30 / Math.PI);
       }
     }
