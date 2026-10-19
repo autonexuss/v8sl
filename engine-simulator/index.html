@@ -1582,7 +1582,7 @@ function mount(target, userOpts) {
     if (state == 2 && !g.dsl && g.cr > 13.5 && te > .6 && rpm > g.rl * .3) knk += dt * (g.cr - 13.5) * .5; else knk = Math.max(0, knk - dt * .5);
     if (state == 2 && knk > 2) { state = 0; msg = 'DETONATION: compression ratio too high for petrol, engine destroyed'; }
     if (state == 2 && rpm > g.rl * 1.12) { state = 0; msg = 'ENGINE DAMAGED: over-rev (wrong downshift?)'; }
-    if (state == 2 && !AUTO && !autoGearbox && gear && !cp && v < .8 && pedal < .24 && thr < .24 && rpm < (smallEngine && gear === 1 ? Math.max(g.idle * 1.08, 1050) : idl * 1.35)) {
+    if (state == 2 && !AUTO && !autoGearbox && gear && !cp && v < .8 && pedal < .24 && thr < .24 && rpm < (smallEngine && gear === 1 ? g.idle * 1.08 + pedal * 260 : idl * 1.35)) {
       state = 0;
       msg = 'STALLED: clutch released in gear at idle without enough throttle';
     }
