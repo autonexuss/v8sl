@@ -1334,6 +1334,7 @@ const TEMPLATE = '' +
 '     <button type="button" class="anx-toggle is-on" data-ref="auto" aria-pressed="true"><span>Auto-clutch</span><i></i></button>' +
 '    </div>' +
 '    <div class="anx-deck-c"><div class="anx-row"><span class="anx-lbl">Gearbox</span><button type="button" class="anx-link" data-ref="neutral">Neutral (N)</button></div>' +
+'     <button type="button" class="anx-toggle" data-ref="autoGearbox" aria-pressed="false" title="Automatically select gears using engine speed and road speed"><span>Automatic gearbox off</span><i></i></button>' +
 '     <div class="anx-gearbox"><button type="button" class="anx-btn anx-ico" data-ref="dn" aria-label="Shift down (Arrow Down)">' + ICON.down + '</button><div class="anx-gear" data-ref="gear" aria-live="off">N</div><button type="button" class="anx-btn anx-ico" data-ref="upb" aria-label="Shift up (Arrow Up)">' + ICON.up + '</button></div>' +
 '     <div class="anx-pips" data-ref="pips" aria-hidden="true"></div></div>' +
 '   </section>' +
@@ -1358,7 +1359,7 @@ const TEMPLATE = '' +
 '  </aside>' +
 ' </div>' +
 ' <dialog class="anx-dialog" data-ref="dlg" aria-label="Keyboard shortcuts"><h3>Controls</h3><dl>' +
-'  <dt><kbd>E</kbd></dt><dd>Toggle engine on / off</dd><dt><kbd>W</kbd></dt><dd>Accelerator (hold)</dd><dt><kbd>S</kbd></dt><dd>Brake (hold)</dd>' +
+'  <dt><kbd>E</kbd></dt><dd>Toggle engine; hold to keep cranking when cold</dd><dt><kbd>W</kbd></dt><dd>Accelerator (hold)</dd><dt><kbd>S</kbd></dt><dd>Brake (hold)</dd>' +
 '  <dt><kbd>Space</kbd> / <kbd>C</kbd></dt><dd>Clutch (hold)</dd><dt><kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>Shift up / down</dd>' +
 '  <dt><kbd>1</kbd>–<kbd>6</kbd></dt><dd>Select a forward gear (manual: hold clutch)</dd><dt><kbd>7</kbd></dt><dd>Select reverse (manual: hold clutch)</dd>' +
 '  <dt><kbd>N</kbd></dt><dd>Neutral</dd><dt><kbd>M</kbd></dt><dd>Mute</dd><dt><kbd>R</kbd></dt><dd>Reset all inputs</dd><dt><kbd>F</kbd></dt><dd>Fullscreen</dd>' +
@@ -1419,7 +1420,7 @@ function mount(target, userOpts) {
    * PHYSICS  (identical model to v5; verified numerically against it)
    * ====================================================================== */
   //PHYS
-  let E = { ...ENG.d8 }, engKey = 'd8', state = 0, rpm = 0, thr = 0, key = 0, gas = 0, brk = 0, cut = 0, idleI = 0, gear = 0, v = 0, cp = 0, AUTO = 1, cd = 0, bst = 0, dyn = null,
+  let E = { ...ENG.d8 }, engKey = 'd8', state = 0, rpm = 0, thr = 0, key = 0, gas = 0, brk = 0, cut = 0, idleI = 0, gear = 0, v = 0, cp = 0, AUTO = 1, autoGearbox = 0, autoShiftTimer = 0, eKeyHeld = 0, cd = 0, bst = 0, dyn = null,
       Tc = 20, Tamb = 20, TS = 1, fuel = 60, knk = 0, crkT = 0, msg = 'OFF', sig = {}, uThr = 0, uLoad = 0, ca = 0;
   const DG = [3.6, 2.2, 1.5, 1.1, .85, .7];
   const curve = (r, g) => { const x = r < g.pk ? (g.pk - r) / g.pk : (r - g.pk) / (g.rl - g.pk); return Math.max(.12, 1 - (r < g.pk ? .6 : .55) * x * x); };
@@ -1430,7 +1431,7 @@ function mount(target, userOpts) {
     const idl = g.idle + Math.max(0, 70 - Tc) * 5;          // fast idle when cold
     const pedal = Math.max(uThr, key, gas);
     thr += Math.max(-8 * dt, Math.min(8 * dt, (dyn ? 1 : pedal) - thr));
-    if (state == 1 && gear && !cp && !AUTO) { state = 0; msg = 'CANNOT START: select neutral or press the clutch'; }
+    if (state == 1 && gear && !cp && !AUTO && !autoGearbox) { state = 0; msg = 'CANNOT START: select neutral or press the clutch'; }
     if (state == 1 && g.idle > g.rl * .55) { state = 0; msg = 'INVALID SPECS: idle is too close to redline'; }
     if (state == 1 && crkT < .25 && pedal > .6) { state = 0; msg = 'FLOODED: release the throttle before starting'; }
     let tg = 0, te = 0, ts = 0, pump = g.tq * .04 * f;
@@ -1448,8 +1449,28 @@ function mount(target, userOpts) {
     if (state == 1) { ts = g.tq * .6 * Math.max(.3, 1 - Math.max(0, 5 - Tc) * .02) * Math.max(0, 1 - rpm / (crk * 1.8)); crkT += dt; }
     const net = tg - fr - pump - uLoad * 0 - tl + ts, dir = gear === -1 ? -1 : 1, rt = gear === -1 ? (g.G || DG)[0] * (g.fd || 3.9) : gear > 0 ? (g.G || DG)[gear - 1] * (g.fd || 3.9) : 0, mv = g.mass || 1500, RW = .33;
     cd = Math.max(0, cd - dt);
+    autoShiftTimer = Math.max(0, autoShiftTimer - dt);
+    if (autoGearbox && state == 2 && !cp && autoShiftTimer <= 0) {
+      const ratios = E.G || DG, fd = E.fd || 3.9, wheelRpm = Math.abs(v) / .33 * (gear > 0 ? ratios[gear - 1] * fd : 0) * 30 / Math.PI;
+      if (gear == 0 && pedal > .05) {
+        gear = 1; cd = .24; autoShiftTimer = .55;
+      } else if (gear > 0) {
+        const upAt = Math.max(g.idle * 2.5, g.rl * (pedal > .7 ? .8 : .68));
+        const downAt = Math.max(g.idle * 1.45, g.pk * (pedal > .7 ? .62 : .42));
+        let targetGear = gear;
+        if (gear < ratios.length && Math.max(rpm, wheelRpm) >= upAt) targetGear = gear + 1;
+        else if (gear > 1 && (Math.min(rpm, wheelRpm) <= downAt || pedal > .65 && rpm < g.pk * .68)) targetGear = gear - 1;
+        if (targetGear < gear) {
+          const predictedRpm = Math.abs(v) / .33 * ratios[targetGear - 1] * fd * 30 / Math.PI;
+          if (predictedRpm >= g.rl * .9) targetGear = gear;
+        }
+        if (targetGear != gear) { gear = targetGear; cd = .24; autoShiftTimer = .55; }
+      }
+    }
     const dragMag = (.5 * 1.2 * .7 * 2.2 * v * v + .015 * mv * 9.81 + brk * mv * 8) * RW * (Math.abs(v) > .01 ? 1 : 0), dr = Math.sign(v) * dragMag; // signed aero + rolling + brake (8 m/s2)
-    const cl = gear && !cp ? (AUTO ? (cd == 0 ? Math.max(0, Math.min(1, (rpm - g.idle * 1.1) / (g.idle * .8))) : 0) : 1) : 0;
+    const smallEngine = g.disp <= 2.05 && g.tq <= 300;
+    const pickupRpm = smallEngine ? g.idle * .98 : g.idle * 1.1, pickupSpan = smallEngine ? g.idle * .62 : g.idle * .8;
+    const cl = gear && !cp ? ((AUTO || autoGearbox) ? (cd == 0 ? clamp((rpm - pickupRpm) / pickupSpan, 0, 1) : 0) : 1) : 0;
     const ri = rt ? Math.abs(v) / RW * rt * 30 / Math.PI : 0;
     if (cl > .98 && Math.abs(rpm - ri) < 60) {
       const Je = g.J + mv * RW * RW / (rt * rt);
@@ -1457,7 +1478,7 @@ function mount(target, userOpts) {
       v = dir * rpm * Math.PI / 30 * RW / rt;
     } else {
       let tc = 0;
-      if (rt) { tc = cl * g.tq * 1.6 * Math.tanh((rpm - ri) * Math.PI / 30 * .1); v += (tc * dir * rt / RW - dr / RW) / mv * dt; }
+      if (rt) { const launchBoost = smallEngine && gear === 1 && (AUTO || autoGearbox) && Math.abs(v) < 7 ? 1.55 - .55 * clamp(Math.abs(v) / 7, 0, 1) : 1; tc = cl * g.tq * 1.6 * launchBoost * Math.tanh((rpm - ri) * Math.PI / 30 * .1); v += (tc * dir * rt / RW - dr / RW) / mv * dt; }
       else v -= dr / RW / mv * dt;
       if (state == 0) {
         // Use a power-independent coast-down when combustion is off. Otherwise,
@@ -1471,18 +1492,18 @@ function mount(target, userOpts) {
     if (dyn) rpm = Math.min(dyn.r, g.rl - 1);
     const tmin = g.dsl ? -12 : -25;
     if (state == 1 && rpm > crk && Tc > tmin && fuel > 0 && (!g.dsl || g.cr >= 13)) { state = 2; knk = 0; idleI = .05; msg = 'RUNNING'; }
-    if (state == 1 && crkT > 5) { state = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : g.dsl && g.cr < 13 ? 'COMPRESSION TOO LOW: diesel cannot ignite fuel' : Tc <= tmin ? 'TOO COLD: cranks but will not fire' : 'COLD BATTERY/OIL: cannot crank fast enough'; }
+    if (state == 1 && crkT > 5 && (!eKeyHeld || Tc > tmin || fuel <= 0 || (g.dsl && g.cr < 13))) { state = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : g.dsl && g.cr < 13 ? 'COMPRESSION TOO LOW: diesel cannot ignite fuel' : Tc <= tmin ? 'TOO COLD: cranks but will not fire' : 'COLD BATTERY/OIL: cannot crank fast enough'; }
     if (state == 2 && !g.dsl && g.cr > 13.5 && te > .6 && rpm > g.rl * .3) knk += dt * (g.cr - 13.5) * .5; else knk = Math.max(0, knk - dt * .5);
     if (state == 2 && knk > 2) { state = 0; msg = 'DETONATION: compression ratio too high for petrol, engine destroyed'; }
     if (state == 2 && rpm > g.rl * 1.12) { state = 0; msg = 'ENGINE DAMAGED: over-rev (wrong downshift?)'; }
-    if (state == 2 && !AUTO && gear && !cp && v < .8 && pedal < .24 && thr < .24 && rpm < idl * 1.35) {
+    if (state == 2 && !AUTO && !autoGearbox && gear && !cp && v < .8 && pedal < .24 && thr < .24 && rpm < idl * 1.35) {
       state = 0;
       msg = 'STALLED: clutch released in gear at idle without enough throttle';
     }
     // With the manual clutch fully engaged, road speed fixes the engine speed
     // for the selected ratio. Stall when that coupled RPM falls below idle,
     // even if the idle controller would otherwise keep the engine running.
-    if (state == 2 && !AUTO && gear && !cp && Math.abs(v) >= .8 && ri > 0 && ri < idl && rpm < idl * 1.45) {
+    if (state == 2 && !AUTO && !autoGearbox && gear && !cp && Math.abs(v) >= .8 && ri > 0 && ri < idl && rpm < idl * 1.45) {
       state = 0;
       msg = 'STALLED: gear too high for current speed; downshift or press the clutch';
     }
@@ -1494,7 +1515,8 @@ function mount(target, userOpts) {
   }
   function thermal(dt) {
     const g = E, hl = state == 2 ? Math.min(1, (sig.ind || 0) / g.tq * (.4 + .6 * rpm / g.rl)) : 0;
-    const Qh = (state == 2 ? 8 : 0) + 85 * hl + Math.max(0, Tamb - 45) * 3;
+    const coldLimit = g.dsl ? -12 : -25, crankHeat = state == 1 && Tc <= coldLimit ? 4.5 : 0;
+    const Qh = (state == 2 ? 8 : crankHeat) + 85 * hl + Math.max(0, Tamb - 45) * 3;
     const kc = (Tc < 85 ? .12 : .35 + .03 * (Tc - 85)) * Math.max(.5, 1 - Math.max(0, Tamb - 35) * .012);
     Tc += (Qh - kc * (Tc - Tamb)) / 14 * dt * 6 * TS;
   }
@@ -1526,7 +1548,7 @@ function mount(target, userOpts) {
     if (!kind) { R.ovl.hidden = true; return; }
     const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
     R.ovl.innerHTML = kind === 'intro'
-      ? '<div class="anx-card"><span class="anx-eyebrow">Ready</span><h3>Turn the key.</h3><p>Pick an engine, press <kbd>E</kbd> to start or stop it, use <kbd>↑</kbd> / <kbd>↓</kbd> to shift, and hold <kbd>Space</kbd> or <kbd>C</kbd> for the clutch.</p><div class="anx-card-actions"><button type="button" class="anx-btn anx-go" data-act="start">' + ICON.power + '<span>Start engine</span></button></div><small>Sound plays after you press start.</small></div>'
+      ? '<div class="anx-card"><span class="anx-eyebrow">Ready</span><h3>Turn the key.</h3><p>Pick an engine, press <kbd>E</kbd> to start or stop it, or hold <kbd>E</kbd> to keep cranking during a cold start; use <kbd>↑</kbd> / <kbd>↓</kbd> to shift, and hold <kbd>Space</kbd> or <kbd>C</kbd> for the clutch.</p><div class="anx-card-actions"><button type="button" class="anx-btn anx-go" data-act="start">' + ICON.power + '<span>Start engine</span></button></div><small>Sound plays after you press start.</small></div>'
       : '<div class="anx-card anx-card--fail"><span class="anx-eyebrow">Engine stopped</span><h3>' + esc(title) + '</h3>' + (detail ? '<p>' + esc(detail) + '</p>' : '') + '<div class="anx-card-actions"><button type="button" class="anx-btn anx-go" data-act="start">' + ICON.power + '<span>Restart engine</span></button><button type="button" class="anx-btn" data-act="reset">' + ICON.reset + '<span>Reset all</span></button></div></div>';
     R.ovl.hidden = false;
   }
@@ -1645,27 +1667,36 @@ function mount(target, userOpts) {
   on(R.start, 'click', e => { start(); e.currentTarget.blur(); });
   on(R.stop, 'click', e => { stop(); e.currentTarget.blur(); });
   const sh = d => {
-    if (!AUTO && !cp) { toast('Press and hold the clutch to shift gears'); return false; }
+    if (!AUTO && !autoGearbox && !cp) { toast('Press and hold the clutch to shift gears'); return false; }
     const n = Math.max(-1, Math.min((E.G || DG).length, gear + d));
     if (n != gear) { gear = n; cd = .3; }
     return true;
   };
   const selectGear = target => {
-    if (!AUTO && !cp) { toast('Press and hold the clutch to shift gears'); return false; }
+    if (!AUTO && !autoGearbox && !cp) { toast('Press and hold the clutch to shift gears'); return false; }
     const maxGear = (E.G || DG).length;
     if (target > maxGear) { toast('This engine has only ' + maxGear + ' forward gears'); return false; }
     if (target !== gear) { gear = target; cd = .3; }
     return true;
   };
   const setNeutral = () => {
-    if (!AUTO && !cp) { toast('Press and hold the clutch to shift gears'); return false; }
+    if (!AUTO && !autoGearbox && !cp) { toast('Press and hold the clutch to shift gears'); return false; }
     gear = 0;
     return true;
   };
   on(R.upb, 'click', e => { sh(1); e.currentTarget.blur(); }); on(R.dn, 'click', e => { sh(-1); e.currentTarget.blur(); }); on(R.neutral, 'click', e => { setNeutral(); e.currentTarget.blur(); });
   function buildPips() { const n = (E.G || DG).length; R.pips.innerHTML = '<i data-g="-1">R</i><i data-g="0">N</i>' + Array.from({ length: n }, (_, i) => '<i data-g="' + (i + 1) + '">' + (i + 1) + '</i>').join(''); R.pips._c = null; }
   function setAuto(b) { AUTO = b ? 1 : 0; R.auto.classList.toggle('is-on', !!AUTO); R.auto.setAttribute('aria-pressed', AUTO ? 'true' : 'false'); }
+  function setAutoGearbox(b) {
+    autoGearbox = b ? 1 : 0;
+    R.autoGearbox.classList.toggle('is-on', !!autoGearbox);
+    R.autoGearbox.setAttribute('aria-pressed', autoGearbox ? 'true' : 'false');
+    const label = R.autoGearbox.querySelector('span');
+    if (label) label.textContent = autoGearbox ? 'Automatic gearbox on' : 'Automatic gearbox off';
+    autoShiftTimer = 0;
+  }
   on(R.auto, 'click', e => { setAuto(!AUTO); e.currentTarget.blur(); });
+  on(R.autoGearbox, 'click', e => { setAutoGearbox(!autoGearbox); e.currentTarget.blur(); });
   function hold(btn, set) {
     on(btn, 'pointerdown', e => { e.preventDefault(); try { btn.setPointerCapture(e.pointerId); } catch (x) {} set(1); btn.classList.add('is-down'); });
     ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => on(btn, ev, () => { set(0); btn.classList.remove('is-down'); }));
@@ -1725,7 +1756,7 @@ function mount(target, userOpts) {
   function resetAll() {
     state = 0; msg = 'OFF'; dyn = null; hist.length = 0; rpm = 0; v = 0; gear = 0; cd = 0; thr = 0; uThr = 0; uLoad = 0; key = 0; gas = 0; brk = 0; cp = 0; knk = 0; cut = 0; bst = 0; ca = 0; cav = 0; fuel = 60;
     arm = 0; l60 = l100 = 0; setText(R.t0, '-'); setText(R.t60, '-'); setText(R.t100, '-'); R.lt.textContent = 'Arm launch';
-    R.thr.value = 0; R.ld.value = 0; paint(R.thr); paint(R.ld); setAuto(true); setTS(1); setPV(1);
+    R.thr.value = 0; R.ld.value = 0; paint(R.thr); paint(R.ld); setAuto(true); setAutoGearbox(false); setTS(1); setPV(1);
     slow = 1; host.querySelectorAll('[data-slow]').forEach(c => c.classList.toggle('is-on', c.dataset.slow === '1'));
     setAmb(20); Tc = Tamb; setVol(70); setMute(false); setSound(1);
     setEngine(startEngine, true);
@@ -1750,13 +1781,13 @@ function mount(target, userOpts) {
     else if (c === 'Space' || c === 'KeyC') { cp = 1; e.preventDefault(); }
     else if (c === 'ArrowUp') { if (!e.repeat) sh(1); e.preventDefault(); }
     else if (c === 'ArrowDown') { if (!e.repeat) sh(-1); e.preventDefault(); }
-    else if (/^(?:Digit|Numpad)[1-6]$/.test(c)) { if (!e.repeat) selectGear(Number(c.slice(-1))); e.preventDefault(); } else if (/^(?:Digit|Numpad)7$/.test(c)) { if (!e.repeat) selectGear(-1); e.preventDefault(); } else if (c === 'KeyE') { if (!e.repeat) { if (state === 0) start(); else stop(); } }
+    else if (/^(?:Digit|Numpad)[1-6]$/.test(c)) { if (!e.repeat) selectGear(Number(c.slice(-1))); e.preventDefault(); } else if (/^(?:Digit|Numpad)7$/.test(c)) { if (!e.repeat) selectGear(-1); e.preventDefault(); } else if (c === 'KeyE') { if (!e.repeat) { eKeyHeld = 1; if (state === 0) start(); else stop(); } e.preventDefault(); }
     else if (c === 'KeyN') setNeutral();
     else if (c === 'KeyM') setMute(!muted); else if (c === 'KeyR') resetAll(); else if (c === 'KeyF') toggleFS();
     else if (e.key === '?' || c === 'KeyH') openHelp();
   });
-  on(document, 'keyup', e => { const c = e.code; if (KEYS.thr.indexOf(c) >= 0) key = 0; if (KEYS.brk.indexOf(c) >= 0) brk = 0; if (c === 'Space' || c === 'KeyC') cp = 0; });
-  on(global, 'blur', () => { key = 0; brk = 0; cp = 0; gas = 0; });
+  on(document, 'keyup', e => { const c = e.code; if (KEYS.thr.indexOf(c) >= 0) key = 0; if (KEYS.brk.indexOf(c) >= 0) brk = 0; if (c === 'Space' || c === 'KeyC') cp = 0; if (c === 'KeyE') eKeyHeld = 0; });
+  on(global, 'blur', () => { key = 0; brk = 0; cp = 0; gas = 0; eKeyHeld = 0; });
 
   /* ---------- gauges + charts ---------- */
   const gT = createGauge(R.dT), gR = createGauge(R.dR), gS = createGauge(R.dS);
