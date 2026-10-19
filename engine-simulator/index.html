@@ -385,6 +385,7 @@ const DSP_SRC = `class P {
     this.k = [0, 0]; this.kc = [0, 0]; this.kb = [0, 0];
     this.z = [0, 0, 0, 0, 0, 0]; this.h = [0, 0]; this.o = [0, 0]; this.o2 = [0, 0];
     this.n1 = 0; this.n2 = 0; this.n3 = 0; this.wn = 0; this.tl = 0;
+    this.tw = 0; this.tw2 = 0; this.twg = 0;
   }
   process(L, R) {
     const s = this.s, sr = typeof sampleRate !== 'undefined' ? sampleRate : globalThis.__sr, N = L.length;
@@ -462,6 +463,14 @@ const DSP_SRC = `class P {
       const mod = 1 + .025 * Math.sin(this.lfo);
       // --- stereo image (V engines: one bank per side) ------------------------------------
       const sd0 = s.nb > 1 ? ob[0] + .35 * ob[1] : ob[0] * 1.05, sd1 = s.nb > 1 ? ob[1] + .35 * ob[0] : ob[0] * 1.05;
+      // --- turbo whistle: compressor tone rising with boost, only on turbo engines ----------
+      this.twg += .0008 * ((s.tb && s.on ? Math.pow(s.bst, 1.4) * (.25 + .75 * Math.min(1, s.thr * 1.5)) : 0) - this.twg);
+      let whs = 0;
+      if (this.twg > .0005) {
+        const wf = 1500 + 3300 * s.bst + 900 * rr; this.tw += 6.2832 * wf / sr; if (this.tw > 6.2832) this.tw -= 6.2832;
+        this.tw2 += 6.2832 * wf * 1.5 / sr; if (this.tw2 > 6.2832) this.tw2 -= 6.2832;
+        whs = (Math.sin(this.tw) * .8 + Math.sin(this.tw2) * .25) * this.twg * (.9 + .1 * this.n1 * 6) * .8;
+      }
       const com = (res + sub + air + road + post) * mod;
       this.dc += .0004 * ((sd0 + sd1) * .5 + com - this.dc);
       for (let c = 0; c < 2; c++) {
@@ -469,7 +478,7 @@ const DSP_SRC = `class P {
         this.h[c] += fc * (xc - this.h[c]);                                   // dynamic low-pass (brighter with load)
         const y = Math.tanh(this.h[c] * drv) * sat;                           // gentle warmth, not distortion
         this.o[c] += .38 * (y - this.o[c]); this.o2[c] += .5 * (this.o[c] - this.o2[c]); // two-stage smoothing
-        (c ? R : L)[n] = this.o2[c] * this.vm * s.lv * 1.1;
+        (c ? R : L)[n] = (this.o2[c] + whs) * this.vm * s.lv * 1.1;
       }
     }
   }
@@ -1428,7 +1437,7 @@ function mount(target, userOpts) {
    * ====================================================================== */
   //PHYS
   let E = { ...ENG.d8 }, engKey = 'd8', state = 0, rpm = 0, thr = 0, key = 0, gas = 0, brk = 0, cut = 0, idleI = 0, gear = 0, v = 0, cp = 0, AUTO = 1, autoGearbox = 0, autoShiftTimer = 0, autoShiftTarget = 0, autoShiftRpmCeiling = 0, autoShiftDuration = 0, autoThrottlePrev = 0, autoThrottleSteady = 0, eKeyHeld = 0, startCatchT = 1, startCatchFrom = 0, cd = 0, bst = 0, dyn = null,
-      Tc = 20, Tamb = 20, TS = 1, fuel = 60, knk = 0, crkT = 0, msg = 'OFF', sig = {}, uThr = 0, uLoad = 0, ca = 0;
+      Tc = 20, Tamb = 20, TS = 1, fuel = 60, knk = 0, crkT = 0, msg = 'OFF', sig = {}, uThr = 0, uLoad = 0, ca = 0, crankStartTc = 0;
   const DG = [3.6, 2.2, 1.5, 1.1, .85, .7];
   const curve = (r, g) => { const x = r < g.pk ? (g.pk - r) / g.pk : (r - g.pk) / (g.rl - g.pk); return Math.max(.12, 1 - (r < g.pk ? .6 : .55) * x * x); };
   function step(dt) {
@@ -1642,7 +1651,7 @@ function mount(target, userOpts) {
       : 0;
     const Qh = (state == 2 ? 8 : crankHeat) + 85 * hl + Math.max(0, Tamb - 45) * 3;
     Tc += (Qh - kc * (Tc - Tamb)) / 14 * dt * 6 * TS;
-    if (state === 1 && Tamb < 0 && Tc > 0) Tc = 0;
+    if (state === 1 && Tamb < 0 && Tc > 0 && crankStartTc <= 0) Tc = 0;
   }
   //ENDPHYS
 
@@ -1789,7 +1798,7 @@ function mount(target, userOpts) {
     if (state !== 0) return;
     // Put the engine into crank before touching Web Audio. Audio can be blocked
     // by browser policy or hardware and must never prevent the simulator start.
-    state = 1; crkT = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : 'CRANKING'; everStarted = true;
+    state = 1; crkT = 0; crankStartTc = Tc; msg = fuel <= 0 ? 'OUT OF FUEL' : 'CRANKING'; everStarted = true;
     try { Promise.resolve(audio.unlock()).then(pushVol).catch(() => {}); } catch (_) {}
   }
   function stop() { state = 0; startCatchT = 1; msg = 'OFF'; dyn = null; }
