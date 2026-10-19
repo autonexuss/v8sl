@@ -1592,7 +1592,13 @@ function mount(target, userOpts) {
     // In extreme ambient cold, keep cranking until the coolant reaches 0°C.
     const startTemp = Tamb <= tmin ? 0 : tmin;
     const crankReady = crkT >= .5;
-    if (state == 1 && crankReady && Tc >= startTemp - .05 && fuel > 0 && (!g.dsl || g.cr >= 13)) { state = 2; knk = 0; idleI = .05; msg = 'RUNNING'; }
+    if (state == 1 && crankReady && Tc >= startTemp - .05 && fuel > 0 && (!g.dsl || g.cr >= 13)) {
+      state = 2;
+      // The starter turns below idle speed. Give the engine a brief catch-up
+      // speed at ignition so the low-RPM stall guard does not kill every start.
+      rpm = Math.max(rpm, idl * .42);
+      knk = 0; idleI = .05; msg = 'RUNNING';
+    }
     if (state == 1 && crkT > 5 && (fuel <= 0 || (g.dsl && g.cr < 13))) { state = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : 'COMPRESSION TOO LOW: diesel cannot ignite fuel'; }
     if (state == 2 && !g.dsl && g.cr > 13.5 && te > .6 && rpm > g.rl * .3) knk += dt * (g.cr - 13.5) * .5; else knk = Math.max(0, knk - dt * .5);
     if (state == 2 && knk > 2) { state = 0; msg = 'DETONATION: compression ratio too high for petrol, engine destroyed'; }
@@ -1769,7 +1775,13 @@ function mount(target, userOpts) {
   on(R.specReset, 'click', () => { const s = state; setEngine(engKey, true); toast('Stock specs restored'); if (s) toast('Engine stopped to apply stock specs'); });
 
   /* ---------- controls ---------- */
-  function start() { audio.unlock().then(pushVol); if (state == 0) { state = 1; crkT = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : 'CRANKING'; everStarted = true; } }
+  function start() {
+    if (state !== 0) return;
+    // Put the engine into crank before touching Web Audio. Audio can be blocked
+    // by browser policy or hardware and must never prevent the simulator start.
+    state = 1; crkT = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : 'CRANKING'; everStarted = true;
+    try { Promise.resolve(audio.unlock()).then(pushVol).catch(() => {}); } catch (_) {}
+  }
   function stop() { state = 0; msg = 'OFF'; dyn = null; }
   let everStarted = false;
   function releaseEngineKey() {
@@ -1894,12 +1906,13 @@ function mount(target, userOpts) {
   }
   const typing = () => { const a = document.activeElement; if (!a || !host.contains(a)) return false; return a.tagName === 'SELECT' || a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.type !== 'range') || a.tagName === 'DIALOG'; };
   on(global, 'keydown', e => {
-    if (o.keyboard === 'off' || !engaged || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (o.keyboard === 'off' || e.ctrlKey || e.metaKey || e.altKey) return;
     const a = document.activeElement, onRange = a && a.tagName === 'INPUT' && a.type === 'range';
     const c = e.code || ((e.key || '').toLowerCase() === 'e' ? 'KeyE' : '');
     const isE = c === 'KeyE' || (e.key || '').toLowerCase() === 'e';
-    const textEditing = a && host.contains(a) && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.type !== 'range') || a.tagName === 'DIALOG');
-    // Handle E in capture phase so focused dropdowns or page controls cannot swallow the start/crank key.
+    const textEditing = a && (a.isContentEditable || a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.type !== 'range') || a.tagName === 'DIALOG');
+    // E works as soon as this simulator tab is active, even before a control is clicked.
+    // Capture it before dropdowns or other page controls can swallow the start/crank key.
     if (isE && !textEditing) {
       if (!e.repeat) {
         if (state === 0) { eKeyHeld = 1; start(); }
@@ -1910,7 +1923,7 @@ function mount(target, userOpts) {
       e.stopPropagation();
       return;
     }
-    if (typing()) return;
+    if (!engaged || typing()) return;
     if (onRange && (c === 'ArrowLeft' || c === 'ArrowRight')) return;
     if (KEYS.thr.indexOf(c) >= 0) { key = 1; e.preventDefault(); }
     else if (KEYS.brk.indexOf(c) >= 0) { brk = 1; e.preventDefault(); }
