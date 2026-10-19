@@ -1501,10 +1501,10 @@ function mount(target, userOpts) {
       if (rt) {
         const launchBoost = smallEngine && gear === 1 && (AUTO || autoGearbox) && Math.abs(v) < 7 ? 1.55 - .55 * clamp(Math.abs(v) / 7, 0, 1) : 1;
         const requestedTc = cl * g.tq * 1.6 * launchBoost * Math.tanh((rpm - ri) * Math.PI / 30 * .1);
-        const manualSmallLaunch = smallEngine && gear === 1 && !AUTO && !autoGearbox && Math.abs(v) < 7 && pedal > .1;
+        const smallFirstGearLaunch = smallEngine && gear === 1 && Math.abs(v) < 7 && pedal > .1;
         const launchRpmFloor = Math.max(g.idle * 1.08, 1050);
         const launchTorqueLimit = net + (rpm - launchRpmFloor) * g.J / Math.max(dt, .001) * Math.PI / 30;
-        tc = manualSmallLaunch && requestedTc > 0 ? Math.min(requestedTc, Math.max(0, launchTorqueLimit)) : requestedTc;
+        tc = smallFirstGearLaunch && requestedTc > 0 ? Math.min(requestedTc, Math.max(0, launchTorqueLimit)) : requestedTc;
         v += (tc * dir * rt / RW - dr / RW) / mv * dt;
       }
       else v -= dr / RW / mv * dt;
