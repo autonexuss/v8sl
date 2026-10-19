@@ -1550,7 +1550,7 @@ function mount(target, userOpts) {
     if (state === 1) {
       // Starter speed is independent of engine torque and flywheel settings, so every
       // engine can sustain a realistic crank even at extreme cold or reduced power.
-      const coldStartFloor = g.dsl ? -12 : -25;
+      const coldStartFloor = g.dsl ? -13 : -25;
       // Cranking targets this engine's minimum start temperature.
       const crankTargetTemp = coldStartFloor;
       const crankWarmProgress = crankTargetTemp > Tamb ? clamp((Tc - Tamb) / (crankTargetTemp - Tamb), 0, 1) : 1;
@@ -1589,7 +1589,7 @@ function mount(target, userOpts) {
     }
     if (autoGearbox && gear > 0 && autoShiftTarget > gear && autoShiftRpmCeiling > 0) rpm = Math.min(rpm, autoShiftRpmCeiling);
     if (dyn) rpm = Math.min(dyn.r, g.rl - 1);
-    const tmin = g.dsl ? -12 : -25;
+    const tmin = g.dsl ? -13 : -25;
     // Use the engine's own cold-start threshold, regardless of ambient temperature.
     const startTemp = tmin;
     const crankReady = crkT >= .5;
@@ -1796,7 +1796,7 @@ function mount(target, userOpts) {
   let everStarted = false;
   function releaseEngineKey() {
     if (eKeyHeld && state === 1) {
-      const tmin = E.dsl ? -12 : -25;
+      const tmin = E.dsl ? -13 : -25;
       const requiredStartTemp = tmin;
       // A quick tap can complete a normal-temperature start; in extreme cold,
       // releasing E stops the starter so the user can choose to keep cranking.
@@ -1848,7 +1848,7 @@ function mount(target, userOpts) {
   hold(R.gasB, b => { gas = b; }); hold(R.brkB, b => { brk = b; }); hold(R.clB, b => { cp = b; });
   on(R.thr, 'input', e => { uThr = e.target.value / 100; paint(R.thr); }); on(R.ld, 'input', e => { uLoad = e.target.value / 100; paint(R.ld); });
   [R.thr, R.ld].forEach(i => on(i, 'change', () => i.blur()));
-  const ZONE = () => { const tmn = E.dsl ? -12 : -25; return Tamb <= tmn ? ['Extreme cold: this engine will not fire', 'cold'] : Tamb <= tmn + 15 ? ['Very cold: hard start, rough fast idle', 'cold'] : Tamb >= 52 ? ['Extreme heat: the engine will overheat and shut down', 'hot'] : Tamb >= 40 ? ['Hot: heavy load will overheat the engine', 'hot'] : ['Normal operating range', 'ok']; };
+  const ZONE = () => { const tmn = E.dsl ? -13 : -25; return Tamb <= tmn ? ['Extreme cold: this engine will not fire', 'cold'] : Tamb <= tmn + 15 ? ['Very cold: hard start, rough fast idle', 'cold'] : Tamb >= 52 ? ['Extreme heat: the engine will overheat and shut down', 'hot'] : Tamb >= 40 ? ['Hot: heavy load will overheat the engine', 'hot'] : ['Normal operating range', 'ok']; };
   function setAmb(x) { Tamb = +x; if (state == 0) Tc = Tamb; R.amb.value = x; paint(R.amb); setText(R.ambV, Tamb + ' °C'); store.set({ ambient: Tamb }); }
   on(R.amb, 'input', e => setAmb(e.target.value));
   [-40, -20, 0, 20, 40, 55].forEach(t => { const b = document.createElement('button'); b.type = 'button'; b.className = 'anx-chip'; b.textContent = t + '°'; on(b, 'click', () => setAmb(t)); R.pre.appendChild(b); });
