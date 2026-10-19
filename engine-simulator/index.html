@@ -1427,7 +1427,7 @@ function mount(target, userOpts) {
    * PHYSICS  (identical model to v5; verified numerically against it)
    * ====================================================================== */
   //PHYS
-  let E = { ...ENG.d8 }, engKey = 'd8', state = 0, rpm = 0, thr = 0, key = 0, gas = 0, brk = 0, cut = 0, idleI = 0, gear = 0, v = 0, cp = 0, AUTO = 1, autoGearbox = 0, autoShiftTimer = 0, autoShiftTarget = 0, autoShiftRpmCeiling = 0, autoShiftDuration = 0, autoThrottlePrev = 0, autoThrottleSteady = 0, eKeyHeld = 0, cd = 0, bst = 0, dyn = null,
+  let E = { ...ENG.d8 }, engKey = 'd8', state = 0, rpm = 0, thr = 0, key = 0, gas = 0, brk = 0, cut = 0, idleI = 0, gear = 0, v = 0, cp = 0, AUTO = 1, autoGearbox = 0, autoShiftTimer = 0, autoShiftTarget = 0, autoShiftRpmCeiling = 0, autoShiftDuration = 0, autoThrottlePrev = 0, autoThrottleSteady = 0, eKeyHeld = 0, startCatchT = 1, startCatchFrom = 0, cd = 0, bst = 0, dyn = null,
       Tc = 20, Tamb = 20, TS = 1, fuel = 60, knk = 0, crkT = 0, msg = 'OFF', sig = {}, uThr = 0, uLoad = 0, ca = 0;
   const DG = [3.6, 2.2, 1.5, 1.1, .85, .7];
   const curve = (r, g) => { const x = r < g.pk ? (g.pk - r) / g.pk : (r - g.pk) / (g.rl - g.pk); return Math.max(.12, 1 - (r < g.pk ? .6 : .55) * x * x); };
@@ -1551,7 +1551,8 @@ function mount(target, userOpts) {
       // Starter speed is independent of engine torque and flywheel settings, so every
       // engine can sustain a realistic crank even at extreme cold or reduced power.
       const coldStartFloor = g.dsl ? -12 : -25;
-      const crankTargetTemp = Tamb <= coldStartFloor ? 0 : coldStartFloor;
+      // All sub-zero starts require sustained cranking until the engine reaches 0°C.
+      const crankTargetTemp = Tamb < 0 ? 0 : coldStartFloor;
       const crankWarmProgress = crankTargetTemp > Tamb ? clamp((Tc - Tamb) / (crankTargetTemp - Tamb), 0, 1) : 1;
       const crankTargetRpm = crk * (.9 + .25 * crankWarmProgress);
       const crankResponse = 1 - Math.exp(-dt / .28);
@@ -1589,15 +1590,24 @@ function mount(target, userOpts) {
     if (autoGearbox && gear > 0 && autoShiftTarget > gear && autoShiftRpmCeiling > 0) rpm = Math.min(rpm, autoShiftRpmCeiling);
     if (dyn) rpm = Math.min(dyn.r, g.rl - 1);
     const tmin = g.dsl ? -12 : -25;
-    // In extreme ambient cold, keep cranking until the coolant reaches 0°C.
-    const startTemp = Tamb <= tmin ? 0 : tmin;
+    // Any sub-zero ambient requires warming to 0°C before ignition.
+    const startTemp = Tamb < 0 ? 0 : tmin;
     const crankReady = crkT >= .5;
     if (state == 1 && crankReady && Tc >= startTemp - .05 && fuel > 0 && (!g.dsl || g.cr >= 13)) {
       state = 2;
-      // The starter turns below idle speed. Give the engine a brief catch-up
-      // speed at ignition so the low-RPM stall guard does not kill every start.
-      rpm = Math.max(rpm, idl * .42);
+      // Preserve the real cranking RPM at ignition, then ease up to idle smoothly.
+      startCatchFrom = rpm;
+      startCatchT = 0;
       knk = 0; idleI = .05; msg = 'RUNNING';
+    }
+    if (state === 2 && startCatchT < 1) {
+      startCatchT = Math.min(1, startCatchT + dt);
+      const catchProgress = startCatchT;
+      const catchEase = catchProgress * catchProgress * (3 - 2 * catchProgress);
+      const catchTarget = Math.max(idl, startCatchFrom);
+      const catchRpm = startCatchFrom + (catchTarget - startCatchFrom) * catchEase;
+      // Cap the model's initial torque spike to a smooth one-second catch-up ramp.
+      rpm = Math.min(Math.max(rpm, startCatchFrom), catchRpm);
     }
     if (state == 1 && crkT > 5 && (fuel <= 0 || (g.dsl && g.cr < 13))) { state = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : 'COMPRESSION TOO LOW: diesel cannot ignite fuel'; }
     if (state == 2 && !g.dsl && g.cr > 13.5 && te > .6 && rpm > g.rl * .3) knk += dt * (g.cr - 13.5) * .5; else knk = Math.max(0, knk - dt * .5);
@@ -1614,7 +1624,7 @@ function mount(target, userOpts) {
       state = 0;
       msg = 'STALLED: gear too high for current speed; downshift or press the clutch';
     }
-    if (state == 2 && rpm < g.idle * .3) { state = 0; if (gear && !cp && v > .8) rpm = ri; msg = 'STALLED: ' + (gear && cl > .3 ? (gear > 2 ? 'gear too high for this speed: downshift or press the clutch' : 'clutch released too fast in gear, use throttle or slip the clutch') : uLoad > .5 ? 'dyno load too high for this rpm' : 'idle speed too low for these specs'); }
+    if (state == 2 && startCatchT >= 1 && rpm < g.idle * .3) { state = 0; if (gear && !cp && v > .8) rpm = ri; msg = 'STALLED: ' + (gear && cl > .3 ? (gear > 2 ? 'gear too high for this speed: downshift or press the clutch' : 'clutch released too fast in gear, use throttle or slip the clutch') : uLoad > .5 ? 'dyno load too high for this rpm' : 'idle speed too low for these specs'); }
     if (state == 2 && Tc > 106) { state = 0; msg = 'OVERHEATED: engine shut down, let it cool'; }
     if (state == 2 && fuel <= 0) { state = 0; msg = 'OUT OF FUEL'; }
     if (state == 0) te = 0;
@@ -1764,7 +1774,7 @@ function mount(target, userOpts) {
   }
   function setEngine(k, quiet) {
     if (!ENG[k]) return;
-    engKey = k; E = { ...ENG[k], JScale: 1 }; state = 0; knk = 0; rpm = 0; v = 0; gear = 0; bst = 0; msg = 'OFF'; dyn = null; cut = 0; hist.length = 0; spMax = 200; R.eng.value = k;
+    engKey = k; E = { ...ENG[k], JScale: 1 }; state = 0; startCatchT = 1; startCatchFrom = 0; knk = 0; rpm = 0; v = 0; gear = 0; bst = 0; msg = 'OFF'; dyn = null; cut = 0; hist.length = 0; spMax = 200; R.eng.value = k;
     E.stockHP = estimate().hp; buildSpecs(); recompute(); buildPips(); store.set({ engine: k }); setText(R.pkP, '-'); setText(R.pkT, '-');
     if (!quiet) emit('engine', { key: k, name: ENG[k].name });
   }
@@ -1782,12 +1792,12 @@ function mount(target, userOpts) {
     state = 1; crkT = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : 'CRANKING'; everStarted = true;
     try { Promise.resolve(audio.unlock()).then(pushVol).catch(() => {}); } catch (_) {}
   }
-  function stop() { state = 0; msg = 'OFF'; dyn = null; }
+  function stop() { state = 0; startCatchT = 1; msg = 'OFF'; dyn = null; }
   let everStarted = false;
   function releaseEngineKey() {
     if (eKeyHeld && state === 1) {
       const tmin = E.dsl ? -12 : -25;
-      const requiredStartTemp = Tamb <= tmin ? 0 : tmin;
+      const requiredStartTemp = Tamb < 0 ? 0 : tmin;
       // A quick tap can complete a normal-temperature start; in extreme cold,
       // releasing E stops the starter so the user can choose to keep cranking.
       if (Tc < requiredStartTemp - .05) {
