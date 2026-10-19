@@ -1420,7 +1420,7 @@ function mount(target, userOpts) {
    * PHYSICS  (identical model to v5; verified numerically against it)
    * ====================================================================== */
   //PHYS
-  let E = { ...ENG.d8 }, engKey = 'd8', state = 0, rpm = 0, thr = 0, key = 0, gas = 0, brk = 0, cut = 0, idleI = 0, gear = 0, v = 0, cp = 0, AUTO = 1, autoGearbox = 0, autoShiftTimer = 0, autoThrottlePrev = 0, eKeyHeld = 0, cd = 0, bst = 0, dyn = null,
+  let E = { ...ENG.d8 }, engKey = 'd8', state = 0, rpm = 0, thr = 0, key = 0, gas = 0, brk = 0, cut = 0, idleI = 0, gear = 0, v = 0, cp = 0, AUTO = 1, autoGearbox = 0, autoShiftTimer = 0, autoShiftTarget = 0, autoShiftRpmCeiling = 0, autoThrottlePrev = 0, autoThrottleSteady = 0, eKeyHeld = 0, cd = 0, bst = 0, dyn = null,
       Tc = 20, Tamb = 20, TS = 1, fuel = 60, knk = 0, crkT = 0, msg = 'OFF', sig = {}, uThr = 0, uLoad = 0, ca = 0;
   const DG = [3.6, 2.2, 1.5, 1.1, .85, .7];
   const curve = (r, g) => { const x = r < g.pk ? (g.pk - r) / g.pk : (r - g.pk) / (g.rl - g.pk); return Math.max(.12, 1 - (r < g.pk ? .6 : .55) * x * x); };
@@ -1432,41 +1432,69 @@ function mount(target, userOpts) {
     const pedal = Math.max(uThr, key, gas);
     thr += Math.max(-8 * dt, Math.min(8 * dt, (dyn ? 1 : pedal) - thr));
     const kickdown = autoGearbox && pedal > .78 && autoThrottlePrev <= .5;
+    const throttleRise = pedal > autoThrottlePrev + .1;
+    const throttleStable = autoGearbox && state === 2 && pedal > .03 && Math.abs(pedal - autoThrottlePrev) < .035;
+    autoThrottleSteady = throttleStable ? Math.min(2, autoThrottleSteady + dt) : 0;
     autoThrottlePrev = autoGearbox ? pedal : 0;
-    autoShiftTimer = Math.max(0, autoShiftTimer - dt);
-    if (autoGearbox && state == 2 && !cp && (autoShiftTimer <= 0 || kickdown)) {
-      const ratios = g.G || DG, fd = g.fd || 3.9;
-      let targetGear = gear;
-      if (gear === 0 && pedal > .05) targetGear = 1;
-      else if (gear > 0) {
-        const wheelRpm = Math.abs(v) / .33 * ratios[gear - 1] * fd * 30 / Math.PI;
-        const kickdownRpm = Math.min(g.rl * .86, Math.max(g.pk * .92, g.rl * .7));
-        const kickdownNeeded = gear > 1 && pedal > .78 && (kickdown || wheelRpm < kickdownRpm * .78);
-        if (kickdownNeeded) {
-          let bestGear = gear, bestRpm = 0;
-          for (let candidate = gear - 1; candidate >= 1; candidate--) {
-            const predictedRpm = Math.abs(v) / .33 * ratios[candidate - 1] * fd * 30 / Math.PI;
-            if (predictedRpm > 0 && predictedRpm < g.rl * .9 &&
-                (bestGear === gear || Math.abs(predictedRpm - kickdownRpm) < Math.abs(bestRpm - kickdownRpm))) {
-              bestGear = candidate;
-              bestRpm = predictedRpm;
+    if (!autoGearbox || state !== 2) {
+      autoShiftTarget = 0;
+      autoShiftRpmCeiling = 0;
+      autoShiftTimer = 0;
+    } else {
+      if (kickdown || autoShiftTarget > gear && (pedal <= .04 || throttleRise)) {
+        autoShiftTarget = 0;
+        autoShiftRpmCeiling = 0;
+        autoShiftTimer = 0;
+      }
+      if (autoShiftTarget) {
+        autoShiftTimer = Math.max(0, autoShiftTimer - dt);
+        if (autoShiftTimer === 0) {
+          gear = autoShiftTarget;
+          autoShiftTarget = 0;
+          autoShiftRpmCeiling = 0;
+          autoShiftTimer = .2;
+        }
+      } else if (autoShiftTimer > 0 && !kickdown) {
+        autoShiftTimer = Math.max(0, autoShiftTimer - dt);
+      } else if (!cp) {
+        const ratios = g.G || DG, fd = g.fd || 3.9;
+        let targetGear = gear, shiftDelay = .5;
+        if (gear === 0 && pedal > .05) { targetGear = 1; shiftDelay = .25; }
+        else if (gear > 0) {
+          const wheelRpm = Math.abs(v) / .33 * ratios[gear - 1] * fd * 30 / Math.PI;
+          const kickdownRpm = Math.min(g.rl * .86, Math.max(g.pk * .92, g.rl * .7));
+          const kickdownNeeded = gear > 1 && pedal > .78 && (kickdown || wheelRpm < kickdownRpm * .78);
+          if (kickdownNeeded) {
+            let bestGear = gear, bestRpm = 0;
+            for (let candidate = gear - 1; candidate >= 1; candidate--) {
+              const predictedRpm = Math.abs(v) / .33 * ratios[candidate - 1] * fd * 30 / Math.PI;
+              if (predictedRpm > 0 && predictedRpm < g.rl * .9 &&
+                  (bestGear === gear || Math.abs(predictedRpm - kickdownRpm) < Math.abs(bestRpm - kickdownRpm))) {
+                bestGear = candidate;
+                bestRpm = predictedRpm;
+              }
+            }
+            if (bestGear < gear) { targetGear = bestGear; shiftDelay = 1; }
+          } else {
+            const estimatedRpm = Math.max(rpm, wheelRpm);
+            const relaxedUp = Math.min(g.rl * .86, Math.max(g.idle * 1.65, g.pk * .58));
+            const moderateUp = Math.min(g.rl * .86, Math.max(g.idle * 1.85, g.pk * .82));
+            const upAt = pedal > .75 ? g.rl * .88 : pedal > .42 ? moderateUp : relaxedUp;
+            const downAt = Math.max(g.idle * 1.2, g.pk * (pedal > .55 ? .72 : .34));
+            if (gear < ratios.length && pedal > .04 && autoThrottleSteady >= .3 && estimatedRpm >= upAt) {
+              targetGear = gear + 1;
+              shiftDelay = .5;
+            } else if (gear > 1 && wheelRpm <= downAt) {
+              targetGear = gear - 1;
+              shiftDelay = .35;
             }
           }
-          if (bestGear < gear) targetGear = bestGear;
-        } else {
-          const estimatedRpm = Math.max(rpm, wheelRpm);
-          const relaxedUp = Math.min(g.rl * .86, Math.max(g.idle * 1.65, g.pk * .58));
-          const moderateUp = Math.min(g.rl * .86, Math.max(g.idle * 1.85, g.pk * .82));
-          const upAt = pedal > .75 ? g.rl * .88 : pedal > .42 ? moderateUp : relaxedUp;
-          const downAt = Math.max(g.idle * 1.2, g.pk * (pedal > .55 ? .72 : .34));
-          if (gear < ratios.length && estimatedRpm >= upAt) targetGear = gear + 1;
-          else if (gear > 1 && (Math.min(rpm, wheelRpm) <= downAt || pedal > .6 && wheelRpm < g.pk * .78)) targetGear = gear - 1;
         }
-      }
-      if (targetGear !== gear) {
-        const wasDownshift = targetGear < gear;
-        gear = targetGear;
-        autoShiftTimer = wasDownshift ? .42 : .3;
+        if (targetGear !== gear) {
+          autoShiftTarget = targetGear;
+          autoShiftRpmCeiling = targetGear > gear && gear > 0 ? rpm : 0;
+          autoShiftTimer = shiftDelay;
+        }
       }
     }
     if (state == 1 && gear && !cp && !AUTO && !autoGearbox) { state = 0; msg = 'CANNOT START: select neutral or press the clutch'; }
@@ -1482,6 +1510,7 @@ function mount(target, userOpts) {
       if (dyn) bst = 1;
       const der = Tc > 96 ? Math.max(.5, 1 - (Tc - 96) * .03) : 1, cold = .85 + .15 * Math.min(1, Math.max(0, Tc) / 60);
       tg = (cut || fuel <= 0) ? 0 : g.tq * curve(rpm, g) * te * (g.tb ? .7 + .3 * bst : 1) * der * cold * (1 - Math.min(.3, knk * .1));
+      if (autoGearbox && gear > 0 && autoShiftTarget > gear) tg *= .12; // torque cut during an upshift prevents RPM flare
       pump = (1 - te) * g.tq * (g.dsl ? .03 : .12) * f;
     } else bst *= 1 - Math.min(1, dt * 2);
     if (state == 1) { ts = g.tq * .6 * Math.max(.3, 1 - Math.max(0, 5 - Tc) * .02) * Math.max(0, 1 - rpm / (crk * 1.8)); crkT += dt; }
@@ -1490,7 +1519,7 @@ function mount(target, userOpts) {
     const dragMag = (.5 * 1.2 * .7 * 2.2 * v * v + .015 * mv * 9.81 + brk * mv * 8) * RW * (Math.abs(v) > .01 ? 1 : 0), dr = Math.sign(v) * dragMag; // signed aero + rolling + brake (8 m/s2)
     const smallEngine = g.cat === 'Inline & boxer' || g.cat === 'Small & bike';
     const pickupRpm = smallEngine ? g.idle * .98 : g.idle * 1.1, pickupSpan = smallEngine ? g.idle * .62 : g.idle * .8;
-    const cl = gear && !cp ? ((AUTO || autoGearbox) ? (cd == 0 ? clamp((rpm - pickupRpm) / pickupSpan, 0, 1) : 0) : 1) : 0;
+    const cl = gear && !cp ? ((AUTO || autoGearbox) ? (cd == 0 ? clamp((rpm - pickupRpm) / pickupSpan, 0, 1) : 0) : 1) * (autoGearbox && gear > 0 && autoShiftTarget > gear ? .35 : 1) : 0;
     const ri = rt ? Math.abs(v) / RW * rt * 30 / Math.PI : 0;
     if (cl > .98 && Math.abs(rpm - ri) < 60) {
       const Je = g.J + mv * RW * RW / (rt * rt);
@@ -1517,10 +1546,11 @@ function mount(target, userOpts) {
         rpm = Math.max(0, rpm + (net - tc) / g.J * dt * 30 / Math.PI);
       }
     }
+    if (autoGearbox && gear > 0 && autoShiftTarget > gear && autoShiftRpmCeiling > 0) rpm = Math.min(rpm, autoShiftRpmCeiling);
     if (dyn) rpm = Math.min(dyn.r, g.rl - 1);
     const tmin = g.dsl ? -12 : -25;
     if (state == 1 && rpm > crk && Tc > tmin && fuel > 0 && (!g.dsl || g.cr >= 13)) { state = 2; knk = 0; idleI = .05; msg = 'RUNNING'; }
-    if (state == 1 && crkT > 5 && (!eKeyHeld || Tc > tmin || fuel <= 0 || (g.dsl && g.cr < 13))) { state = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : g.dsl && g.cr < 13 ? 'COMPRESSION TOO LOW: diesel cannot ignite fuel' : Tc <= tmin ? 'TOO COLD: cranks but will not fire' : 'COLD BATTERY/OIL: cannot crank fast enough'; }
+    if (state == 1 && crkT > 5 && (!eKeyHeld || fuel <= 0 || (g.dsl && g.cr < 13))) { state = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : g.dsl && g.cr < 13 ? 'COMPRESSION TOO LOW: diesel cannot ignite fuel' : Tc <= tmin ? 'TOO COLD: cranks but will not fire' : 'COLD BATTERY/OIL: cannot crank fast enough'; }
     if (state == 2 && !g.dsl && g.cr > 13.5 && te > .6 && rpm > g.rl * .3) knk += dt * (g.cr - 13.5) * .5; else knk = Math.max(0, knk - dt * .5);
     if (state == 2 && knk > 2) { state = 0; msg = 'DETONATION: compression ratio too high for petrol, engine destroyed'; }
     if (state == 2 && rpm > g.rl * 1.12) { state = 0; msg = 'ENGINE DAMAGED: over-rev (wrong downshift?)'; }
@@ -1543,7 +1573,7 @@ function mount(target, userOpts) {
   }
   function thermal(dt) {
     const g = E, hl = state == 2 ? Math.min(1, (sig.ind || 0) / g.tq * (.4 + .6 * rpm / g.rl)) : 0;
-    const coldLimit = g.dsl ? -12 : -25, crankHeat = state == 1 && Tc <= coldLimit ? 4.5 : 0;
+    const coldLimit = g.dsl ? -12 : -25, crankHeat = state == 1 && Tc <= coldLimit ? 4.5 + Math.max(0, coldLimit - Tamb) * .16 : 0;
     const Qh = (state == 2 ? 8 : crankHeat) + 85 * hl + Math.max(0, Tamb - 45) * 3;
     const kc = (Tc < 85 ? .12 : .35 + .03 * (Tc - 85)) * Math.max(.5, 1 - Math.max(0, Tamb - 35) * .012);
     Tc += (Qh - kc * (Tc - Tamb)) / 14 * dt * 6 * TS;
@@ -1692,6 +1722,13 @@ function mount(target, userOpts) {
   function start() { audio.unlock().then(pushVol); if (state == 0) { state = 1; crkT = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : 'CRANKING'; everStarted = true; } }
   function stop() { state = 0; msg = 'OFF'; dyn = null; }
   let everStarted = false;
+  function releaseEngineKey() {
+    if (eKeyHeld && state === 1) {
+      state = 0;
+      msg = Tc <= (E.dsl ? -12 : -25) ? 'CRANKING STOPPED: hold E to warm and start' : 'CRANKING STOPPED';
+    }
+    eKeyHeld = 0;
+  }
   on(R.start, 'click', e => { start(); e.currentTarget.blur(); });
   on(R.stop, 'click', e => { stop(); e.currentTarget.blur(); });
   const sh = d => {
@@ -1814,8 +1851,8 @@ function mount(target, userOpts) {
     else if (c === 'KeyM') setMute(!muted); else if (c === 'KeyR') resetAll(); else if (c === 'KeyF') toggleFS();
     else if (e.key === '?' || c === 'KeyH') openHelp();
   });
-  on(document, 'keyup', e => { const c = e.code; if (KEYS.thr.indexOf(c) >= 0) key = 0; if (KEYS.brk.indexOf(c) >= 0) brk = 0; if (c === 'Space' || c === 'KeyC') cp = 0; if (c === 'KeyE') eKeyHeld = 0; });
-  on(global, 'blur', () => { key = 0; brk = 0; cp = 0; gas = 0; eKeyHeld = 0; });
+  on(document, 'keyup', e => { const c = e.code; if (KEYS.thr.indexOf(c) >= 0) key = 0; if (KEYS.brk.indexOf(c) >= 0) brk = 0; if (c === 'Space' || c === 'KeyC') cp = 0; if (c === 'KeyE') releaseEngineKey(); });
+  on(global, 'blur', () => { key = 0; brk = 0; cp = 0; gas = 0; releaseEngineKey(); });
 
   /* ---------- gauges + charts ---------- */
   const gT = createGauge(R.dT), gR = createGauge(R.dR), gS = createGauge(R.dS);
