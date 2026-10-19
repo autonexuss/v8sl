@@ -1577,8 +1577,10 @@ function mount(target, userOpts) {
     if (autoGearbox && gear > 0 && autoShiftTarget > gear && autoShiftRpmCeiling > 0) rpm = Math.min(rpm, autoShiftRpmCeiling);
     if (dyn) rpm = Math.min(dyn.r, g.rl - 1);
     const tmin = g.dsl ? -12 : -25;
-    if (state == 1 && rpm > crk && Tc > tmin && fuel > 0 && (!g.dsl || g.cr >= 13)) { state = 2; knk = 0; idleI = .05; msg = 'RUNNING'; }
-    if (state == 1 && crkT > 5 && (!eKeyHeld || fuel <= 0 || (g.dsl && g.cr < 13))) { state = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : g.dsl && g.cr < 13 ? 'COMPRESSION TOO LOW: diesel cannot ignite fuel' : Tc <= tmin ? 'TOO COLD: cranks but will not fire' : 'COLD BATTERY/OIL: cannot crank fast enough'; }
+    // In extreme ambient cold, keep cranking until the coolant reaches 0°C.
+    const startTemp = Tamb <= tmin ? 0 : tmin;
+    if (state == 1 && rpm > crk && Tc > startTemp && fuel > 0 && (!g.dsl || g.cr >= 13)) { state = 2; knk = 0; idleI = .05; msg = 'RUNNING'; }
+    if (state == 1 && crkT > 5 && (!eKeyHeld || fuel <= 0 || (g.dsl && g.cr < 13))) { state = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : g.dsl && g.cr < 13 ? 'COMPRESSION TOO LOW: diesel cannot ignite fuel' : Tc <= startTemp ? 'TOO COLD: cranks but will not fire' : 'COLD BATTERY/OIL: cannot crank fast enough'; }
     if (state == 2 && !g.dsl && g.cr > 13.5 && te > .6 && rpm > g.rl * .3) knk += dt * (g.cr - 13.5) * .5; else knk = Math.max(0, knk - dt * .5);
     if (state == 2 && knk > 2) { state = 0; msg = 'DETONATION: compression ratio too high for petrol, engine destroyed'; }
     if (state == 2 && rpm > g.rl * 1.12) { state = 0; msg = 'ENGINE DAMAGED: over-rev (wrong downshift?)'; }
@@ -1601,10 +1603,16 @@ function mount(target, userOpts) {
   }
   function thermal(dt) {
     const g = E, hl = state == 2 ? Math.min(1, (sig.ind || 0) / g.tq * (.4 + .6 * rpm / g.rl)) : 0;
-    const coldLimit = g.dsl ? -12 : -25, crankHeat = state == 1 && Tc <= coldLimit ? 4.5 + Math.max(0, coldLimit - Tamb) * .16 : 0;
-    const Qh = (state == 2 ? 8 : crankHeat) + 85 * hl + Math.max(0, Tamb - 45) * 3;
     const kc = (Tc < 85 ? .12 : .35 + .03 * (Tc - 85)) * Math.max(.5, 1 - Math.max(0, Tamb - 35) * .012);
+    // Continuous cranking adds a slow, tapering warm-up toward 0°C. Compensate
+    // for heat lost to very cold ambient air so the cranking heat can reach 0°C.
+    const crankWarmRate = state === 1 && Tc < 0 ? .12 + .28 * clamp(-Tc / 40, 0, 1) : 0;
+    const crankHeat = crankWarmRate
+      ? Math.max(0, kc * (Tc - Tamb)) + crankWarmRate * 14 / (6 * Math.max(.1, TS))
+      : 0;
+    const Qh = (state == 2 ? 8 : crankHeat) + 85 * hl + Math.max(0, Tamb - 45) * 3;
     Tc += (Qh - kc * (Tc - Tamb)) / 14 * dt * 6 * TS;
+    if (state === 1 && Tamb < 0 && Tc > 0) Tc = 0;
   }
   //ENDPHYS
 
