@@ -346,7 +346,7 @@ const ENG = {
          blurb: 'Small turbocharged triple: thrummy, characterful and eager.' },
   vt:  { cat: 'Small & bike', name: 'V-twin 1.2L (45deg, uneven fire)', n: 2, disp: 1.2, rl: 6500, idle: 900, pk: 3800, tq: 105, J: .16, ms: 6, dsl: 0, cr: 9.5, V: 45, fo: [0, 315],
          blurb: '45° V-twin with uneven firing intervals: the classic cruiser rhythm.' },
-  sg:  { cat: 'Small & bike', name: 'Single 0.45L', n: 1, disp: .45, rl: 9000, idle: 1300, pk: 6500, tq: 48, J: .04, ms: 5, dsl: 0, cr: 12, V: 0, lope: .2,
+  sg:  { cat: 'Small & bike', name: 'Single 0.45L', n: 1, disp: .45, rl: 9000, idle: 1300, pk: 6500, tq: 120, J: .04, ms: 5, dsl: 0, cr: 12, V: 0, lope: .2,
          blurb: 'Single-cylinder thumper: punchy, light and fast-revving.' }
 };
 for (const k in ENG) {
@@ -1001,7 +1001,7 @@ const trimNum = n => (Math.round(n * 100) / 100).toString();
  * `key` identifies the static layer (bezel, ticks, numerals) so it is re-rendered only when it changes.
  */
 function createGauge(canvas) {
-  let layer = null, layerKey = '';
+  let layer = null, layerKey = '', displayVal = null, lastDisplayTime = null;
   const LW = 300;
   function drawStatic(o, P, K) {
     const cv = document.createElement('canvas'); cv.width = cv.height = Math.round(LW * K);
@@ -1042,20 +1042,27 @@ function createGauge(canvas) {
   return {
     draw(o, P) {
       const x = fitCanvas(canvas, LW, LW), K = x.K;
+      let needleVal = o.val;
+      if (o.smooth) {
+        const now = Number.isFinite(o.t) ? o.t : 0;
+        if (displayVal === null || lastDisplayTime === null || now < lastDisplayTime) displayVal = o.val;
+        else { const elapsed = clamp(now - lastDisplayTime, 0, .1); displayVal += (o.val - displayVal) * (1 - Math.exp(-elapsed / .11)); }
+        lastDisplayTime = now; needleVal = displayVal;
+      } else { displayVal = o.val; lastDisplayTime = Number.isFinite(o.t) ? o.t : 0; }
       const key = [o.key, o.max, o.minor, o.major, o.red, o.label, o.unit, P.stamp, Math.round(K * 100)].join('|');
       if (layerKey !== key || !layer) { layer = drawStatic(o, P, K); layerKey = key; }
       x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, canvas.width, canvas.height); x.drawImage(layer, 0, 0); x.setTransform(K, 0, 0, K, 0, 0);
       const c = LW / 2, R = LW * .4, a0 = PI * .75, sp = PI * 1.5, an = q => a0 + sp * clamp(q / o.max, 0, 1);
-      const over = o.red && o.val > o.red;
+      const over = o.red && needleVal > o.red;
       if (over) { const g = x.createRadialGradient(c, c, R * .3, c, c, R * 1.15), p = .1 + .08 * Math.sin((o.t || 0) * 22); g.addColorStop(0, 'rgba(255,60,70,0)'); g.addColorStop(1, 'rgba(255,60,70,' + p + ')'); x.fillStyle = g; x.beginPath(); x.arc(c, c, R * 1.15, 0, TAU); x.fill(); }
       // progress arc
       x.lineCap = 'round'; x.lineWidth = 7;
-      const lim = o.red ? Math.min(o.val, o.red) : o.val;
+      const lim = o.red ? Math.min(needleVal, o.red) : needleVal;
       if (lim > 0) { x.shadowColor = P.accent; x.shadowBlur = 10; x.strokeStyle = P.accent; x.beginPath(); x.arc(c, c, R * 1.04, a0, an(lim)); x.stroke(); }
       if (over) { x.shadowColor = P.red; x.strokeStyle = P.red; x.beginPath(); x.arc(c, c, R * 1.04, an(o.red), an(o.val)); x.stroke(); }
       x.shadowBlur = 0;
       // needle
-      const a = an(o.val);
+      const a = an(needleVal);
       x.save(); x.translate(c, c); x.rotate(a);
       x.shadowColor = 'rgba(255,90,70,.9)'; x.shadowBlur = 9; x.fillStyle = '#ff6a4d';
       x.beginPath(); x.moveTo(-R * .16, -2.4); x.lineTo(R * .86, -.9); x.lineTo(R * .86, .9); x.lineTo(-R * .16, 2.4); x.closePath(); x.fill();
@@ -1420,14 +1427,13 @@ function mount(target, userOpts) {
    * PHYSICS  (identical model to v5; verified numerically against it)
    * ====================================================================== */
   //PHYS
-  let E = { ...ENG.d8 }, engKey = 'd8', state = 0, rpm = 0, thr = 0, key = 0, gas = 0, brk = 0, cut = 0, idleI = 0, gear = 0, v = 0, cp = 0, AUTO = 1, autoGearbox = 0, autoShiftTimer = 0, autoShiftTarget = 0, autoShiftRpmCeiling = 0, autoThrottlePrev = 0, autoThrottleSteady = 0, eKeyHeld = 0, cd = 0, bst = 0, dyn = null,
+  let E = { ...ENG.d8 }, engKey = 'd8', state = 0, rpm = 0, thr = 0, key = 0, gas = 0, brk = 0, cut = 0, idleI = 0, gear = 0, v = 0, cp = 0, AUTO = 1, autoGearbox = 0, autoShiftTimer = 0, autoShiftTarget = 0, autoShiftRpmCeiling = 0, autoShiftDuration = 0, autoThrottlePrev = 0, autoThrottleSteady = 0, eKeyHeld = 0, cd = 0, bst = 0, dyn = null,
       Tc = 20, Tamb = 20, TS = 1, fuel = 60, knk = 0, crkT = 0, msg = 'OFF', sig = {}, uThr = 0, uLoad = 0, ca = 0;
   const DG = [3.6, 2.2, 1.5, 1.1, .85, .7];
   const curve = (r, g) => { const x = r < g.pk ? (g.pk - r) / g.pk : (r - g.pk) / (g.rl - g.pk); return Math.max(.12, 1 - (r < g.pk ? .6 : .55) * x * x); };
   function step(dt) {
     const g = E, f = rpm / g.rl;
     const smallEngine = g.cat === 'Inline & boxer' || g.cat === 'Small & bike';
-    const lowGearPowerTorqueBoost = smallEngine ? (gear === 1 ? 1.5 : gear === 2 ? 1.25 : 1) : 1;
     const vis = 1 + Math.max(0, 60 - Tc) * .025;            // cold oil is thick: more friction
     const crk = Math.max(160, g.idle * .3);                 // cranking speed
     const idl = g.idle + Math.max(0, 70 - Tc) * 5;          // fast idle when cold
@@ -1442,11 +1448,13 @@ function mount(target, userOpts) {
       autoShiftTarget = 0;
       autoShiftRpmCeiling = 0;
       autoShiftTimer = 0;
+      autoShiftDuration = 0;
     } else {
       if (kickdown || autoShiftTarget > gear && (pedal <= .04 || throttleRise)) {
         autoShiftTarget = 0;
         autoShiftRpmCeiling = 0;
         autoShiftTimer = 0;
+        autoShiftDuration = 0;
       }
       if (autoShiftTarget) {
         autoShiftTimer = Math.max(0, autoShiftTimer - dt);
@@ -1455,6 +1463,7 @@ function mount(target, userOpts) {
           autoShiftTarget = 0;
           autoShiftRpmCeiling = 0;
           autoShiftTimer = .2;
+          autoShiftDuration = 0;
         }
       } else if (autoShiftTimer > 0 && !kickdown) {
         autoShiftTimer = Math.max(0, autoShiftTimer - dt);
@@ -1496,9 +1505,21 @@ function mount(target, userOpts) {
           autoShiftTarget = targetGear;
           autoShiftRpmCeiling = targetGear > gear && gear > 0 ? rpm : 0;
           autoShiftTimer = shiftDelay;
+          autoShiftDuration = shiftDelay;
         }
       }
     }
+    const shiftInProgress = autoGearbox && autoShiftTarget > 0 && gear > 0 && autoShiftDuration > 0;
+    const shiftWindow = autoShiftTarget < gear && autoShiftDuration >= .9 ? Math.min(.28, autoShiftDuration) : autoShiftDuration;
+    const autoShiftProgress = shiftInProgress ? clamp((autoShiftDuration - autoShiftTimer) / Math.max(.001, shiftWindow), 0, 1) : 0;
+    const autoShiftEase = autoShiftProgress * autoShiftProgress * (3 - 2 * autoShiftProgress);
+    const autoShiftPulse = shiftInProgress ? Math.sin(Math.PI * autoShiftProgress) : 0;
+    const autoShiftClutchFactor = 1 - .42 * autoShiftPulse;
+    const autoShiftTorqueFactor = 1 - .30 * autoShiftPulse;
+    const gearPowerFactor = n => smallEngine ? (n === 1 ? 1.5 : n === 2 ? 1.25 : 1) : 1;
+    const currentGearPowerFactor = gearPowerFactor(gear);
+    const targetGearPowerFactor = gearPowerFactor(autoShiftTarget);
+    const lowGearPowerTorqueBoost = shiftInProgress ? currentGearPowerFactor + (targetGearPowerFactor - currentGearPowerFactor) * autoShiftEase : currentGearPowerFactor;
     if (state == 1 && gear && !cp && !AUTO && !autoGearbox) { state = 0; msg = 'CANNOT START: select neutral or press the clutch'; }
     if (state == 1 && g.idle > g.rl * .55) { state = 0; msg = 'INVALID SPECS: idle is too close to redline'; }
     if (state == 1 && crkT < .25 && pedal > .6) { state = 0; msg = 'FLOODED: release the throttle before starting'; }
@@ -1512,15 +1533,19 @@ function mount(target, userOpts) {
       if (dyn) bst = 1;
       const der = Tc > 96 ? Math.max(.5, 1 - (Tc - 96) * .03) : 1, cold = .85 + .15 * Math.min(1, Math.max(0, Tc) / 60);
       tg = (cut || fuel <= 0) ? 0 : g.tq * curve(rpm, g) * te * (g.tb ? .7 + .3 * bst : 1) * der * cold * (1 - Math.min(.3, knk * .1)) * lowGearPowerTorqueBoost;
-      if (autoGearbox && gear > 0 && autoShiftTarget > gear) tg *= .12; // torque cut during an upshift prevents RPM flare
+      if (shiftInProgress) tg *= autoShiftTorqueFactor; // soften torque smoothly through each automatic shift
       pump = (1 - te) * g.tq * (g.dsl ? .03 : .12) * f;
     } else bst *= 1 - Math.min(1, dt * 2);
     if (state == 1) { ts = g.tq * .6 * Math.max(.3, 1 - Math.max(0, 5 - Tc) * .02) * Math.max(0, 1 - rpm / (crk * 1.8)); crkT += dt; }
-    const net = tg - fr - pump - uLoad * 0 - tl + ts, dir = gear === -1 ? -1 : 1, rt = gear === -1 ? (g.G || DG)[0] * (g.fd || 3.9) : gear > 0 ? (g.G || DG)[gear - 1] * (g.fd || 3.9) : 0, mv = g.mass || 1500, RW = .33;
+    const net = tg - fr - pump - uLoad * 0 - tl + ts, dir = gear === -1 ? -1 : 1, ratios = g.G || DG, finalDrive = g.fd || 3.9;
+    const currentRatio = gear === -1 ? ratios[0] : gear > 0 ? ratios[gear - 1] : 0;
+    const targetRatio = autoShiftTarget > 0 ? ratios[autoShiftTarget - 1] : currentRatio;
+    const activeRatio = shiftInProgress ? currentRatio + (targetRatio - currentRatio) * autoShiftEase : currentRatio;
+    const rt = activeRatio * finalDrive, mv = g.mass || 1500, RW = .33;
     cd = Math.max(0, cd - dt);
     const dragMag = (.5 * 1.2 * .7 * 2.2 * v * v + .015 * mv * 9.81 + brk * mv * 8) * RW * (Math.abs(v) > .01 ? 1 : 0), dr = Math.sign(v) * dragMag; // signed aero + rolling + brake (8 m/s2)
     const pickupRpm = smallEngine ? g.idle * .98 : g.idle * 1.1, pickupSpan = smallEngine ? g.idle * .62 : g.idle * .8;
-    const cl = gear && !cp ? ((AUTO || autoGearbox) ? (cd == 0 ? clamp((rpm - pickupRpm) / pickupSpan, 0, 1) : 0) : 1) * (autoGearbox && gear > 0 && autoShiftTarget > gear ? .35 : 1) : 0;
+    const cl = gear && !cp ? ((AUTO || autoGearbox) ? (cd == 0 ? clamp((rpm - pickupRpm) / pickupSpan, 0, 1) : 0) : 1) * (shiftInProgress ? autoShiftClutchFactor : 1) : 0;
     const ri = rt ? Math.abs(v) / RW * rt * 30 / Math.PI : 0;
     if (cl > .98 && Math.abs(rpm - ri) < 60) {
       const Je = g.J + mv * RW * RW / (rt * rt);
@@ -1532,8 +1557,10 @@ function mount(target, userOpts) {
         const launchBoost = smallEngine && gear === 1 && (AUTO || autoGearbox) && Math.abs(v) < 7 ? 1.55 - .55 * clamp(Math.abs(v) / 7, 0, 1) : 1;
         const requestedTc = cl * g.tq * 1.6 * launchBoost * Math.tanh((rpm - ri) * Math.PI / 30 * .1);
         const smallFirstGearLaunch = smallEngine && gear === 1 && Math.abs(v) < 7 && pedal > .1;
-        const launchRpmFloor = Math.max(g.idle * 1.08, 1050);
-        const launchTorqueLimit = net + (rpm - launchRpmFloor) * g.J / Math.max(dt, .001) * Math.PI / 30;
+        const launchRpmFloor = g.idle * 1.08 + pedal * 260;
+        const launchRevRate = 240 + pedal * 980;
+        const launchRevReserve = Math.min(Math.max(0, net) * .55, launchRevRate * g.J * Math.PI / 30);
+        const launchTorqueLimit = net - launchRevReserve + (rpm - launchRpmFloor) * g.J / .22 * Math.PI / 30;
         tc = smallFirstGearLaunch && requestedTc > 0 ? Math.min(requestedTc, Math.max(0, launchTorqueLimit)) : requestedTc;
         v += (tc * dir * rt / RW - dr / RW) / mv * dt;
       }
@@ -1932,8 +1959,8 @@ function mount(target, userOpts) {
     // ----- instruments -----
     if (kmh > spMax * .94) spMax += 50;
     const rmax = Math.ceil(g.rl * 1.12 / 1000) * 1000;
-    gR.draw({ val: rpm, max: rmax, minor: rmax > 9000 ? 500 : 200, major: 1000, red: g.rl, label: 'RPM x1000', unit: 'rpm', txt: Math.round(rpm), sub: gear < 0 ? 'R' : gear ? 'G' + gear : 'N', fmt: q => q / 1000, key: 'r' + g.rl, t: T }, PAL);
-    gS.draw({ val: kmh, max: spMax, minor: 10, major: spMax > 260 ? 50 : 20, red: 0, label: 'SPEED', unit: 'km/h', txt: Math.round(kmh), key: 's', t: T }, PAL);
+    gR.draw({ val: rpm, smooth: !!autoGearbox, max: rmax, minor: rmax > 9000 ? 500 : 200, major: 1000, red: g.rl, label: 'RPM x1000', unit: 'rpm', txt: Math.round(rpm), sub: gear < 0 ? 'R' : gear ? 'G' + gear : 'N', fmt: q => q / 1000, key: 'r' + g.rl, t: T }, PAL);
+    gS.draw({ val: kmh, smooth: !!autoGearbox, max: spMax, minor: 10, major: spMax > 260 ? 50 : 20, red: 0, label: 'SPEED', unit: 'km/h', txt: Math.round(kmh), key: 's', t: T }, PAL);
     gT.draw({ val: Tc, max: 140, minor: 5, major: 20, red: 106, label: 'COOLANT', unit: '°C', txt: Math.round(Tc), key: 'c', t: T }, PAL);
     const ph = (cav - E.fo[0] + 1440) % 720, tpv = (ph + 360) % 720, sidx = strokeOfT(tpv);
     strokeEls.forEach((s, i) => toggleCls(s, 'is-on', i === sidx));
