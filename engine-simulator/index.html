@@ -1571,7 +1571,10 @@ function mount(target, userOpts) {
         const coastTau = Math.max(.18, Math.min(.26, .18 + Math.sqrt(Math.max(.01, g.J)) * .04));
         rpm = rpm <= 12 ? 0 : rpm * Math.exp(-dt / coastTau);
       } else {
-        rpm = Math.max(0, rpm + (net - tc) / g.J * dt * 30 / Math.PI);
+        // The 0.45L single has a small crank inertia and raised torque specs.
+        // Add flywheel-like inertia only while it free-revs in neutral.
+        const neutralRevInertia = engKey === 'sg' && gear === 0 ? Math.max(g.J, .16) : g.J;
+        rpm = Math.max(0, rpm + (net - tc) / neutralRevInertia * dt * 30 / Math.PI);
       }
     }
     if (autoGearbox && gear > 0 && autoShiftTarget > gear && autoShiftRpmCeiling > 0) rpm = Math.min(rpm, autoShiftRpmCeiling);
