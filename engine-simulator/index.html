@@ -1547,7 +1547,16 @@ function mount(target, userOpts) {
     const pickupRpm = smallEngine ? g.idle * .98 : g.idle * 1.1, pickupSpan = smallEngine ? g.idle * .62 : g.idle * .8;
     const cl = gear && !cp ? ((AUTO || autoGearbox) ? (cd == 0 ? clamp((rpm - pickupRpm) / pickupSpan, 0, 1) : 0) : 1) * (shiftInProgress ? autoShiftClutchFactor : 1) : 0;
     const ri = rt ? Math.abs(v) / RW * rt * 30 / Math.PI : 0;
-    if (cl > .98 && Math.abs(rpm - ri) < 60) {
+    if (state === 1) {
+      // Starter speed is independent of engine torque and flywheel settings, so every
+      // engine can sustain a realistic crank even at extreme cold or reduced power.
+      const coldStartFloor = g.dsl ? -12 : -25;
+      const crankTargetTemp = Tamb <= coldStartFloor ? 0 : coldStartFloor;
+      const crankWarmProgress = crankTargetTemp > Tamb ? clamp((Tc - Tamb) / (crankTargetTemp - Tamb), 0, 1) : 1;
+      const crankTargetRpm = crk * (.9 + .25 * crankWarmProgress);
+      const crankResponse = 1 - Math.exp(-dt / .28);
+      rpm = Math.max(0, rpm + (crankTargetRpm - rpm) * crankResponse);
+    } else if (cl > .98 && Math.abs(rpm - ri) < 60) {
       const Je = g.J + mv * RW * RW / (rt * rt);
       rpm = Math.max(0, rpm + (net - dr * dir / rt) / Je * dt * 30 / Math.PI);
       v = dir * rpm * Math.PI / 30 * RW / rt;
@@ -1611,7 +1620,7 @@ function mount(target, userOpts) {
     const crankSpeed = state === 1 ? clamp(rpm / (Math.max(160, g.idle * .3) * 1.8), 0, 1) : 0;
     const coldLoad = clamp(-Tc / 40, 0, 1);
     // Cranking warms the engine slowly; higher cranking RPM adds more heat.
-    const crankWarmRate = state === 1 && Tc < 0 ? (.03 + .37 * crankSpeed) * (.65 + .35 * coldLoad) : 0;
+    const crankWarmRate = state === 1 && Tc < 0 ? (.03 + .37 * crankSpeed) * (.85 + .15 * coldLoad) : 0;
     const crankHeat = crankWarmRate
       ? Math.max(0, kc * (Tc - Tamb)) + crankWarmRate * 14 / (6 * Math.max(.1, TS))
       : 0;
