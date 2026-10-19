@@ -1593,7 +1593,7 @@ function mount(target, userOpts) {
     const startTemp = Tamb <= tmin ? 0 : tmin;
     const crankReady = crkT >= .5;
     if (state == 1 && crankReady && Tc >= startTemp - .05 && fuel > 0 && (!g.dsl || g.cr >= 13)) { state = 2; knk = 0; idleI = .05; msg = 'RUNNING'; }
-    if (state == 1 && crkT > 5 && (!eKeyHeld || fuel <= 0 || (g.dsl && g.cr < 13))) { state = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : g.dsl && g.cr < 13 ? 'COMPRESSION TOO LOW: diesel cannot ignite fuel' : Tc <= startTemp ? 'TOO COLD: cranks but will not fire' : 'COLD BATTERY/OIL: cannot crank fast enough'; }
+    if (state == 1 && crkT > 5 && (fuel <= 0 || (g.dsl && g.cr < 13))) { state = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : 'COMPRESSION TOO LOW: diesel cannot ignite fuel'; }
     if (state == 2 && !g.dsl && g.cr > 13.5 && te > .6 && rpm > g.rl * .3) knk += dt * (g.cr - 13.5) * .5; else knk = Math.max(0, knk - dt * .5);
     if (state == 2 && knk > 2) { state = 0; msg = 'DETONATION: compression ratio too high for petrol, engine destroyed'; }
     if (state == 2 && rpm > g.rl * 1.12) { state = 0; msg = 'ENGINE DAMAGED: over-rev (wrong downshift?)'; }
@@ -1774,8 +1774,14 @@ function mount(target, userOpts) {
   let everStarted = false;
   function releaseEngineKey() {
     if (eKeyHeld && state === 1) {
-      state = 0;
-      msg = Tc <= (E.dsl ? -12 : -25) ? 'CRANKING STOPPED: hold E to warm and start' : 'CRANKING STOPPED';
+      const tmin = E.dsl ? -12 : -25;
+      const requiredStartTemp = Tamb <= tmin ? 0 : tmin;
+      // A quick tap can complete a normal-temperature start; in extreme cold,
+      // releasing E stops the starter so the user can choose to keep cranking.
+      if (Tc < requiredStartTemp - .05) {
+        state = 0;
+        msg = 'CRANKING STOPPED: hold E to warm and start';
+      }
     }
     eKeyHeld = 0;
   }
@@ -1888,15 +1894,23 @@ function mount(target, userOpts) {
   }
   const typing = () => { const a = document.activeElement; if (!a || !host.contains(a)) return false; return a.tagName === 'SELECT' || a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.type !== 'range') || a.tagName === 'DIALOG'; };
   on(document, 'keydown', e => {
-    if (o.keyboard === 'off' || !engaged || e.ctrlKey || e.metaKey || e.altKey || typing()) return;
+    if (o.keyboard === 'off' || !engaged || e.ctrlKey || e.metaKey || e.altKey) return;
     const a = document.activeElement, onRange = a && a.tagName === 'INPUT' && a.type === 'range', c = e.code;
+    if (typing() && !(c === 'KeyE' && a && a.tagName === 'SELECT')) return;
     if (onRange && (c === 'ArrowLeft' || c === 'ArrowRight')) return;
     if (KEYS.thr.indexOf(c) >= 0) { key = 1; e.preventDefault(); }
     else if (KEYS.brk.indexOf(c) >= 0) { brk = 1; e.preventDefault(); }
     else if (c === 'Space' || c === 'KeyC') { cp = 1; e.preventDefault(); }
     else if (c === 'ArrowUp') { if (!e.repeat) sh(1); e.preventDefault(); }
     else if (c === 'ArrowDown') { if (!e.repeat) sh(-1); e.preventDefault(); }
-    else if (/^(?:Digit|Numpad)[1-6]$/.test(c)) { if (!e.repeat) selectGear(Number(c.slice(-1))); e.preventDefault(); } else if (/^(?:Digit|Numpad)7$/.test(c)) { if (!e.repeat) selectGear(-1); e.preventDefault(); } else if (c === 'KeyE') { if (!e.repeat) { eKeyHeld = 1; if (state === 0) start(); else stop(); } e.preventDefault(); }
+    else if (/^(?:Digit|Numpad)[1-6]$/.test(c)) { if (!e.repeat) selectGear(Number(c.slice(-1))); e.preventDefault(); } else if (/^(?:Digit|Numpad)7$/.test(c)) { if (!e.repeat) selectGear(-1); e.preventDefault(); } else if (c === 'KeyE') {
+      if (!e.repeat) {
+        if (state === 0) { eKeyHeld = 1; start(); }
+        else if (state === 2) { eKeyHeld = 0; stop(); }
+        else eKeyHeld = 1;
+      } else if (state === 1) eKeyHeld = 1;
+      e.preventDefault();
+    }
     else if (c === 'KeyN') setNeutral();
     else if (c === 'KeyM') setMute(!muted); else if (c === 'KeyR') resetAll(); else if (c === 'KeyF') toggleFS();
     else if (e.key === '?' || c === 'KeyH') openHelp();
