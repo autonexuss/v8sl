@@ -1426,6 +1426,8 @@ function mount(target, userOpts) {
   const curve = (r, g) => { const x = r < g.pk ? (g.pk - r) / g.pk : (r - g.pk) / (g.rl - g.pk); return Math.max(.12, 1 - (r < g.pk ? .6 : .55) * x * x); };
   function step(dt) {
     const g = E, f = rpm / g.rl;
+    const smallEngine = g.cat === 'Inline & boxer' || g.cat === 'Small & bike';
+    const lowGearPowerTorqueBoost = smallEngine ? (gear === 1 ? 1.5 : gear === 2 ? 1.25 : 1) : 1;
     const vis = 1 + Math.max(0, 60 - Tc) * .025;            // cold oil is thick: more friction
     const crk = Math.max(160, g.idle * .3);                 // cranking speed
     const idl = g.idle + Math.max(0, 70 - Tc) * 5;          // fast idle when cold
@@ -1509,7 +1511,7 @@ function mount(target, userOpts) {
       bst += ((g.tb ? Math.min(1, te * Math.min(1, rpm / (g.pk * .7))) : 0) - bst) * Math.min(1, dt / .6);
       if (dyn) bst = 1;
       const der = Tc > 96 ? Math.max(.5, 1 - (Tc - 96) * .03) : 1, cold = .85 + .15 * Math.min(1, Math.max(0, Tc) / 60);
-      tg = (cut || fuel <= 0) ? 0 : g.tq * curve(rpm, g) * te * (g.tb ? .7 + .3 * bst : 1) * der * cold * (1 - Math.min(.3, knk * .1));
+      tg = (cut || fuel <= 0) ? 0 : g.tq * curve(rpm, g) * te * (g.tb ? .7 + .3 * bst : 1) * der * cold * (1 - Math.min(.3, knk * .1)) * lowGearPowerTorqueBoost;
       if (autoGearbox && gear > 0 && autoShiftTarget > gear) tg *= .12; // torque cut during an upshift prevents RPM flare
       pump = (1 - te) * g.tq * (g.dsl ? .03 : .12) * f;
     } else bst *= 1 - Math.min(1, dt * 2);
@@ -1517,7 +1519,6 @@ function mount(target, userOpts) {
     const net = tg - fr - pump - uLoad * 0 - tl + ts, dir = gear === -1 ? -1 : 1, rt = gear === -1 ? (g.G || DG)[0] * (g.fd || 3.9) : gear > 0 ? (g.G || DG)[gear - 1] * (g.fd || 3.9) : 0, mv = g.mass || 1500, RW = .33;
     cd = Math.max(0, cd - dt);
     const dragMag = (.5 * 1.2 * .7 * 2.2 * v * v + .015 * mv * 9.81 + brk * mv * 8) * RW * (Math.abs(v) > .01 ? 1 : 0), dr = Math.sign(v) * dragMag; // signed aero + rolling + brake (8 m/s2)
-    const smallEngine = g.cat === 'Inline & boxer' || g.cat === 'Small & bike';
     const pickupRpm = smallEngine ? g.idle * .98 : g.idle * 1.1, pickupSpan = smallEngine ? g.idle * .62 : g.idle * .8;
     const cl = gear && !cp ? ((AUTO || autoGearbox) ? (cd == 0 ? clamp((rpm - pickupRpm) / pickupSpan, 0, 1) : 0) : 1) * (autoGearbox && gear > 0 && autoShiftTarget > gear ? .35 : 1) : 0;
     const ri = rt ? Math.abs(v) / RW * rt * 30 / Math.PI : 0;
