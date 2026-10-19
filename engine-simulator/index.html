@@ -1420,7 +1420,7 @@ function mount(target, userOpts) {
    * PHYSICS  (identical model to v5; verified numerically against it)
    * ====================================================================== */
   //PHYS
-  let E = { ...ENG.d8 }, engKey = 'd8', state = 0, rpm = 0, thr = 0, key = 0, gas = 0, brk = 0, cut = 0, idleI = 0, gear = 0, v = 0, cp = 0, AUTO = 1, autoGearbox = 0, autoShiftTimer = 0, eKeyHeld = 0, cd = 0, bst = 0, dyn = null,
+  let E = { ...ENG.d8 }, engKey = 'd8', state = 0, rpm = 0, thr = 0, key = 0, gas = 0, brk = 0, cut = 0, idleI = 0, gear = 0, v = 0, cp = 0, AUTO = 1, autoGearbox = 0, autoShiftTimer = 0, autoThrottlePrev = 0, eKeyHeld = 0, cd = 0, bst = 0, dyn = null,
       Tc = 20, Tamb = 20, TS = 1, fuel = 60, knk = 0, crkT = 0, msg = 'OFF', sig = {}, uThr = 0, uLoad = 0, ca = 0;
   const DG = [3.6, 2.2, 1.5, 1.1, .85, .7];
   const curve = (r, g) => { const x = r < g.pk ? (g.pk - r) / g.pk : (r - g.pk) / (g.rl - g.pk); return Math.max(.12, 1 - (r < g.pk ? .6 : .55) * x * x); };
@@ -1431,6 +1431,44 @@ function mount(target, userOpts) {
     const idl = g.idle + Math.max(0, 70 - Tc) * 5;          // fast idle when cold
     const pedal = Math.max(uThr, key, gas);
     thr += Math.max(-8 * dt, Math.min(8 * dt, (dyn ? 1 : pedal) - thr));
+    const kickdown = autoGearbox && pedal > .78 && autoThrottlePrev <= .5;
+    autoThrottlePrev = autoGearbox ? pedal : 0;
+    autoShiftTimer = Math.max(0, autoShiftTimer - dt);
+    if (autoGearbox && state == 2 && !cp && (autoShiftTimer <= 0 || kickdown)) {
+      const ratios = g.G || DG, fd = g.fd || 3.9;
+      let targetGear = gear;
+      if (gear === 0 && pedal > .05) targetGear = 1;
+      else if (gear > 0) {
+        const wheelRpm = Math.abs(v) / .33 * ratios[gear - 1] * fd * 30 / Math.PI;
+        const kickdownRpm = Math.min(g.rl * .86, Math.max(g.pk * .92, g.rl * .7));
+        const kickdownNeeded = gear > 1 && pedal > .78 && (kickdown || wheelRpm < kickdownRpm * .78);
+        if (kickdownNeeded) {
+          let bestGear = gear, bestRpm = 0;
+          for (let candidate = gear - 1; candidate >= 1; candidate--) {
+            const predictedRpm = Math.abs(v) / .33 * ratios[candidate - 1] * fd * 30 / Math.PI;
+            if (predictedRpm > 0 && predictedRpm < g.rl * .9 &&
+                (bestGear === gear || Math.abs(predictedRpm - kickdownRpm) < Math.abs(bestRpm - kickdownRpm))) {
+              bestGear = candidate;
+              bestRpm = predictedRpm;
+            }
+          }
+          if (bestGear < gear) targetGear = bestGear;
+        } else {
+          const estimatedRpm = Math.max(rpm, wheelRpm);
+          const relaxedUp = Math.min(g.rl * .86, Math.max(g.idle * 1.65, g.pk * .58));
+          const moderateUp = Math.min(g.rl * .86, Math.max(g.idle * 1.85, g.pk * .82));
+          const upAt = pedal > .75 ? g.rl * .88 : pedal > .42 ? moderateUp : relaxedUp;
+          const downAt = Math.max(g.idle * 1.2, g.pk * (pedal > .55 ? .72 : .34));
+          if (gear < ratios.length && estimatedRpm >= upAt) targetGear = gear + 1;
+          else if (gear > 1 && (Math.min(rpm, wheelRpm) <= downAt || pedal > .6 && wheelRpm < g.pk * .78)) targetGear = gear - 1;
+        }
+      }
+      if (targetGear !== gear) {
+        const wasDownshift = targetGear < gear;
+        gear = targetGear;
+        autoShiftTimer = wasDownshift ? .42 : .3;
+      }
+    }
     if (state == 1 && gear && !cp && !AUTO && !autoGearbox) { state = 0; msg = 'CANNOT START: select neutral or press the clutch'; }
     if (state == 1 && g.idle > g.rl * .55) { state = 0; msg = 'INVALID SPECS: idle is too close to redline'; }
     if (state == 1 && crkT < .25 && pedal > .6) { state = 0; msg = 'FLOODED: release the throttle before starting'; }
@@ -1449,26 +1487,8 @@ function mount(target, userOpts) {
     if (state == 1) { ts = g.tq * .6 * Math.max(.3, 1 - Math.max(0, 5 - Tc) * .02) * Math.max(0, 1 - rpm / (crk * 1.8)); crkT += dt; }
     const net = tg - fr - pump - uLoad * 0 - tl + ts, dir = gear === -1 ? -1 : 1, rt = gear === -1 ? (g.G || DG)[0] * (g.fd || 3.9) : gear > 0 ? (g.G || DG)[gear - 1] * (g.fd || 3.9) : 0, mv = g.mass || 1500, RW = .33;
     cd = Math.max(0, cd - dt);
-    autoShiftTimer = Math.max(0, autoShiftTimer - dt);
-    if (autoGearbox && state == 2 && !cp && autoShiftTimer <= 0) {
-      const ratios = E.G || DG, fd = E.fd || 3.9, wheelRpm = Math.abs(v) / .33 * (gear > 0 ? ratios[gear - 1] * fd : 0) * 30 / Math.PI;
-      if (gear == 0 && pedal > .05) {
-        gear = 1; cd = .24; autoShiftTimer = .55;
-      } else if (gear > 0) {
-        const upAt = Math.max(g.idle * 2.5, g.rl * (pedal > .7 ? .8 : .68));
-        const downAt = Math.max(g.idle * 1.45, g.pk * (pedal > .7 ? .62 : .42));
-        let targetGear = gear;
-        if (gear < ratios.length && Math.max(rpm, wheelRpm) >= upAt) targetGear = gear + 1;
-        else if (gear > 1 && (Math.min(rpm, wheelRpm) <= downAt || pedal > .65 && rpm < g.pk * .68)) targetGear = gear - 1;
-        if (targetGear < gear) {
-          const predictedRpm = Math.abs(v) / .33 * ratios[targetGear - 1] * fd * 30 / Math.PI;
-          if (predictedRpm >= g.rl * .9) targetGear = gear;
-        }
-        if (targetGear != gear) { gear = targetGear; cd = .24; autoShiftTimer = .55; }
-      }
-    }
     const dragMag = (.5 * 1.2 * .7 * 2.2 * v * v + .015 * mv * 9.81 + brk * mv * 8) * RW * (Math.abs(v) > .01 ? 1 : 0), dr = Math.sign(v) * dragMag; // signed aero + rolling + brake (8 m/s2)
-    const smallEngine = g.disp <= 2.05 && g.tq <= 300;
+    const smallEngine = g.cat === 'Inline & boxer' || g.cat === 'Small & bike';
     const pickupRpm = smallEngine ? g.idle * .98 : g.idle * 1.1, pickupSpan = smallEngine ? g.idle * .62 : g.idle * .8;
     const cl = gear && !cp ? ((AUTO || autoGearbox) ? (cd == 0 ? clamp((rpm - pickupRpm) / pickupSpan, 0, 1) : 0) : 1) : 0;
     const ri = rt ? Math.abs(v) / RW * rt * 30 / Math.PI : 0;
@@ -1478,7 +1498,15 @@ function mount(target, userOpts) {
       v = dir * rpm * Math.PI / 30 * RW / rt;
     } else {
       let tc = 0;
-      if (rt) { const launchBoost = smallEngine && gear === 1 && (AUTO || autoGearbox) && Math.abs(v) < 7 ? 1.55 - .55 * clamp(Math.abs(v) / 7, 0, 1) : 1; tc = cl * g.tq * 1.6 * launchBoost * Math.tanh((rpm - ri) * Math.PI / 30 * .1); v += (tc * dir * rt / RW - dr / RW) / mv * dt; }
+      if (rt) {
+        const launchBoost = smallEngine && gear === 1 && (AUTO || autoGearbox) && Math.abs(v) < 7 ? 1.55 - .55 * clamp(Math.abs(v) / 7, 0, 1) : 1;
+        const requestedTc = cl * g.tq * 1.6 * launchBoost * Math.tanh((rpm - ri) * Math.PI / 30 * .1);
+        const manualSmallLaunch = smallEngine && gear === 1 && !AUTO && !autoGearbox && Math.abs(v) < 7 && pedal > .1;
+        const launchRpmFloor = Math.max(g.idle * 1.08, 1050);
+        const launchTorqueLimit = net + (rpm - launchRpmFloor) * g.J / Math.max(dt, .001) * Math.PI / 30;
+        tc = manualSmallLaunch && requestedTc > 0 ? Math.min(requestedTc, Math.max(0, launchTorqueLimit)) : requestedTc;
+        v += (tc * dir * rt / RW - dr / RW) / mv * dt;
+      }
       else v -= dr / RW / mv * dt;
       if (state == 0) {
         // Use a power-independent coast-down when combustion is off. Otherwise,
@@ -1496,14 +1524,14 @@ function mount(target, userOpts) {
     if (state == 2 && !g.dsl && g.cr > 13.5 && te > .6 && rpm > g.rl * .3) knk += dt * (g.cr - 13.5) * .5; else knk = Math.max(0, knk - dt * .5);
     if (state == 2 && knk > 2) { state = 0; msg = 'DETONATION: compression ratio too high for petrol, engine destroyed'; }
     if (state == 2 && rpm > g.rl * 1.12) { state = 0; msg = 'ENGINE DAMAGED: over-rev (wrong downshift?)'; }
-    if (state == 2 && !AUTO && !autoGearbox && gear && !cp && v < .8 && pedal < .24 && thr < .24 && rpm < idl * 1.35) {
+    if (state == 2 && !AUTO && !autoGearbox && gear && !cp && v < .8 && pedal < .24 && thr < .24 && rpm < (smallEngine && gear === 1 ? Math.max(g.idle * 1.08, 1050) : idl * 1.35)) {
       state = 0;
       msg = 'STALLED: clutch released in gear at idle without enough throttle';
     }
     // With the manual clutch fully engaged, road speed fixes the engine speed
     // for the selected ratio. Stall when that coupled RPM falls below idle,
     // even if the idle controller would otherwise keep the engine running.
-    if (state == 2 && !AUTO && !autoGearbox && gear && !cp && Math.abs(v) >= .8 && ri > 0 && ri < idl && rpm < idl * 1.45) {
+    if (state == 2 && !AUTO && !autoGearbox && gear && !cp && !(smallEngine && gear === 1 && pedal > .1 && Math.abs(v) < 7) && Math.abs(v) >= .8 && ri > 0 && ri < idl && rpm < idl * 1.45) {
       state = 0;
       msg = 'STALLED: gear too high for current speed; downshift or press the clutch';
     }
