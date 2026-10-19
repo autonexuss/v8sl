@@ -1582,7 +1582,7 @@ function mount(target, userOpts) {
     const tmin = g.dsl ? -12 : -25;
     // In extreme ambient cold, keep cranking until the coolant reaches 0°C.
     const startTemp = Tamb <= tmin ? 0 : tmin;
-    const crankReady = crkT >= .5 && rpm > crk;
+    const crankReady = crkT >= .5;
     if (state == 1 && crankReady && Tc >= startTemp - .05 && fuel > 0 && (!g.dsl || g.cr >= 13)) { state = 2; knk = 0; idleI = .05; msg = 'RUNNING'; }
     if (state == 1 && crkT > 5 && (!eKeyHeld || fuel <= 0 || (g.dsl && g.cr < 13))) { state = 0; msg = fuel <= 0 ? 'OUT OF FUEL' : g.dsl && g.cr < 13 ? 'COMPRESSION TOO LOW: diesel cannot ignite fuel' : Tc <= startTemp ? 'TOO COLD: cranks but will not fire' : 'COLD BATTERY/OIL: cannot crank fast enough'; }
     if (state == 2 && !g.dsl && g.cr > 13.5 && te > .6 && rpm > g.rl * .3) knk += dt * (g.cr - 13.5) * .5; else knk = Math.max(0, knk - dt * .5);
