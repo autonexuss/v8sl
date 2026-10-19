@@ -1893,29 +1893,37 @@ function mount(target, userOpts) {
     on(document, 'pointerdown', e => { if (!host.contains(e.target)) engaged = false; }, true);
   }
   const typing = () => { const a = document.activeElement; if (!a || !host.contains(a)) return false; return a.tagName === 'SELECT' || a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.type !== 'range') || a.tagName === 'DIALOG'; };
-  on(document, 'keydown', e => {
+  on(global, 'keydown', e => {
     if (o.keyboard === 'off' || !engaged || e.ctrlKey || e.metaKey || e.altKey) return;
-    const a = document.activeElement, onRange = a && a.tagName === 'INPUT' && a.type === 'range', c = e.code;
-    if (typing() && !(c === 'KeyE' && a && a.tagName === 'SELECT')) return;
-    if (onRange && (c === 'ArrowLeft' || c === 'ArrowRight')) return;
-    if (KEYS.thr.indexOf(c) >= 0) { key = 1; e.preventDefault(); }
-    else if (KEYS.brk.indexOf(c) >= 0) { brk = 1; e.preventDefault(); }
-    else if (c === 'Space' || c === 'KeyC') { cp = 1; e.preventDefault(); }
-    else if (c === 'ArrowUp') { if (!e.repeat) sh(1); e.preventDefault(); }
-    else if (c === 'ArrowDown') { if (!e.repeat) sh(-1); e.preventDefault(); }
-    else if (/^(?:Digit|Numpad)[1-6]$/.test(c)) { if (!e.repeat) selectGear(Number(c.slice(-1))); e.preventDefault(); } else if (/^(?:Digit|Numpad)7$/.test(c)) { if (!e.repeat) selectGear(-1); e.preventDefault(); } else if (c === 'KeyE') {
+    const a = document.activeElement, onRange = a && a.tagName === 'INPUT' && a.type === 'range';
+    const c = e.code || ((e.key || '').toLowerCase() === 'e' ? 'KeyE' : '');
+    const isE = c === 'KeyE' || (e.key || '').toLowerCase() === 'e';
+    const textEditing = a && host.contains(a) && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && a.type !== 'range') || a.tagName === 'DIALOG');
+    // Handle E in capture phase so focused dropdowns or page controls cannot swallow the start/crank key.
+    if (isE && !textEditing) {
       if (!e.repeat) {
         if (state === 0) { eKeyHeld = 1; start(); }
         else if (state === 2) { eKeyHeld = 0; stop(); }
         else eKeyHeld = 1;
       } else if (state === 1) eKeyHeld = 1;
       e.preventDefault();
+      e.stopPropagation();
+      return;
     }
+    if (typing()) return;
+    if (onRange && (c === 'ArrowLeft' || c === 'ArrowRight')) return;
+    if (KEYS.thr.indexOf(c) >= 0) { key = 1; e.preventDefault(); }
+    else if (KEYS.brk.indexOf(c) >= 0) { brk = 1; e.preventDefault(); }
+    else if (c === 'Space' || c === 'KeyC') { cp = 1; e.preventDefault(); }
+    else if (c === 'ArrowUp') { if (!e.repeat) sh(1); e.preventDefault(); }
+    else if (c === 'ArrowDown') { if (!e.repeat) sh(-1); e.preventDefault(); }
+    else if (/^(?:Digit|Numpad)[1-6]$/.test(c)) { if (!e.repeat) selectGear(Number(c.slice(-1))); e.preventDefault(); }
+    else if (/^(?:Digit|Numpad)7$/.test(c)) { if (!e.repeat) selectGear(-1); e.preventDefault(); }
     else if (c === 'KeyN') setNeutral();
     else if (c === 'KeyM') setMute(!muted); else if (c === 'KeyR') resetAll(); else if (c === 'KeyF') toggleFS();
     else if (e.key === '?' || c === 'KeyH') openHelp();
-  });
-  on(document, 'keyup', e => { const c = e.code; if (KEYS.thr.indexOf(c) >= 0) key = 0; if (KEYS.brk.indexOf(c) >= 0) brk = 0; if (c === 'Space' || c === 'KeyC') cp = 0; if (c === 'KeyE') releaseEngineKey(); });
+  }, true);
+  on(global, 'keyup', e => { const c = e.code || ((e.key || '').toLowerCase() === 'e' ? 'KeyE' : ''); if (KEYS.thr.indexOf(c) >= 0) key = 0; if (KEYS.brk.indexOf(c) >= 0) brk = 0; if (c === 'Space' || c === 'KeyC') cp = 0; if (c === 'KeyE') releaseEngineKey(); }, true);
   on(global, 'blur', () => { key = 0; brk = 0; cp = 0; gas = 0; releaseEngineKey(); });
 
   /* ---------- gauges + charts ---------- */
