@@ -1694,7 +1694,7 @@ function mount(target, userOpts) {
   function thermal(dt) {
     const g = E, hl = state == 2 ? Math.min(1, (sig.ind || 0) / g.tq * (.4 + .6 * rpm / g.rl)) : 0;
     const kc = (Tc < 85 ? .12 : .35 + .03 * (Tc - 85)) * Math.max(.5, 1 - Math.max(0, Tamb - 35) * .012);
-    const crankSpeed = state === 1 ? clamp(rpm / (Math.max(160, g.idle * .3) * 1.8), 0, 1) : 0;
+    const crankSpeed = state === 1 ? clamp(rpm / Math.max(160, g.idle * .3), 0, 1) : 0;
     const coldLoad = clamp(-Tc / 40, 0, 1);
     // Cranking warms the engine slowly; higher cranking RPM adds more heat.
     const crankWarmRate = state === 1 && Tc < 0 ? 2 * (.03 + .37 * crankSpeed) * (.85 + .15 * coldLoad) : 0;
