@@ -285,7 +285,7 @@
  *   version                 -> string
  *
  * Options (all optional)
- *   engine      'd8'|'t8'|'g8'|'m8'|'p8'|'v12'|'i6'|'i4'|'b4'|'f6'|'i3'|'vt'|'sg'   default 'd8'
+ *   engine      'd8'|'t8'|'g8'|'m8'|'p8'|'v12'|'i6'|'i4'|'b4'|'f6'|'i3'|'vt'|'sg'|'d6'|'d4'|'v8s'|'v8c'|'v8t'|'v10'|'v6'|'v6t'|'v6s'|'v12t'|'i5'|'i4t'|'i4s'|'f6t'|'b4t'|'i6n'|'i4r'|'i4b'|'p2'|'bt'   default 'd8'
  *   units       'metric' | 'imperial'                                              default 'metric'
  *   sound       0..3  (Cabin, Exterior, Sport, Race)                               default 1
  *   volume      0..100                                                             default 70
@@ -315,7 +315,7 @@ var VERSION = '6.0.0';
  * 1. ENGINE CATALOGUE
  *    n cylinders | disp litres | rl redline | idle | pk torque-peak rpm | tq Nm
  *    J flywheel inertia | ms exhaust length (ms) | dsl diesel | cr compression
- *    V bank angle | tb turbo | lope | pop | flat | fo firing offsets (deg/720)
+ *    V bank angle | tb turbo | sc supercharger (1 Roots, 2 twin-screw, 3 centrifugal) | lope | pop | flat | fo firing offsets (deg/720)
  *    mass kg | G gear ratios | fd final drive
  * ========================================================================== */
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -326,6 +326,10 @@ const ENG = {
          blurb: 'Heavy-duty truck diesel. Enormous low-rpm torque, a rattly knock and a short 3,600 rpm redline.' },
   t8:  { cat: 'Diesel', name: 'Diesel V8 6.7L Turbo', n: 8, disp: 6.7, rl: 3800, idle: 700, pk: 1900, tq: 1250, J: 2.6, ms: 3.4, dsl: 1, cr: 16.2, V: 90, tb: 1, mass: 3000, G: [6.5, 4, 2.6, 1.8, 1.3, 1], fd: 3.7,
          blurb: 'The same V8 with a turbocharger: 1,250 Nm and an audible spool-up whistle.' },
+  d6:  { cat: 'Diesel', name: 'Diesel Inline-6 3.0L Turbo', n: 6, disp: 3, rl: 5200, idle: 750, pk: 2000, tq: 620, J: .3, ms: 3.6, dsl: 1, cr: 16, V: 0, tb: 1,
+         blurb: 'Modern turbo-diesel straight-six: smooth, torquey and quietly efficient with a faint turbo whistle.' },
+  d4:  { cat: 'Diesel', name: 'Diesel Inline-4 2.0L Turbo', n: 4, disp: 2, rl: 5000, idle: 780, pk: 2000, tq: 400, J: .2, ms: 2.8, dsl: 1, cr: 16, V: 0, tb: 1,
+         blurb: 'Common-rail 2.0 L turbo-diesel four: a light clatter at idle and strong low-rpm pull.' },
   g8:  { cat: 'V8 & V12', name: 'Petrol V8 5.0L', n: 8, disp: 5, rl: 7000, idle: 750, pk: 4500, tq: 520, J: .5, ms: 4.6, dsl: 0, cr: 11, V: 90,
          blurb: 'A classic naturally aspirated V8: deep, smooth and effortless.' },
   m8:  { cat: 'V8 & V12', name: 'Muscle V8 6.2L (lumpy idle, pops)', n: 8, disp: 6.2, rl: 6600, idle: 800, pk: 4400, tq: 640, J: .55, ms: 5.4, dsl: 0, cr: 10.5, V: 90, lope: .6, pop: 1,
@@ -334,6 +338,22 @@ const ENG = {
          blurb: 'Flat-plane crank: light, free-revving and shrill all the way to 8,400 rpm.' },
   v12: { cat: 'V8 & V12', name: 'V12 6.5L', n: 12, disp: 6.5, rl: 9000, idle: 900, pk: 6500, tq: 690, J: .4, ms: 2.8, dsl: 0, cr: 12, V: 60,
          blurb: 'Perfectly balanced twelve cylinders that sing up to 9,000 rpm.' },
+  v8s: { cat: 'V8 & V12', name: 'Supercharged V8 6.2L (Roots blower)', n: 8, disp: 6.2, rl: 6500, idle: 750, pk: 4300, tq: 880, J: .6, ms: 5.2, dsl: 0, cr: 9.5, V: 90, sc: 1, lope: .3, pop: .5,
+         blurb: 'Big Roots-type supercharger on a 6.2 L V8: instant boost, a deep burble and a loud mechanical whine.' },
+  v8c: { cat: 'V8 & V12', name: 'Supercharged V8 5.0L (centrifugal)', n: 8, disp: 5, rl: 7000, idle: 750, pk: 4800, tq: 700, J: .5, ms: 4.6, dsl: 0, cr: 9.5, V: 90, sc: 3,
+         blurb: 'Belt-driven centrifugal blower: boost builds with the revs and the siren-like whine climbs to the redline.' },
+  v8t: { cat: 'V8 & V12', name: 'Twin-Turbo V8 4.0L', n: 8, disp: 4, rl: 7000, idle: 700, pk: 4500, tq: 800, J: .38, ms: 4.2, dsl: 0, cr: 9.5, V: 90, tb: 1, pop: .5,
+         blurb: 'Twin-turbo V8 with huge mid-range torque, a deep growl and a soft turbo whistle.' },
+  v10: { cat: 'V8 & V12', name: 'V10 5.2L', n: 10, disp: 5.2, rl: 8700, idle: 900, pk: 6500, tq: 560, J: .3, ms: 2.7, dsl: 0, cr: 12.5, V: 90,
+         blurb: 'Naturally aspirated ten-cylinder supercar engine: a raspy, high-pitched scream up to 8,700 rpm.' },
+  v6:  { cat: 'V8 & V12', name: 'V6 3.5L', n: 6, disp: 3.5, rl: 6800, idle: 750, pk: 4800, tq: 370, J: .25, ms: 3.3, dsl: 0, cr: 11, V: 60,
+         blurb: 'The everyday naturally aspirated V6: smooth, refined and happy to rev.' },
+  v6t: { cat: 'V8 & V12', name: 'Twin-Turbo V6 3.8L', n: 6, disp: 3.8, rl: 7000, idle: 750, pk: 4200, tq: 650, J: .3, ms: 3.2, dsl: 0, cr: 9, V: 60, tb: 1, pop: .6,
+         blurb: 'Sports-car twin-turbo V6 with brutal mid-range punch and crackles on the overrun.' },
+  v6s: { cat: 'V8 & V12', name: 'Supercharged V6 3.5L (twin-screw)', n: 6, disp: 3.5, rl: 7000, idle: 750, pk: 4800, tq: 450, J: .25, ms: 3.2, dsl: 0, cr: 10.5, V: 60, sc: 2,
+         blurb: 'Twin-screw blower on a V6: boost from idle and a clean mechanical whine that rises with the revs.' },
+  v12t: { cat: 'V8 & V12', name: 'Twin-Turbo V12 6.0L', n: 12, disp: 6, rl: 6200, idle: 700, pk: 3500, tq: 1000, J: .55, ms: 3.4, dsl: 0, cr: 9.5, V: 60, tb: 1,
+         blurb: 'Effortless twin-turbo twelve: silky smooth, enormous torque and a muted turbo whistle.' },
   i6:  { cat: 'Inline & boxer', name: 'Inline-6 3.0L Turbo', n: 6, disp: 3, rl: 7000, idle: 800, pk: 3800, tq: 500, J: .25, ms: 3.6, dsl: 0, cr: 10, V: 0, tb: 1, pop: .6,
          blurb: 'Turbocharged straight-six: strong mid-range shove and a light overrun crackle.' },
   i4:  { cat: 'Inline & boxer', name: 'Inline-4 2.0L', n: 4, disp: 2, rl: 7200, idle: 800, pk: 4200, tq: 260, J: .17, ms: 2.6, dsl: 0, cr: 10.5, V: 0,
@@ -344,10 +364,30 @@ const ENG = {
          blurb: 'Horizontally opposed six that howls up to 8,000 rpm.' },
   i3:  { cat: 'Inline & boxer', name: 'Inline-3 1.0L Turbo', n: 3, disp: 1, rl: 6800, idle: 850, pk: 4000, tq: 170, J: .12, ms: 2.9, dsl: 0, cr: 10, V: 0, tb: 1,
          blurb: 'Small turbocharged triple: thrummy, characterful and eager.' },
+  i5:  { cat: 'Inline & boxer', name: 'Inline-5 2.5L Turbo', n: 5, disp: 2.5, rl: 7000, idle: 800, pk: 4500, tq: 480, J: .2, ms: 3, dsl: 0, cr: 9.5, V: 0, tb: 1, pop: .3,
+         blurb: 'Turbocharged five-cylinder: a distinctive, slightly offbeat warble with strong mid-range shove.' },
+  i4t: { cat: 'Inline & boxer', name: 'Inline-4 2.0L Turbo', n: 4, disp: 2, rl: 7000, idle: 800, pk: 3800, tq: 400, J: .17, ms: 2.6, dsl: 0, cr: 9.5, V: 0, tb: 1, pop: .7,
+         blurb: 'Hot-hatch turbo four: punchy mid-range, a whooshing turbo and crackles when you lift.' },
+  i4s: { cat: 'Inline & boxer', name: 'Supercharged Inline-4 1.8L (Roots)', n: 4, disp: 1.8, rl: 7800, idle: 850, pk: 5000, tq: 280, J: .14, ms: 2.6, dsl: 0, cr: 10, V: 0, sc: 1,
+         blurb: 'Lightweight sports four with a Roots blower: crisp throttle response and a whining supercharger over the intake roar.' },
+  f6t: { cat: 'Inline & boxer', name: 'Turbo Flat-6 3.8L', n: 6, disp: 3.8, rl: 7200, idle: 800, pk: 4500, tq: 750, J: .25, ms: 3.8, dsl: 0, cr: 9.8, V: 180, tb: 1,
+         blurb: 'Boosted flat-six: a hard-edged rasp with relentless mid-range thrust.' },
+  b4t: { cat: 'Inline & boxer', name: 'Boxer-4 2.0L Turbo (burble)', n: 4, disp: 2, rl: 6700, idle: 800, pk: 4000, tq: 350, J: .17, ms: 3.2, dsl: 0, cr: 9, V: 180, tb: 1, lope: .4, pop: 1,
+         blurb: 'Turbocharged horizontally opposed four: the classic rally-car burble with a turbo whistle on top.' },
+  i6n: { cat: 'Inline & boxer', name: 'Inline-6 3.2L', n: 6, disp: 3.2, rl: 8000, idle: 800, pk: 5500, tq: 365, J: .25, ms: 3.6, dsl: 0, cr: 11.5, V: 0,
+         blurb: 'High-revving naturally aspirated straight-six: silky, balanced and a glorious howl to 8,000 rpm.' },
+  i4r: { cat: 'Inline & boxer', name: 'Inline-4 1.6L (high-revving)', n: 4, disp: 1.6, rl: 8600, idle: 900, pk: 6200, tq: 160, J: .12, ms: 2.4, dsl: 0, cr: 11.5, V: 0,
+         blurb: 'Peaky 1.6 L four that comes alive at the top of the rev range and wails to 8,600 rpm.' },
   vt:  { cat: 'Small & bike', name: 'V-twin 1.2L (45deg, uneven fire)', n: 2, disp: 1.2, rl: 6500, idle: 900, pk: 3800, tq: 105, J: .16, ms: 6, dsl: 0, cr: 9.5, V: 45, fo: [0, 315],
          blurb: '45° V-twin with uneven firing intervals: the classic cruiser rhythm.' },
   sg:  { cat: 'Small & bike', name: 'Single 0.45L', n: 1, disp: .45, rl: 9000, idle: 1300, pk: 6500, tq: 120, J: .04, ms: 5, dsl: 0, cr: 12, V: 0, lope: .2,
-         blurb: 'Single-cylinder thumper: punchy, light and fast-revving.' }
+         blurb: 'Single-cylinder thumper: punchy, light and fast-revving.' },
+  i4b: { cat: 'Small & bike', name: 'Inline-4 1.0L (superbike)', n: 4, disp: 1, rl: 12000, idle: 1200, pk: 9000, tq: 115, J: .05, ms: 4.5, dsl: 0, cr: 13, V: 0,
+         blurb: 'Screaming superbike four that revs to 12,000 rpm with a thin, metallic wail.' },
+  p2:  { cat: 'Small & bike', name: 'Parallel-twin 0.8L (270deg crank)', n: 2, disp: .8, rl: 9500, idle: 1100, pk: 6500, tq: 75, J: .07, ms: 5, dsl: 0, cr: 11.5, V: 0, fo: [0, 270],
+         blurb: 'Modern 270-degree parallel-twin that fires unevenly like a V-twin: lively, torquey and rhythmic.' },
+  bt:  { cat: 'Small & bike', name: 'Big V-twin 1.8L (cruiser)', n: 2, disp: 1.8, rl: 5800, idle: 850, pk: 3200, tq: 160, J: .28, ms: 6.5, dsl: 0, cr: 9.2, V: 45, fo: [0, 315], lope: .3, pop: .3,
+         blurb: 'Large-displacement cruiser V-twin: a slow, heavy potato-potato beat with a mellow, deep exhaust note.' }
 };
 for (const k in ENG) {
   const g = ENG[k], sr = g.dsl ? 1.15 : .95;
@@ -377,7 +417,7 @@ function layoutLabel(g) {
 const DSP_SRC = `class P {
   constructor() {
     // Parameters pushed from the main thread (see voice() and the frame loop).
-    this.s = { rpm: 0, tq: 0, thr: 0, on: 0, st: 0, fo: [0], bp: [0], ca: [1], nb: 1, dsl: 0, ms: 4, bl: 1, vol: .7, rl: 7000, tb: 0, lope: 0, pop: 0, bst: 0,
+    this.s = { rpm: 0, tq: 0, thr: 0, on: 0, st: 0, fo: [0], bp: [0], ca: [1], nb: 1, dsl: 0, ms: 4, bl: 1, vol: .7, rl: 7000, tb: 0, lope: 0, pop: 0, bst: 0, sc: 0,
       fm: 1, cd: 0, g: .6, lp: .34, cr: .1, kn: 0, ir: .12, sz: 1, evn: 1, vs: 0, fr: [105, 215, 430], dr: 1, lv: 1, bs: 1, rg: 1, qd: .75, ta: 1, ld: 0, ds: 1, pw: 2.3, sh: .18 };
     this.ph = 0; this.w = 0; this.vm = 0; this.dc = 0; this.fp = 0; this.sp = 0; this.tp = 0; this.pt = 0; this.bov = 0; this.lfo = 0;
     this.imp = [0, 0]; this.bA = [0, 0]; this.bB = [0, 0]; this.sA = [0, 0]; this.sB = [0, 0];
@@ -385,7 +425,7 @@ const DSP_SRC = `class P {
     this.k = [0, 0]; this.kc = [0, 0]; this.kb = [0, 0];
     this.z = [0, 0, 0, 0, 0, 0]; this.h = [0, 0]; this.o = [0, 0]; this.o2 = [0, 0];
     this.n1 = 0; this.n2 = 0; this.n3 = 0; this.wn = 0; this.tl = 0;
-    this.tw = 0; this.tw2 = 0; this.twg = 0;
+    this.tw = 0; this.tw2 = 0; this.twg = 0; this.sw = 0; this.sw2 = 0; this.sw3 = 0; this.swg = 0;
   }
   process(L, R) {
     const s = this.s, sr = typeof sampleRate !== 'undefined' ? sampleRate : globalThis.__sr, N = L.length;
@@ -469,7 +509,19 @@ const DSP_SRC = `class P {
       if (this.twg > .0005) {
         const wf = 1500 + 3300 * s.bst + 900 * rr; this.tw += 6.2832 * wf / sr; if (this.tw > 6.2832) this.tw -= 6.2832;
         this.tw2 += 6.2832 * wf * 1.5 / sr; if (this.tw2 > 6.2832) this.tw2 -= 6.2832;
-        whs = (Math.sin(this.tw) * .8 + Math.sin(this.tw2) * .25) * this.twg * (.9 + .1 * this.n1 * 6) * .8;
+        whs = (Math.sin(this.tw) * .8 + Math.sin(this.tw2) * .25) * this.twg * (.9 + .1 * this.n1 * 6) * .55;
+      }
+      // --- supercharger whine: belt-driven blower, pitch locked to engine rpm (sc 1 Roots, 2 twin-screw, 3 centrifugal) ---
+      const scK = s.sc | 0;
+      this.swg += .0008 * ((scK && s.on ? (scK == 3 ? rr * rr : .25 + .75 * rr) * (.3 + .7 * Math.min(1, s.thr * 1.5)) : 0) - this.swg);
+      let scw = 0;
+      if (this.swg > .0005) {
+        const sf = scK == 3 ? 500 + s.rpm * .33 : scK == 2 ? 120 + s.rpm * .26 : 60 + s.rpm * .15;
+        this.sw += 6.2832 * sf / sr; if (this.sw > 6.2832) this.sw -= 6.2832;
+        this.sw2 += 6.2832 * sf * 2 / sr; if (this.sw2 > 6.2832) this.sw2 -= 6.2832;
+        this.sw3 += 6.2832 * sf * 3 / sr; if (this.sw3 > 6.2832) this.sw3 -= 6.2832;
+        const a1 = scK == 3 ? .6 : scK == 2 ? .42 : .3, a2 = scK == 3 ? .12 : scK == 2 ? .22 : .38, a3 = scK == 3 ? .04 : scK == 2 ? .1 : .2;
+        scw = (Math.sin(this.sw) * a1 + Math.sin(this.sw2) * a2 + Math.sin(this.sw3) * a3) * this.swg * (.92 + .08 * this.n1 * 6) * .55;
       }
       const com = (res + sub + air + road + post) * mod;
       this.dc += .0004 * ((sd0 + sd1) * .5 + com - this.dc);
@@ -478,7 +530,7 @@ const DSP_SRC = `class P {
         this.h[c] += fc * (xc - this.h[c]);                                   // dynamic low-pass (brighter with load)
         const y = Math.tanh(this.h[c] * drv) * sat;                           // gentle warmth, not distortion
         this.o[c] += .38 * (y - this.o[c]); this.o2[c] += .5 * (this.o[c] - this.o2[c]); // two-stage smoothing
-        (c ? R : L)[n] = (this.o2[c] + whs) * this.vm * s.lv * 1.1;
+        (c ? R : L)[n] = (this.o2[c] + whs + scw) * this.vm * s.lv * 1.1;
       }
     }
   }
@@ -1538,10 +1590,10 @@ function mount(target, userOpts) {
       idleI = Math.max(0, Math.min(.25, idleI + (idl - rpm) * dt * .0004));
       te = Math.max(thr, Math.min(.5, (idl - rpm) * .0007 + idleI + .02));
       if (rpm > g.rl) cut = 1; else if (rpm < g.rl - 120) cut = 0;
-      bst += ((g.tb ? Math.min(1, te * Math.min(1, rpm / (g.pk * .7))) : 0) - bst) * Math.min(1, dt / .6);
+      bst += ((g.tb ? Math.min(1, te * Math.min(1, rpm / (g.pk * .7))) : g.sc ? Math.min(1, te * Math.min(1, rpm / (g.pk * (g.sc == 3 ? 1 : .35)))) : 0) - bst) * Math.min(1, dt / (g.sc ? .12 : .6));
       if (dyn) bst = 1;
       const der = Tc > 96 ? Math.max(.5, 1 - (Tc - 96) * .03) : 1, cold = .85 + .15 * Math.min(1, Math.max(0, Tc) / 60);
-      tg = (cut || fuel <= 0) ? 0 : g.tq * curve(rpm, g) * te * (g.tb ? .7 + .3 * bst : 1) * der * cold * (1 - Math.min(.3, knk * .1)) * lowGearPowerTorqueBoost;
+      tg = (cut || fuel <= 0) ? 0 : g.tq * curve(rpm, g) * te * (g.tb || g.sc ? .7 + .3 * bst : 1) * der * cold * (1 - Math.min(.3, knk * .1)) * lowGearPowerTorqueBoost;
       if (shiftInProgress) tg *= autoShiftTorqueFactor; // soften torque smoothly through each automatic shift
       pump = (1 - te) * g.tq * (g.dsl ? .03 : .12) * f;
     } else bst *= 1 - Math.min(1, dt * 2);
@@ -1662,7 +1714,7 @@ function mount(target, userOpts) {
   function pushEngine() {
     const vo = voiceFor(E), k = ENG[engKey];
     const fo = E.fo.map((a, i) => (a + (E.n > 2 && E.V && (vo.bp[i % vo.bp.length] & 1) ? (E.V - k.V) * .5 : 0) + 1440) % 720);
-    audio.post(Object.assign({}, vo, { fo, dsl: E.dsl, rl: E.rl, tb: E.tb || 0, lope: E.lope || 0, pop: E.pop || 0 }));
+    audio.post(Object.assign({}, vo, { fo, dsl: E.dsl, rl: E.rl, tb: E.tb || 0, sc: E.sc || 0, lope: E.lope || 0, pop: E.pop || 0 }));
   }
 
   /* ---------- 3D view ---------- */
@@ -1768,11 +1820,11 @@ function mount(target, userOpts) {
   }
   function updateInfo() {
     const est = estimate(), k = ENG[engKey];
-    setText(R.badge, layoutLabel(E)); setText(R.engName, k.name.replace(/ \(.*\)$/, '')); setText(R.engSub, E.n + ' cyl · ' + E.disp.toFixed(1) + ' L · ' + (E.dsl ? 'diesel' : 'petrol') + (E.tb ? ' · turbo' : ''));
+    setText(R.badge, layoutLabel(E)); setText(R.engName, k.name.replace(/ \(.*\)$/, '')); setText(R.engSub, E.n + ' cyl · ' + E.disp.toFixed(1) + ' L · ' + (E.dsl ? 'diesel' : 'petrol') + (E.tb ? ' · turbo' : E.sc ? ' · supercharged' : ''));
     R.blurb.textContent = k.blurb;
     const T = (l, val, sub) => '<div class="anx-tile"><span>' + l + '</span><b>' + val + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>';
     R.tiles.innerHTML = T('Layout', layoutLabel(E), E.n + ' cylinders') + T('Displacement', E.disp.toFixed(2) + ' L', E.dsl ? 'Diesel' : 'Petrol') + T('Peak power', Math.round(est.hp) + ' hp', Math.round(est.kw) + ' kW @ ' + est.rpmP) +
-      T('Peak torque', Math.round(est.tq) + ' Nm', '@ ' + est.rpmT + ' rpm') + T('Redline', E.rl + ' rpm', 'idle ' + E.idle) + T('Compression', (+E.cr).toFixed(1) + ':1', E.tb ? 'Turbocharged' : 'Naturally aspirated');
+      T('Peak torque', Math.round(est.tq) + ' Nm', '@ ' + est.rpmT + ' rpm') + T('Redline', E.rl + ' rpm', 'idle ' + E.idle) + T('Compression', (+E.cr).toFixed(1) + ':1', E.tb ? 'Turbocharged' : E.sc ? 'Supercharged' : 'Naturally aspirated');
   }
   function recompute() {
     E.disp = E.n * PI / 4 * E.bore * E.bore * E.stroke / 1e6; E.tq = E.tqL * E.disp;
@@ -2015,7 +2067,7 @@ function mount(target, userOpts) {
     const S = (k, t) => setText(SX[k], t);
     S('hp', fmt1(kw * 1.341)); S('kw', fmt1(kw)); S('br', Math.round(sig.brake || 0) + ''); S('ind', Math.round(sig.ind || 0) + ''); S('bm', bm.toFixed(2)); S('map', (g.dsl ? 1 + 1.2 * te : .35 + .65 * te).toFixed(2)); S('exh', (1.05 + .3 * te).toFixed(2));
     S('pu', ((sig.pump || 0) * 4 * PI / (g.disp * 1e-3) / 1e5).toFixed(2)); S('ct', Number(Tc.toFixed(0)) === 0 ? '0' : Tc.toFixed(0)); S('iat', (Tamb + (Tc - Tamb) * .15).toFixed(0)); S('egt', Math.round(egt)); S('th', Math.round(thr * 100)); S('cr', Math.round(ca) + '');
-    S('tk', fuel.toFixed(1)); S('lh', lh.toFixed(1)); S('rg', lh > .1 ? (fuel / lh).toFixed(1) : '-'); S('rl', g.dsl ? Math.round(500 + 1300 * (.4 + .6 * f)) + '' : '3.0'); S('inj', Math.round(te * (.3 + .7 * f) * 100) + ''); S('am', Tamb + ''); S('bo', g.tb ? Math.round(bst * 100) + '' : '-');
+    S('tk', fuel.toFixed(1)); S('lh', lh.toFixed(1)); S('rg', lh > .1 ? (fuel / lh).toFixed(1) : '-'); S('rl', g.dsl ? Math.round(500 + 1300 * (.4 + .6 * f)) + '' : '3.0'); S('inj', Math.round(te * (.3 + .7 * f) * 100) + ''); S('am', Tamb + ''); S('bo', g.tb || g.sc ? Math.round(bst * 100) + '' : '-'); setText(SX.bo.previousElementSibling, g.sc ? 'Supercharger boost' : 'Turbo boost');
     // launch timer
     if (arm == 1 && v > .1) { arm = 2; t0 = T; }
     if (arm == 2) { if (!l60 && kmh >= 60) { l60 = T - t0; setText(R.t60, l60.toFixed(1) + ' s'); } if (!l100 && kmh >= 100) { l100 = T - t0; setText(R.t100, l100.toFixed(1) + ' s'); arm = 0; } setText(R.t0, (T - t0).toFixed(1) + ' s'); }
@@ -2025,7 +2077,7 @@ function mount(target, userOpts) {
 
     // ----- telltales + shift lights -----
     toggleCls(tellEls.temp, 'is-warn', Tc > 100); toggleCls(tellEls.fuel, 'is-warn', fuel < 8); toggleCls(tellEls.lim, 'is-warn', !!cut && state == 2); toggleCls(tellEls.knock, 'is-warn', knk > .5);
-    toggleCls(tellEls.boost, 'is-on', !!g.tb && bst > .15); toggleCls(tellEls.clutch, 'is-on', !!cp);
+    toggleCls(tellEls.boost, 'is-on', !!(g.tb || g.sc) && bst > .15); toggleCls(tellEls.clutch, 'is-on', !!cp);
     const lit = state == 2 ? Math.round(clamp((f - .62) / .36, 0, 1) * LEDS.length) : 0, flash = cut && state == 2 ? (Math.floor(T * 14) & 1) + 2 : 0, lk = lit + ':' + flash;
     if (lk !== ledOn) { ledOn = lk; LEDS.forEach((l, i) => { l.classList.toggle('on', flash ? flash == 3 : i < lit); }); }
 
