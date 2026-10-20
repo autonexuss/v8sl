@@ -1588,7 +1588,7 @@ function mount(target, userOpts) {
     const fr = g.tq * (.05 + .1 * f + .04 * f * f) * vis, tl = state == 2 ? uLoad * g.tq * .9 * (.2 + .8 * f) : 0;
     if (state == 2) {
       idleI = Math.max(0, Math.min(.25, idleI + (idl - rpm) * dt * .0004));
-      te = Math.max(thr, Math.min(.5, (idl - rpm) * .0007 + idleI + .02));
+      te = Math.max(thr, Math.min(rpm < idl * .75 ? .85 : .5, (idl - rpm) * .0007 + idleI + .02));
       if (rpm > g.rl) cut = 1; else if (rpm < g.rl - 120) cut = 0;
       bst += ((g.tb ? Math.min(1, te * Math.min(1, rpm / (g.pk * .7))) : g.sc ? Math.min(1, te * Math.min(1, rpm / (g.pk * (g.sc == 3 ? 1 : .35)))) : 0) - bst) * Math.min(1, dt / (g.sc ? .12 : .6));
       if (dyn) bst = 1;
@@ -1685,7 +1685,7 @@ function mount(target, userOpts) {
       state = 0;
       msg = 'STALLED: gear too high for current speed; downshift or press the clutch';
     }
-    if (state == 2 && startCatchT >= 1 && rpm < g.idle * .3) { state = 0; if (gear && !cp && v > .8) rpm = ri; msg = 'STALLED: ' + (gear && cl > .3 ? (gear > 2 ? 'gear too high for this speed: downshift or press the clutch' : 'clutch released too fast in gear, use throttle or slip the clutch') : uLoad > .5 ? 'dyno load too high for this rpm' : 'idle speed too low for these specs'); }
+    if (state == 2 && startCatchT >= 1 && rpm < Math.max(60, g.idle * .12)) { state = 0; if (gear && !cp && v > .8) rpm = ri; msg = 'STALLED: ' + (gear && cl > .3 ? (gear > 2 ? 'gear too high for this speed: downshift or press the clutch' : 'clutch released too fast in gear, use throttle or slip the clutch') : uLoad > .5 ? 'dyno load too high for this rpm' : 'idle speed too low for these specs'); }
     if (state == 2 && Tc > 106) { state = 0; msg = 'OVERHEATED: engine shut down, let it cool'; }
     if (state == 2 && fuel <= 0) { state = 0; msg = 'OUT OF FUEL'; }
     if (state == 0) te = 0;
