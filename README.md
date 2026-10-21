@@ -47,5 +47,5 @@ GitHub Actions publishes `main` to GitHub Pages. Check the latest Actions run an
 ## Official services
 
 - [VAHAN vehicle services](https://vahan.parivahan.gov.in/vahanservice/)
-- [eChallan](https://echallan.parivahan.gov.in/index/accused-challan)
+- [eChallan](https://echallan.parivahan.nic.in/challan)
 - [IRDAI-listed general insurers](https://irdai.gov.in/list-of-general-insurers)
