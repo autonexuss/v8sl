@@ -112,3 +112,10 @@
 .simulator-teaser-copy{grid-column:1;grid-row:1}
 .simulator-teaser-visual{grid-column:2;grid-row:1}
 @media(max-width:850px){.simulator-teaser.home-visible.scroll-reveal{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr)!important}}
+
+/* The simulator feature is always a side-by-side composition. */
+#simulator-teaser{display:flex!important;flex-direction:row!important;align-items:stretch}
+#simulator-teaser>.simulator-teaser-copy{flex:1.05 1 0;min-width:0;grid-column:auto;grid-row:auto}
+#simulator-teaser>.simulator-teaser-visual{flex:.95 1 0;min-width:0;grid-column:auto;grid-row:auto;margin:20px 20px 20px 0}
+@media(max-width:850px){#simulator-teaser{display:flex!important;flex-direction:row!important;min-height:0}#simulator-teaser>.simulator-teaser-copy{flex:1.05 1 0;padding:clamp(20px,4vw,38px)}#simulator-teaser>.simulator-teaser-visual{flex:.95 1 0;min-height:320px;margin:14px 14px 14px 0}}
+@media(max-width:560px){#simulator-teaser{width:calc(100% - 24px);min-height:0}#simulator-teaser>.simulator-teaser-copy{flex:1.05 1 0;padding:16px 11px}#simulator-teaser>.simulator-teaser-visual{flex:.95 1 0;min-height:230px;margin:8px 8px 8px 0}}
