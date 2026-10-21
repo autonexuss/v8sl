@@ -5,7 +5,7 @@
   const firebaseCdn = 'https://www.gstatic.com/firebasejs/12.4.0';
   const profileToggle = document.getElementById('my-profile-toggle');
   const profileLabel = profileToggle.querySelector('.my-profile-label');
-  const proDialog = document.getElementById('pro-access-dialog');
+  const signInDialog = document.getElementById('account-signin-dialog');
   const proForm = document.getElementById('pro-auth-form');
   const proNameWrap = document.getElementById('pro-auth-name-wrap');
   const proName = document.getElementById('pro-auth-name');
@@ -129,7 +129,7 @@
     currentUser = user || null;
     const signedIn = Boolean(currentUser);
     profileToggle.hidden = false;
-    profileToggle.setAttribute('aria-controls', signedIn ? 'account-profile-dialog' : 'pro-access-dialog');
+    profileToggle.setAttribute('aria-controls', signedIn ? 'account-profile-dialog' : 'account-signin-dialog');
     profileLabel.textContent = signedIn ? 'My Profile' : 'Sign in';
     document.body.classList.toggle('autonexus-user-signed-in', signedIn);
     if (!signedIn) {
@@ -311,10 +311,10 @@
   profileToggle.addEventListener('click', async () => {
     if (!currentUser) {
       setMode('signin');
-      if (proDialog && !proDialog.open) proDialog.showModal();
+      if (signInDialog && !signInDialog.open) signInDialog.showModal();
       if (!await prepare()) return;
       if (currentUser) {
-        if (proDialog?.open) proDialog.close();
+        if (signInDialog?.open) signInDialog.close();
         if (!profileDialog.open) profileDialog.showModal();
         return;
       }
@@ -325,6 +325,7 @@
     if (!profileDialog.open) profileDialog.showModal();
   });
   openProfileButton.addEventListener('click', () => {
+    if (signInDialog.open) signInDialog.close('profile');
     if (!profileDialog.open) profileDialog.showModal();
   });
 
@@ -349,6 +350,10 @@
       if (profileDialog.open) profileDialog.close('signed-out');
       setStatus(proStatus, 'You have been signed out.', 'success');
     } catch (error) { setStatus(profileStatus, friendlyError(error), 'error'); }
+  });
+
+  signInDialog.addEventListener('click', event => {
+    if (event.target === signInDialog) signInDialog.close('backdrop');
   });
 
   profileDialog.addEventListener('click', event => {
