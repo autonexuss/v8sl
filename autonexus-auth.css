@@ -276,23 +276,55 @@
 }
 
 
-/* The Pro purchase column stays light, so keep its account sign-in copy dark in either site theme. */
-.pro-access-purchase .pro-account-panel { color: #171717; border-top-color: #25212130; }
-.pro-access-purchase .pro-account-heading small { color: #514b4b; }
-.pro-access-purchase .pro-account-heading h3 { color: #171717; }
-.pro-access-purchase .pro-account-intro,
-.pro-access-purchase .pro-auth-form label,
-.pro-access-purchase .pro-auth-link,
-.pro-access-purchase .pro-auth-status,
-.pro-access-purchase .pro-auth-session > span,
-.pro-access-purchase .pro-auth-footnote {
+/* Keep account access in its own light dialog, separate from the Pro offer. */
+.account-signin-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(460px, calc(100% - 30px));
+  max-width: none;
+  max-height: min(720px, calc(100% - 30px));
+  margin: auto;
+  padding: clamp(22px, 5vw, 34px);
+  overflow: auto;
+  border: 1px solid #25212124;
+  border-radius: 22px;
+  background: linear-gradient(155deg, #f5f4f0, #e6e5e0);
+  color: #171717;
+  box-shadow: 0 30px 100px #000b;
+}
+.account-signin-dialog::backdrop { background: #000b; backdrop-filter: blur(12px); }
+.account-signin-dialog .account-profile-close-form { margin-bottom: 20px; }
+.account-signin-dialog .account-profile-close { color: #171717; }
+.account-signin-dialog .account-profile-eyebrow { color: #544a42; }
+.account-signin-dialog h2 { margin: 14px 0 8px; color: #171717; font-size: clamp(28px, 6vw, 38px); letter-spacing: -.055em; }
+.account-signin-lead { margin: 0 0 20px; color: #343434; font-size: 13px; font-weight: 600; line-height: 1.6; }
+.account-signin-panel { margin: 0; padding: 0; border: 0; color: #171717; }
+.account-signin-dialog .pro-auth-form { gap: 12px; }
+.account-signin-dialog .pro-auth-form label,
+.account-signin-dialog .pro-auth-link,
+.account-signin-dialog .pro-auth-status,
+.account-signin-dialog .pro-auth-session > span,
+.account-signin-dialog .pro-auth-footnote {
   color: #171717;
   font-size: 13px;
   font-weight: 650;
   line-height: 1.6;
 }
-.pro-access-purchase .pro-auth-status[data-state="error"] { color: #861b1b; }
-.pro-access-purchase .pro-auth-status[data-state="success"] { color: #14532d; }
-.pro-access-purchase .pro-auth-status[data-state="pending"] { color: #684600; }
-.pro-access-purchase .pro-auth-session > strong { color: #171717; }
-.pro-access-purchase .pro-auth-submit { color: #fff; }
+.account-signin-dialog .pro-auth-form input {
+  border-color: #25212135;
+  background: #fffefa;
+  color: #171717;
+  font-size: 13px;
+}
+.account-signin-dialog .pro-auth-session {
+  border-color: #25212128;
+  background: #ffffffa8;
+}
+.account-signin-dialog .pro-auth-session > strong { color: #171717; font-size: 13px; }
+.account-signin-dialog .pro-auth-status[data-state="error"] { color: #861b1b; }
+.account-signin-dialog .pro-auth-status[data-state="success"] { color: #14532d; }
+.account-signin-dialog .pro-auth-status[data-state="pending"] { color: #684600; }
+.account-signin-dialog .pro-auth-submit { color: #fff; }
+@media (max-width: 560px) {
+  .account-signin-dialog { max-height: calc(100dvh - 24px); border-radius: 18px; }
+}
