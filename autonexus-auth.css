@@ -237,3 +237,40 @@
   .account-profile-photo-editor { margin-left: 0; }
   .account-profile-photo-field input[type="file"] { max-width: 100%; }
 }
+
+
+/* Light-theme account and email-verification text needs stronger contrast. */
+:root[data-theme="light"] .pro-account-intro,
+:root[data-theme="light"] .pro-auth-form label,
+:root[data-theme="light"] .pro-auth-link,
+:root[data-theme="light"] .pro-auth-status,
+:root[data-theme="light"] .pro-auth-session > span,
+:root[data-theme="light"] .pro-auth-footnote,
+:root[data-theme="light"] .account-profile-lead,
+:root[data-theme="light"] .account-profile-identity span,
+:root[data-theme="light"] .account-profile-identity small,
+:root[data-theme="light"] .account-profile-name-form label,
+:root[data-theme="light"] .account-profile-status,
+:root[data-theme="light"] .account-profile-photo-field,
+:root[data-theme="light"] .account-profile-photo-field input[type="file"],
+:root[data-theme="light"] .account-profile-photo-note,
+:root[data-theme="light"] .account-profile-note {
+  color: #171717;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.6;
+}
+:root[data-theme="light"] .pro-auth-status[data-state="error"],
+:root[data-theme="light"] .account-profile-status[data-state="error"] {
+  color: #861b1b;
+}
+:root[data-theme="light"] .pro-auth-status[data-state="success"],
+:root[data-theme="light"] .account-profile-status[data-state="success"],
+:root[data-theme="light"] .account-profile-identity small[data-state="verified"] {
+  color: #14532d;
+}
+:root[data-theme="light"] .pro-auth-status[data-state="pending"],
+:root[data-theme="light"] .account-profile-status[data-state="pending"],
+:root[data-theme="light"] .account-profile-identity small[data-state="pending"] {
+  color: #684600;
+}
