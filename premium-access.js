@@ -7,8 +7,15 @@
   const checkoutStatus = document.getElementById('pro-checkout-status');
   if (!dialog || !form || !input || !status || !checkoutButton || !checkoutStatus) return;
 
+  const sessionKey = 'autonexus-pro-session-unlocked-v1';
+  let unlockedForThisPage = false;
   let pendingLink = null;
-  let replayLink = null;
+
+  function hasSessionAccess() {
+    if (unlockedForThisPage) return true;
+    try { return sessionStorage.getItem(sessionKey) === '1'; }
+    catch { return false; }
+  }
 
   function openAccess(link) {
     pendingLink = link;
@@ -19,6 +26,7 @@
       try { dialog.showModal(); }
       catch { dialog.setAttribute('open', ''); }
     }
+    window.AutonexusAccount?.prepare();
     requestAnimationFrame(() => checkoutButton.focus({ preventScroll: true }));
   }
 
@@ -27,14 +35,7 @@
     const link = target instanceof Element
       ? target.closest('.premium-feature-grid a[href^="#"], .glass-nav-group--pro a[href^="#"]')
       : null;
-    if (!link) return;
-
-    // Replaying the selected link after a valid developer code should continue
-    // to that feature once; the next Pro entry always opens the access page.
-    if (link === replayLink) {
-      replayLink = null;
-      return;
-    }
+    if (!link || hasSessionAccess()) return;
 
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -52,17 +53,13 @@
       input.focus();
       return;
     }
+    try { sessionStorage.setItem(sessionKey, '1'); }
+    catch { unlockedForThisPage = true; }
     const linkToOpen = pendingLink;
     pendingLink = null;
     dialog.close('unlocked');
     status.textContent = '';
-    if (linkToOpen?.isConnected) {
-      replayLink = linkToOpen;
-      requestAnimationFrame(() => {
-        if (linkToOpen.isConnected && replayLink === linkToOpen) linkToOpen.click();
-        else if (replayLink === linkToOpen) replayLink = null;
-      });
-    }
+    if (linkToOpen?.isConnected) requestAnimationFrame(() => linkToOpen.click());
   });
 
   dialog.addEventListener('click', event => {
