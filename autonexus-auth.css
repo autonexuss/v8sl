@@ -119,3 +119,10 @@
 #simulator-teaser>.simulator-teaser-visual{flex:.95 1 0;min-width:0;grid-column:auto;grid-row:auto;margin:20px 20px 20px 0}
 @media(max-width:850px){#simulator-teaser{display:flex!important;flex-direction:row!important;min-height:0}#simulator-teaser>.simulator-teaser-copy{flex:1.05 1 0;padding:clamp(20px,4vw,38px)}#simulator-teaser>.simulator-teaser-visual{flex:.95 1 0;min-height:320px;margin:14px 14px 14px 0}}
 @media(max-width:560px){#simulator-teaser{width:calc(100% - 24px);min-height:0}#simulator-teaser>.simulator-teaser-copy{flex:1.05 1 0;padding:16px 11px}#simulator-teaser>.simulator-teaser-visual{flex:.95 1 0;min-height:230px;margin:8px 8px 8px 0}}
+
+/* Give the EV charging close control its own header row above all panel copy. */
+#ev-charging.section-modal-active{display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-content:start!important;row-gap:0!important}
+#ev-charging.section-modal-active>.section-modal-close{position:relative!important;inset:auto!important;grid-column:1;grid-row:1;justify-self:end;align-self:start;margin:0 0 22px auto!important;transform:none!important}
+#ev-charging.section-modal-active>.section-head{grid-column:1;grid-row:2;width:100%;margin:0 0 24px!important}
+#ev-charging.section-modal-active>.nearby-panel{grid-column:1;grid-row:3;margin-top:0}
+#ev-charging.section-modal-active>.ev-charging-map-visual{grid-column:1;grid-row:4;width:100%;margin-top:22px}
