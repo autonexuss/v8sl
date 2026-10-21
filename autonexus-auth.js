@@ -4,7 +4,6 @@
   const configured = requiredConfigKeys.every(key => typeof firebaseConfig[key] === 'string' && firebaseConfig[key].trim() && !/replace|your[_-]?/i.test(firebaseConfig[key]));
   const firebaseCdn = 'https://www.gstatic.com/firebasejs/12.4.0';
   const profileToggle = document.getElementById('my-profile-toggle');
-  const profileAvatar = document.getElementById('my-profile-avatar');
   const proForm = document.getElementById('pro-auth-form');
   const proNameWrap = document.getElementById('pro-auth-name-wrap');
   const proName = document.getElementById('pro-auth-name');
@@ -66,6 +65,7 @@
     currentUser = user || null;
     const signedIn = Boolean(currentUser);
     profileToggle.hidden = !signedIn;
+    document.body.classList.toggle('autonexus-user-signed-in', signedIn);
     if (!signedIn) {
       proForm.hidden = false;
       if (proSession) proSession.hidden = true;
@@ -73,7 +73,6 @@
     }
     const displayName = currentUser.displayName || currentUser.email || 'Autonexus driver';
     const letter = avatarLetter(currentUser);
-    profileAvatar.textContent = letter;
     profileToggle.setAttribute('aria-label', 'My Profile for ' + (currentUser.email || displayName));
     profileTitle.textContent = displayName;
     profileEmail.textContent = currentUser.email || '';
