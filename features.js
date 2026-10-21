@@ -371,6 +371,58 @@ function updateGarageLimit(count) {
   garageAddButton.disabled = count >= MAX_GARAGE_VEHICLES;
   garageAddButton.textContent = count >= MAX_GARAGE_VEHICLES ? 'Garage full (4/4)' : 'Add to my garage +';
 }
+function describeExpiry(value) {
+  if (!value) return { text: 'Add a date to check validity', state: 'missing' };
+  const parts = value.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(number => !Number.isFinite(number))) return { text: 'Choose a valid date', state: 'missing' };
+  const expiryUtc = Date.UTC(parts[0], parts[1] - 1, parts[2]);
+  const todayParts = localToday().split('-').map(Number);
+  const todayUtc = Date.UTC(todayParts[0], todayParts[1] - 1, todayParts[2]);
+  const days = Math.round((expiryUtc - todayUtc) / 86400000);
+  if (days < 0) return { text: 'Expired ' + Math.abs(days) + ' day' + (Math.abs(days) === 1 ? '' : 's') + ' ago', state: 'expired' };
+  if (days === 0) return { text: 'Expires today', state: 'soon' };
+  if (days <= 30) return { text: 'Expires in ' + days + ' day' + (days === 1 ? '' : 's'), state: 'soon' };
+  return { text: 'Valid · ' + days + ' days left', state: 'valid' };
+}
+const garageExpiryAlertButton = document.getElementById('garage-expiry-alerts');
+const garageExpiryAlertStatus = document.getElementById('garage-expiry-alert-status');
+const garageExpiryAlertKey = 'chassis-garage-expiry-alerts-v1';
+function updateGarageExpiryAlertButton() {
+  let enabled = false;
+  try { enabled = localStorage.getItem(garageExpiryAlertKey) === '1'; } catch {}
+  if (!garageExpiryAlertButton || !garageExpiryAlertStatus) return;
+  garageExpiryAlertButton.textContent = enabled ? 'Expiry alerts enabled ✓' : 'Enable expiry alerts';
+  garageExpiryAlertStatus.textContent = enabled ? 'Browser alerts are enabled for this device.' : 'Alerts are off';
+}
+function checkGarageExpiryNotifications() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  let enabled = false;
+  try { enabled = localStorage.getItem(garageExpiryAlertKey) === '1'; } catch {}
+  if (!enabled) return;
+  const entries = readLocalList(garageKey);
+  let changed = false;
+  entries.forEach(entry => {
+    [['insuranceExpiry', 'Insurance'], ['puccExpiry', 'PUCC']].forEach(([key, label]) => {
+      if (!entry[key]) return;
+      const status = describeExpiry(entry[key]);
+      if (status.state !== 'soon') return;
+      const marker = label + ':' + entry[key];
+      entry.expiryNotified = entry.expiryNotified || {};
+      if (entry.expiryNotified[key] === marker) return;
+      try { new Notification(label + ' renewal coming up', { body: (entry.year || '') + ' ' + (entry.make || '') + ' ' + (entry.model || '') + ' · ' + status.text, tag: 'autonexus-' + key + '-' + entry.registration }); entry.expiryNotified[key] = marker; changed = true; } catch {}
+    });
+  });
+  if (changed) syncPrivateList('garage', entries);
+}
+garageExpiryAlertButton?.addEventListener('click', async () => {
+  if (!('Notification' in window)) { garageExpiryAlertStatus.textContent = 'Notifications are not supported by this browser.'; return; }
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') { garageExpiryAlertStatus.textContent = 'Notification permission was not granted.'; return; }
+  try { localStorage.setItem(garageExpiryAlertKey, '1'); } catch { garageExpiryAlertStatus.textContent = 'Browser storage is unavailable.'; return; }
+  updateGarageExpiryAlertButton(); checkGarageExpiryNotifications();
+});
+updateGarageExpiryAlertButton();
+window.setInterval(checkGarageExpiryNotifications, 60000);
 function renderGarage() {
   const entries = readLocalList(garageKey);
   updateGarageLimit(entries.length);
@@ -385,7 +437,34 @@ function renderGarage() {
     const check = document.createElement('a'); check.href = 'https://echallan.parivahan.gov.in/index/accused-challan'; check.target = '_blank'; check.rel = 'noopener noreferrer'; check.className = 'button button-light'; check.textContent = 'Check eChallan ↗';
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'filter-reset'; remove.textContent = 'Remove';
     remove.addEventListener('click', () => { const next = readLocalList(garageKey); next.splice(index, 1); syncPrivateList('garage', next); renderGarage(); });
-    card.append(name, check, remove); garageList.append(card);
+    const expiryPanel = document.createElement('div'); expiryPanel.className = 'garage-expiry-panel';
+    const expiryHeading = document.createElement('strong'); expiryHeading.textContent = 'Validity & renewals';
+    const expiryGrid = document.createElement('div'); expiryGrid.className = 'garage-expiry-grid';
+    const expiryInputs = {};
+    [['insuranceExpiry', 'Insurance valid through'], ['puccExpiry', 'PUCC valid through']].forEach(([key, labelText]) => {
+      const field = document.createElement('label'); field.className = 'garage-expiry-field';
+      const label = document.createElement('span'); label.textContent = labelText;
+      const input = document.createElement('input'); input.type = 'date'; input.value = entry[key] || ''; input.dataset.expiryField = key; input.setAttribute('aria-label', labelText);
+      const status = document.createElement('small'); status.dataset.expiryStatus = key; status.setAttribute('aria-live', 'polite');
+      const updateStatus = () => { const result = describeExpiry(input.value); status.textContent = result.text; status.dataset.state = result.state; };
+      input.addEventListener('change', updateStatus); updateStatus();
+      field.append(label, input, status); expiryGrid.append(field); expiryInputs[key] = input;
+    });
+    const expiryActions = document.createElement('div'); expiryActions.className = 'garage-expiry-actions';
+    const checkExpiry = document.createElement('button'); checkExpiry.type = 'button'; checkExpiry.className = 'garage-expiry-check'; checkExpiry.textContent = 'Check validity';
+    checkExpiry.addEventListener('click', () => Object.values(expiryInputs).forEach(input => input.dispatchEvent(new Event('change'))));
+    const saveExpiry = document.createElement('button'); saveExpiry.type = 'button'; saveExpiry.className = 'garage-expiry-save'; saveExpiry.textContent = 'Save renewal dates';
+    saveExpiry.addEventListener('click', () => {
+      const next = readLocalList(garageKey); const current = next[index];
+      if (!current) return;
+      current.insuranceExpiry = expiryInputs.insuranceExpiry.value;
+      current.puccExpiry = expiryInputs.puccExpiry.value;
+      current.expiryNotified = current.expiryNotified || {};
+      if (!syncPrivateList('garage', next)) { window.alert('Browser storage is unavailable. Renewal dates were not saved.'); return; }
+      renderGarage(); checkGarageExpiryNotifications();
+    });
+    expiryActions.append(checkExpiry, saveExpiry); expiryPanel.append(expiryHeading, expiryGrid, expiryActions);
+    card.append(name, expiryPanel, check, remove); garageList.append(card);
   });
 }
 garageForm.addEventListener('submit', event => {
