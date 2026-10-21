@@ -126,3 +126,114 @@
 #ev-charging.section-modal-active>.section-head{grid-column:1;grid-row:2;width:100%;margin:0 0 24px!important}
 #ev-charging.section-modal-active>.nearby-panel{grid-column:1;grid-row:3;margin-top:0}
 #ev-charging.section-modal-active>.ev-charging-map-visual{grid-column:1;grid-row:4;width:100%;margin-top:22px}
+
+
+/* Give the EV map panel room for its artwork and keep the complete image in view. */
+#ev-charging.section-modal-active {
+  top: clamp(68px, 7vh, 80px) !important;
+  bottom: 4px !important;
+  overflow-y: auto !important;
+  padding-bottom: clamp(48px, 8vh, 84px) !important;
+  scroll-padding-bottom: clamp(48px, 8vh, 84px);
+  overscroll-behavior-y: contain;
+}
+#ev-charging.section-modal-active > .ev-charging-map-visual {
+  display: grid;
+  place-items: center;
+  min-height: clamp(220px, 34vh, 340px);
+  height: clamp(220px, 34vh, 340px);
+  overflow: hidden;
+  align-self: start;
+}
+#ev-charging.section-modal-active > .ev-charging-map-visual img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+@media (max-width: 620px) {
+  #ev-charging.section-modal-active {
+    top: 68px !important;
+    bottom: 4px !important;
+    padding-bottom: 48px !important;
+  }
+  #ev-charging.section-modal-active > .ev-charging-map-visual {
+    min-height: clamp(200px, 46vw, 280px);
+    height: clamp(200px, 46vw, 280px);
+  }
+}
+
+/* Slightly enlarge email-verification and account status copy for readability. */
+.pro-auth-session > span,
+.pro-auth-status,
+.account-profile-status { font-size: 11px; line-height: 1.6; }
+.pro-auth-footnote { font-size: 9px; line-height: 1.6; }
+.account-profile-identity small { font-size: 11px; line-height: 1.5; }
+
+/* Profile pictures are cropped to a compact square when selected, then shown in both avatars. */
+.my-profile-avatar,
+.account-profile-avatar { position: relative; overflow: hidden; }
+.my-profile-avatar svg { width: 15px; height: 15px; }
+.my-profile-avatar-photo,
+.account-profile-avatar-photo {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.my-profile-avatar-photo[hidden],
+.account-profile-avatar-photo[hidden] { display: none !important; }
+.account-profile-avatar-letter[hidden] { display: none !important; }
+.account-profile-photo-editor {
+  display: grid;
+  gap: 7px;
+  margin: -8px 0 18px 62px;
+}
+.account-profile-photo-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 9px; }
+.account-profile-photo-field {
+  display: grid;
+  gap: 6px;
+  color: var(--chassis-muted, #a4a6a5);
+  font-size: 10px;
+  font-weight: 650;
+}
+.account-profile-photo-field input[type="file"] {
+  max-width: min(100%, 320px);
+  color: var(--chassis-muted, #a4a6a5);
+  font: 10px/1.4 system-ui, sans-serif;
+}
+.account-profile-photo-field input[type="file"]::file-selector-button {
+  min-height: 34px;
+  margin-right: 8px;
+  padding: 0 11px;
+  border: 1px solid #d4363a72;
+  border-radius: 7px;
+  background: #d4363a14;
+  color: var(--chassis-text, #f2f0eb);
+  font: 600 10px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+.account-profile-photo-field input[type="file"]::file-selector-button:hover { background: #d4363a2b; }
+.account-profile-photo-controls > button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid color-mix(in srgb, var(--chassis-text, #f2f0eb) 20%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--chassis-text, #f2f0eb) 5%, transparent);
+  color: var(--chassis-text, #f2f0eb);
+  font: 600 10px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+.account-profile-photo-controls > button[hidden] { display: none !important; }
+.account-profile-photo-note { color: var(--chassis-muted, #a4a6a5); font-size: 10px; line-height: 1.55; }
+.account-profile-dialog button:focus-visible,
+.account-profile-photo-field input:focus-visible { outline: 2px solid #eb777b; outline-offset: 3px; }
+@media (max-width: 560px) {
+  .account-profile-photo-editor { margin-left: 0; }
+  .account-profile-photo-field input[type="file"] { max-width: 100%; }
+}
