@@ -274,3 +274,25 @@
 :root[data-theme="light"] .account-profile-identity small[data-state="pending"] {
   color: #684600;
 }
+
+
+/* The Pro purchase column stays light, so keep its account sign-in copy dark in either site theme. */
+.pro-access-purchase .pro-account-panel { color: #171717; border-top-color: #25212130; }
+.pro-access-purchase .pro-account-heading small { color: #514b4b; }
+.pro-access-purchase .pro-account-heading h3 { color: #171717; }
+.pro-access-purchase .pro-account-intro,
+.pro-access-purchase .pro-auth-form label,
+.pro-access-purchase .pro-auth-link,
+.pro-access-purchase .pro-auth-status,
+.pro-access-purchase .pro-auth-session > span,
+.pro-access-purchase .pro-auth-footnote {
+  color: #171717;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.6;
+}
+.pro-access-purchase .pro-auth-status[data-state="error"] { color: #861b1b; }
+.pro-access-purchase .pro-auth-status[data-state="success"] { color: #14532d; }
+.pro-access-purchase .pro-auth-status[data-state="pending"] { color: #684600; }
+.pro-access-purchase .pro-auth-session > strong { color: #171717; }
+.pro-access-purchase .pro-auth-submit { color: #fff; }
