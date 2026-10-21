@@ -434,7 +434,7 @@ function renderGarage() {
     const title = document.createElement('strong'); title.textContent = `${entry.year} ${entry.make} ${entry.model}`;
     const registration = document.createElement('span'); registration.textContent = entry.registration;
     name.append(title, registration);
-    const check = document.createElement('a'); check.href = 'https://echallan.parivahan.gov.in/index/accused-challan'; check.target = '_blank'; check.rel = 'noopener noreferrer'; check.className = 'button button-light'; check.textContent = 'Check eChallan ↗';
+    const check = document.createElement('a'); check.href = 'https://echallan.parivahan.nic.in/challan'; check.target = '_blank'; check.rel = 'noopener noreferrer'; check.className = 'button button-light'; check.textContent = 'Check eChallan ↗';
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'filter-reset'; remove.textContent = 'Remove';
     remove.addEventListener('click', () => { const next = readLocalList(garageKey); next.splice(index, 1); syncPrivateList('garage', next); renderGarage(); });
     const expiryPanel = document.createElement('div'); expiryPanel.className = 'garage-expiry-panel';
