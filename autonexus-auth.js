@@ -24,6 +24,12 @@
   const profileEmail = document.getElementById('account-profile-email');
   const profileVerification = document.getElementById('account-profile-verification');
   const profileAvatarLarge = document.getElementById('account-profile-avatar');
+  const profileAvatarLetter = document.getElementById('account-profile-avatar-letter');
+  const profileAvatarPhoto = document.getElementById('account-profile-avatar-photo');
+  const topAvatarPhoto = document.getElementById('my-profile-avatar-photo');
+  const topAvatarFallback = document.getElementById('my-profile-avatar-fallback');
+  const profilePhotoInput = document.getElementById('account-profile-photo-input');
+  const profilePhotoRemove = document.getElementById('account-profile-photo-remove');
   const profileNameInput = document.getElementById('account-profile-name-input');
   const profileNameForm = document.getElementById('account-profile-name-form');
   const profileStatus = document.getElementById('account-profile-status');
@@ -31,7 +37,7 @@
   const profileRefresh = document.getElementById('account-profile-refresh');
   const profileSignout = document.getElementById('account-profile-signout');
   const openProfileButton = document.getElementById('pro-auth-open-profile');
-  if (!profileToggle || !proForm || !profileDialog) return;
+  if (!profileToggle || !proForm || !profileDialog || !profilePhotoInput || !profilePhotoRemove) return;
 
   let sdk = null;
   let auth = null;
@@ -61,6 +67,62 @@
     return source.trim().charAt(0).toUpperCase() || 'A';
   }
 
+  function savedPhotoFor(user) {
+    if (!user || !user.uid) return '';
+    try { return localStorage.getItem('autonexus-profile-photo-v1:' + user.uid) || ''; }
+    catch { return ''; }
+  }
+
+  function showAvatarPhoto(image, fallback, photo) {
+    if (photo) {
+      image.src = photo;
+      image.hidden = false;
+      fallback.hidden = true;
+    } else {
+      image.removeAttribute('src');
+      image.hidden = true;
+      fallback.hidden = false;
+    }
+  }
+
+  function readAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('The selected image could not be read.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function compressProfilePhoto(file) {
+    if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) {
+      throw new Error('Choose a JPEG, PNG or WebP image.');
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      throw new Error('Choose an image smaller than 10 MB.');
+    }
+    const source = await readAsDataUrl(file);
+    const image = new Image();
+    image.src = source;
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(new Error('The selected image could not be opened.'));
+    });
+    const side = Math.min(image.naturalWidth, image.naturalHeight);
+    if (!side) throw new Error('The selected image has no readable dimensions.');
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Image processing is unavailable in this browser.');
+    const sx = (image.naturalWidth - side) / 2;
+    const sy = (image.naturalHeight - side) / 2;
+    context.drawImage(image, sx, sy, side, side, 0, 0, 512, 512);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+    if (!blob) throw new Error('The selected image could not be prepared.');
+    return readAsDataUrl(blob);
+  }
+
   function renderUser(user) {
     currentUser = user || null;
     const signedIn = Boolean(currentUser);
@@ -76,7 +138,11 @@
     profileToggle.setAttribute('aria-label', 'My Profile for ' + (currentUser.email || displayName));
     profileTitle.textContent = displayName;
     profileEmail.textContent = currentUser.email || '';
-    profileAvatarLarge.textContent = letter;
+    profileAvatarLetter.textContent = letter;
+    const profilePhoto = savedPhotoFor(currentUser);
+    showAvatarPhoto(profileAvatarPhoto, profileAvatarLetter, profilePhoto);
+    showAvatarPhoto(topAvatarPhoto, topAvatarFallback, profilePhoto);
+    profilePhotoRemove.hidden = !profilePhoto;
     profileNameInput.value = currentUser.displayName || '';
     const verification = currentUser.emailVerified ? 'Email verified' : 'Email not verified';
     profileVerification.textContent = verification;
@@ -134,6 +200,38 @@
     proReset.hidden = creating;
     setStatus(proStatus, '');
   }
+
+  profilePhotoInput.addEventListener('change', async () => {
+    const file = profilePhotoInput.files && profilePhotoInput.files[0];
+    if (!file) return;
+    if (!currentUser) {
+      setStatus(profileStatus, 'Sign in before adding a profile picture.', 'error');
+      profilePhotoInput.value = '';
+      return;
+    }
+    setStatus(profileStatus, 'Preparing your profile picture…', 'pending');
+    try {
+      const compressed = await compressProfilePhoto(file);
+      localStorage.setItem('autonexus-profile-photo-v1:' + currentUser.uid, compressed);
+      renderUser(currentUser);
+      setStatus(profileStatus, 'Profile picture saved on this device.', 'success');
+    } catch (error) {
+      setStatus(profileStatus, error && error.message ? error.message : 'The profile picture could not be saved in this browser.', 'error');
+    } finally {
+      profilePhotoInput.value = '';
+    }
+  });
+
+  profilePhotoRemove.addEventListener('click', () => {
+    if (!currentUser) return;
+    try {
+      localStorage.removeItem('autonexus-profile-photo-v1:' + currentUser.uid);
+      renderUser(currentUser);
+      setStatus(profileStatus, 'Profile picture removed from this device.', 'success');
+    } catch {
+      setStatus(profileStatus, 'The profile picture could not be removed in this browser.', 'error');
+    }
+  });
 
   proModeToggle.addEventListener('click', () => setMode(authMode === 'signin' ? 'signup' : 'signin'));
 
