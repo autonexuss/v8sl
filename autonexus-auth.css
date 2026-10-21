@@ -97,3 +97,12 @@
 @media(prefers-reduced-motion:reduce){.simulator-engine-art,.simulator-rpm-chip i{animation:none}}
 
 .pro-auth-form[hidden],.pro-auth-session[hidden],.pro-auth-form label[hidden],.account-profile-actions button[hidden]{display:none!important}
+
+/* Keep the engine lab model beside its copy at every viewport width. */
+.simulator-teaser{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr)}
+.simulator-teaser-visual{min-width:0;align-self:stretch}
+.simulator-engine-model{display:block;width:100%;height:100%;min-width:0;min-height:340px;max-height:520px;background:transparent;--poster-color:transparent;--progress-bar-color:#d4363a;--progress-mask:#100809}
+@media(max-width:850px){.simulator-teaser{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);min-height:0}.simulator-teaser-copy{padding:clamp(20px,4vw,38px)}.simulator-teaser-visual{min-height:320px;margin:14px 14px 14px 0}.simulator-engine-model{min-height:320px}}
+@media(max-width:560px){.simulator-teaser{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);width:calc(100% - 24px);min-height:0}.simulator-teaser-copy{padding:16px 11px}.simulator-teaser-kicker{font-size:7px;letter-spacing:.11em}.simulator-teaser-copy h2{font-size:clamp(22px,5.8vw,31px);line-height:1.06}.simulator-teaser-copy>p{font-size:10px;line-height:1.6}.simulator-teaser-actions{gap:7px;margin-top:16px}.simulator-teaser-actions a{min-height:36px;padding:0 9px;font-size:8px;gap:6px}.simulator-teaser-metrics{gap:8px;margin-top:18px;padding-top:12px;font-size:7px}.simulator-teaser-metrics span{gap:4px}.simulator-teaser-visual{min-height:230px;margin:8px 8px 8px 0;border-radius:16px}.simulator-engine-model{min-height:230px}.simulator-visual-top{top:10px;left:8px;right:8px;font-size:6px}.simulator-live-dot{font-size:6px}.simulator-visual-caption{left:8px;bottom:10px}.simulator-visual-caption strong{font-size:8px}.simulator-rpm-chip{right:8px;bottom:8px;padding:7px}.simulator-rpm-chip small{font-size:6px}}
+/* Keep the EV map close control in normal flow so the section heading never sits beneath it. */
+#ev-charging.section-modal-active>.section-modal-close{position:relative;top:auto;right:auto;display:flex;width:max-content;max-width:calc(100% - 12px);margin:0 0 22px auto;transform:none}
