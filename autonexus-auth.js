@@ -4,6 +4,8 @@
   const configured = requiredConfigKeys.every(key => typeof firebaseConfig[key] === 'string' && firebaseConfig[key].trim() && !/replace|your[_-]?/i.test(firebaseConfig[key]));
   const firebaseCdn = 'https://www.gstatic.com/firebasejs/12.4.0';
   const profileToggle = document.getElementById('my-profile-toggle');
+  const profileLabel = profileToggle.querySelector('.my-profile-label');
+  const proDialog = document.getElementById('pro-access-dialog');
   const proForm = document.getElementById('pro-auth-form');
   const proNameWrap = document.getElementById('pro-auth-name-wrap');
   const proName = document.getElementById('pro-auth-name');
@@ -126,9 +128,13 @@
   function renderUser(user) {
     currentUser = user || null;
     const signedIn = Boolean(currentUser);
-    profileToggle.hidden = !signedIn;
+    profileToggle.hidden = false;
+    profileToggle.setAttribute('aria-controls', signedIn ? 'account-profile-dialog' : 'pro-access-dialog');
+    profileLabel.textContent = signedIn ? 'My Profile' : 'Sign in';
     document.body.classList.toggle('autonexus-user-signed-in', signedIn);
     if (!signedIn) {
+      profileToggle.setAttribute('aria-label', 'Sign in to Autonexus');
+      showAvatarPhoto(topAvatarPhoto, topAvatarFallback, null);
       proForm.hidden = false;
       if (proSession) proSession.hidden = true;
       return;
@@ -303,6 +309,18 @@
   profileRefresh.addEventListener('click', () => refreshVerification(profileStatus));
 
   profileToggle.addEventListener('click', async () => {
+    if (!currentUser) {
+      setMode('signin');
+      if (proDialog && !proDialog.open) proDialog.showModal();
+      if (!await prepare()) return;
+      if (currentUser) {
+        if (proDialog?.open) proDialog.close();
+        if (!profileDialog.open) profileDialog.showModal();
+        return;
+      }
+      requestAnimationFrame(() => proEmail.focus({ preventScroll: true }));
+      return;
+    }
     if (!await prepare()) return;
     if (!profileDialog.open) profileDialog.showModal();
   });
