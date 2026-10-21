@@ -376,8 +376,8 @@ function describeExpiry(value) {
   const parts = value.split('-').map(Number);
   if (parts.length !== 3 || parts.some(number => !Number.isFinite(number))) return { text: 'Choose a valid date', state: 'missing' };
   const expiryUtc = Date.UTC(parts[0], parts[1] - 1, parts[2]);
-  const todayParts = localToday().split('-').map(Number);
-  const todayUtc = Date.UTC(todayParts[0], todayParts[1] - 1, todayParts[2]);
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   const days = Math.round((expiryUtc - todayUtc) / 86400000);
   if (days < 0) return { text: 'Expired ' + Math.abs(days) + ' day' + (Math.abs(days) === 1 ? '' : 's') + ' ago', state: 'expired' };
   if (days === 0) return { text: 'Expires today', state: 'soon' };
