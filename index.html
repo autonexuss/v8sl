@@ -6,13 +6,13 @@
   <title>Autonexus — Know your car, better</title><link rel="icon" type="image/png" sizes="512x512" href="assets/autonexus-icon.png?v=1"><link rel="apple-touch-icon" href="assets/autonexus-icon.png?v=1"><link rel="stylesheet" href="styles.css?v=20261018-black-red-2"><link rel="stylesheet" href="premium.css?v=20261018-black-red-2"><link rel="stylesheet" href="shell.css?v=20261018-black-red-2">
   <link rel="stylesheet" href="home.css?v=20261018-black-red-2">
   <link rel="stylesheet" href="editorial-home.css?v=20261018-black-red-2">
-   <link rel="stylesheet" href="feature-refresh.css?v=20261018-black-red-2"><link rel="stylesheet" href="autonexus-refresh.css?v=20261018-black-red-2"><link rel="stylesheet" href="environment.css?v=20261018-black-red-2"><link rel="stylesheet" href="chatbot.css?v=20261018-black-red-2"><link rel="stylesheet" href="ev-space.css?v=20261018-black-red-2"><link rel="stylesheet" href="squirtle-easter-egg.css?v=20261017-1"><link rel="stylesheet" href="feature-media.css?v=20261018-black-red-2"><link rel="stylesheet" href="new-features.css?v=20261018-black-red-2"><link rel="stylesheet" href="challan-pro.css?v=20261018-black-red-2"><link rel="stylesheet" href="autonexus-auth.css?v=20261021-pro-signin-contrast-1">
+   <link rel="stylesheet" href="feature-refresh.css?v=20261018-black-red-2"><link rel="stylesheet" href="autonexus-refresh.css?v=20261018-black-red-2"><link rel="stylesheet" href="environment.css?v=20261018-black-red-2"><link rel="stylesheet" href="chatbot.css?v=20261018-black-red-2"><link rel="stylesheet" href="ev-space.css?v=20261018-black-red-2"><link rel="stylesheet" href="squirtle-easter-egg.css?v=20261017-1"><link rel="stylesheet" href="feature-media.css?v=20261018-black-red-2"><link rel="stylesheet" href="new-features.css?v=20261018-black-red-2"><link rel="stylesheet" href="challan-pro.css?v=20261018-black-red-2"><link rel="stylesheet" href="autonexus-auth.css?v=20261021-separate-signin-dialog-1">
   <script>self.ModelViewerElement = self.ModelViewerElement || {}; self.ModelViewerElement.dracoDecoderLocation = 'assets/vendor/draco/';</script>
   <script src="media-loader.js?v=20261018-model-queue-2" defer></script>
 </head>
 <body>
   <header class="topbar">
-  <div class="topbar-brand-row"><a class="brand" href="#top" aria-label="Autonexus home"><img class="brand-logo" src="assets/autonexus-wordmark.png?v=1" alt="Autonexus" decoding="async"><span class="visually-hidden">Autonexus</span></a><div class="topbar-actions"><a class="about-shortcut" href="#about" data-scroll-to-about>About us</a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open section menu"><span aria-hidden="true">☰</span><b>Menu</b></button><button class="chatbot-toggle" id="chatbot-toggle" type="button" aria-expanded="false" aria-controls="autonexus-chatbot">AI chatbot</button><button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" aria-pressed="false">☼ <span>Light</span></button><button class="my-profile-toggle" id="my-profile-toggle" type="button" aria-label="Sign in to Autonexus" aria-controls="pro-access-dialog" aria-haspopup="dialog"><span class="my-profile-avatar" id="my-profile-avatar" aria-hidden="true"><img class="my-profile-avatar-photo" id="my-profile-avatar-photo" alt="" hidden><svg id="my-profile-avatar-fallback" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="8" r="3.5"></circle><path d="M4.8 20c.7-4.1 3.1-6.2 7.2-6.2s6.5 2.1 7.2 6.2"></path></svg></span><span class="my-profile-label">Sign in</span></button></div></div>
+  <div class="topbar-brand-row"><a class="brand" href="#top" aria-label="Autonexus home"><img class="brand-logo" src="assets/autonexus-wordmark.png?v=1" alt="Autonexus" decoding="async"><span class="visually-hidden">Autonexus</span></a><div class="topbar-actions"><a class="about-shortcut" href="#about" data-scroll-to-about>About us</a><button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open section menu"><span aria-hidden="true">☰</span><b>Menu</b></button><button class="chatbot-toggle" id="chatbot-toggle" type="button" aria-expanded="false" aria-controls="autonexus-chatbot">AI chatbot</button><button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" aria-pressed="false">☼ <span>Light</span></button><button class="my-profile-toggle" id="my-profile-toggle" type="button" aria-label="Sign in to Autonexus" aria-controls="account-signin-dialog" aria-haspopup="dialog"><span class="my-profile-avatar" id="my-profile-avatar" aria-hidden="true"><img class="my-profile-avatar-photo" id="my-profile-avatar-photo" alt="" hidden><svg id="my-profile-avatar-fallback" viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="8" r="3.5"></circle><path d="M4.8 20c.7-4.1 3.1-6.2 7.2-6.2s6.5 2.1 7.2 6.2"></path></svg></span><span class="my-profile-label">Sign in</span></button></div></div>
   <nav id="site-nav" class="glass-nav" aria-label="Site features" aria-hidden="true" inert>
     <div class="glass-nav-group" aria-labelledby="site-nav-free-title">
       <h2 id="site-nav-free-title">General features</h2>
@@ -261,10 +261,26 @@
       <ul class="pro-plan-points"><li>One payment for the Pro collection</li><li>Designed for your everyday ownership tasks</li><li>Private tools stay in this browser</li></ul>
       <button class="pro-checkout-button" id="pro-checkout-button" type="button">Continue for ₹200 <span aria-hidden="true">↗</span></button>
       <p class="pro-checkout-status" id="pro-checkout-status" role="status" aria-live="polite">Secure checkout is not connected yet. No payment will be taken.</p>
-      <section class="pro-account-panel" aria-labelledby="pro-account-title">
-        <div class="pro-account-heading"><span class="pro-account-mark" aria-hidden="true">A</span><div><small>AUTONEXUS ACCOUNT</small><h3 id="pro-account-title">Your account, in one place.</h3></div></div>
-        <p class="pro-account-intro">Sign in or create an account with email. We’ll send a verification link to confirm it’s yours.</p>
-        <form class="pro-auth-form" id="pro-auth-form">
+      
+      <details class="pro-referral">
+        <summary>Have a referral code?</summary>
+        <form id="pro-access-form" class="pro-access-form" novalidate>
+          <label for="pro-access-code">Referral or developer code</label>
+          <div class="pro-access-entry"><input id="pro-access-code" name="code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter code"><button type="submit">Apply</button></div>
+          <p id="pro-access-status" class="pro-access-status" role="status" aria-live="polite"></p>
+        </form>
+        <small class="pro-access-note">A valid referral code unlocks Pro tools for this browser session.</small>
+      </details>
+    </aside>
+  </div>
+</dialog>
+<dialog class="account-signin-dialog" id="account-signin-dialog" aria-labelledby="account-signin-title">
+  <form method="dialog" class="account-profile-close-form"><button class="account-profile-close" aria-label="Close sign-in window">×</button></form>
+  <div class="account-profile-eyebrow"><span aria-hidden="true"></span> AUTONEXUS ACCOUNT</div>
+  <h2 id="account-signin-title">Sign in or create an account.</h2>
+  <p class="account-signin-lead">Use your email to sign in or create an account. We’ll send a verification link to confirm your address.</p>
+  <section class="account-signin-panel" aria-label="Account sign-in options">
+    <form class="pro-auth-form" id="pro-auth-form">
           <label id="pro-auth-name-wrap" hidden for="pro-auth-name">Your name<input id="pro-auth-name" name="name" type="text" autocomplete="name" maxlength="60" placeholder="Name"></label>
           <label for="pro-auth-email">Email address<input id="pro-auth-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
           <label for="pro-auth-password">Password<input id="pro-auth-password" name="password" type="password" autocomplete="current-password" minlength="8" required placeholder="At least 8 characters"></label>
@@ -280,18 +296,8 @@
           <div><button class="pro-auth-link" id="pro-auth-resend" type="button" hidden>Resend verification link</button><button class="pro-auth-link" id="pro-auth-refresh" type="button" hidden>I’ve verified — refresh</button><button class="pro-auth-link" id="pro-auth-open-profile" type="button">My Profile</button></div>
         </div>
         <small class="pro-auth-footnote">Your password is handled by Firebase Authentication and is never stored by Autonexus.</small>
-      </section>
-      <details class="pro-referral">
-        <summary>Have a referral code?</summary>
-        <form id="pro-access-form" class="pro-access-form" novalidate>
-          <label for="pro-access-code">Referral or developer code</label>
-          <div class="pro-access-entry"><input id="pro-access-code" name="code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter code"><button type="submit">Apply</button></div>
-          <p id="pro-access-status" class="pro-access-status" role="status" aria-live="polite"></p>
-        </form>
-        <small class="pro-access-note">A valid referral code unlocks Pro tools for this browser session.</small>
-      </details>
-    </aside>
-  </div>
+      
+  </section>
 </dialog>
 <dialog class="account-profile-dialog" id="account-profile-dialog" aria-labelledby="account-profile-title">
   <form method="dialog" class="account-profile-close-form"><button class="account-profile-close" aria-label="Close My Profile">×</button></form>
@@ -320,7 +326,7 @@
   <video class="squirtle-easter-egg__video" id="squirtle-easter-egg-video" src="assets/easter-eggs/squirtle-dance.mp4" preload="none" playsinline aria-hidden="true" tabindex="-1"></video>
   <span class="visually-hidden" id="squirtle-easter-egg-help">Squirtle dance is playing. Click anywhere or press Escape to close it.</span>
 </div>
-  <script src="firebase-config.js?v=20261021-1"></script><script src="youtube-config.js?v=20261017-autonexus-1"></script><script src="vehicle-data.js?v=20261018-india-catalog-3"></script><script src="app-search.js?v=20261018-comparison-slot-fix-1"></script><script src="features.js?v=20261021-echallan-link-1"></script><script src="autonexus-auth.js?v=20261021-topbar-signin-1"></script><script src="premium-access.js?v=20261021-session-unlock-1"></script><script src="site-shell.js?v=20261018-modal-photo-1"></script><script src="environment.js?v=20261018-comparison-enrichment-2"></script><script src="chatbot.js?v=20261017-context-1"></script><script src="new-features.js?v=20261018-ev-trip-controls-2"></script><script src="challan-pay.js?v=20261018-demo-estimator-2"></script><script src="showroom.js?v=20261018-new-feature-models-3"></script>
+  <script src="firebase-config.js?v=20261021-1"></script><script src="youtube-config.js?v=20261017-autonexus-1"></script><script src="vehicle-data.js?v=20261018-india-catalog-3"></script><script src="app-search.js?v=20261018-comparison-slot-fix-1"></script><script src="features.js?v=20261021-echallan-link-1"></script><script src="autonexus-auth.js?v=20261021-separate-signin-dialog-1"></script><script src="premium-access.js?v=20261021-session-unlock-1"></script><script src="site-shell.js?v=20261018-modal-photo-1"></script><script src="environment.js?v=20261018-comparison-enrichment-2"></script><script src="chatbot.js?v=20261017-context-1"></script><script src="new-features.js?v=20261018-ev-trip-controls-2"></script><script src="challan-pay.js?v=20261018-demo-estimator-2"></script><script src="showroom.js?v=20261018-new-feature-models-3"></script>
 <script src="squirtle-easter-egg.js?v=20261017-1"></script>
 
 </body></html>
