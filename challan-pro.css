@@ -154,10 +154,13 @@
 
 /* Autonexus Pro — premium automotive editorial treatment. */
 .pro-access-dialog {
+  position: fixed;
+  inset: 50% auto auto 50%;
+  translate: -50% -50%;
   width: min(1080px, calc(100vw - 28px));
   max-width: none;
   max-height: min(92dvh, 900px);
-  margin: auto;
+  margin: 0;
   padding: 0;
   overflow: auto;
   border: 1px solid #ffffff42;
@@ -251,7 +254,7 @@
 }
 @media (prefers-reduced-motion: no-preference) {
   .pro-access-dialog[open] { animation: autonexus-pro-enter .26s cubic-bezier(.2,.8,.2,1) both; }
-  @keyframes autonexus-pro-enter { from { opacity: 0; transform: translateY(10px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes autonexus-pro-enter { from { opacity: 0; scale: .99; } to { opacity: 1; scale: 1; } }
 }
 @media (prefers-reduced-motion: reduce) {
   .pro-access-dialog[open] { animation: none; }
@@ -265,3 +268,4 @@
 
 /* The purchase panel stays light in every site theme; keep its price dark and legible. */
 .pro-access-dialog .pro-access-purchase .pro-access-price strong { color: #181515; font-weight: 750; text-shadow: none; }
+

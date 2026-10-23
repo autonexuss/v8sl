@@ -109,10 +109,13 @@ themeToggle?.addEventListener('click', () => {
   try { localStorage.setItem('chassis-theme', theme); } catch { /* Theme remains active for this page view. */ }
 });
 
-// Service-report preview only: never sends, stores, looks up, or charges for the entered registration.
+// Service-report request preview: vehicle details and the registration stay on this device.
 const reportForm = document.getElementById('service-report-form');
 const reportRegistration = document.getElementById('report-registration');
 const reportResult = document.getElementById('report-demo-result');
+const reportMake = document.getElementById('report-make');
+const reportModel = document.getElementById('report-model');
+const reportYear = document.getElementById('report-year');
 reportRegistration?.addEventListener('input', () => {
   const start = reportRegistration.selectionStart;
   const end = reportRegistration.selectionEnd;
@@ -125,6 +128,12 @@ reportForm?.addEventListener('submit', event => {
   const normalizedRegistration = entered.replace(/[^A-Z0-9]/g, '');
   const regularRegistration = /^[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{1,4}$/.test(normalizedRegistration);
   const bhRegistration = /^[0-9]{2}BH[0-9]{4}[A-Z]{1,2}$/.test(normalizedRegistration);
+  if (!reportMake?.value || !reportModel?.value || !reportYear?.value) {
+    reportResult.hidden = false;
+    reportResult.textContent = 'Choose the vehicle manufacturer, model and year first.';
+    (reportMake?.value ? reportModel : reportMake)?.focus();
+    return;
+  }
   if (!regularRegistration && !bhRegistration) {
     reportResult.hidden = false;
     reportResult.textContent = 'Enter a valid-looking Indian vehicle registration, such as DL 8C AB 1234. The number will not be checked here.';
@@ -135,10 +144,21 @@ reportForm?.addEventListener('submit', event => {
   reportResult.hidden = false;
   reportResult.replaceChildren();
   const heading = document.createElement('strong');
-  heading.textContent = 'Your number stayed on this page.';
+  heading.textContent = 'Review your ₹300 report-fee estimate.';
   const detail = document.createElement('span');
-  detail.textContent = 'Autonexus has no live challan or insurance connection, so it did not check or store the registration. Enter it again only after opening the official service.';
-  reportResult.append(heading, detail);
+  detail.textContent = `${reportYear.value} ${reportMake.value} ${reportModel.value} · ${entered}. The proposed service-report fee is ₹300. The vehicle details remain on this page.`;
+  const continueButton = document.createElement('button');
+  continueButton.type = 'button';
+  continueButton.className = 'button button-dark report-fee-review-button';
+  continueButton.textContent = 'Continue · ₹300 (preview)';
+  continueButton.addEventListener('click', () => {
+    const availability = document.createElement('span');
+    availability.textContent = 'A report provider and payment service are not connected. No vehicle record was checked, no report was generated, and no payment was taken.';
+    continueButton.disabled = true;
+    continueButton.textContent = 'No payment taken';
+    reportResult.append(availability);
+  }, { once: true });
+  reportResult.append(heading, detail, continueButton);
   document.getElementById('record-action-grid').hidden = false;
 });
 
@@ -1443,4 +1463,5 @@ function renderComparison() {
   table.append(tbody);
   comparePanel.append(table);
 }
+
 

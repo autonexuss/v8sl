@@ -4,6 +4,7 @@ window.chassisBindPlanner?.('mileage');
 window.chassisBindPlanner?.('value');
 window.chassisBindPlanner?.('listing');
 window.chassisBindPlanner?.('garage');
+window.chassisBindPlanner?.('report');
 const emiForm = document.getElementById('emi-form');
 function calculateEmi() {
   const price = Number(document.getElementById('emi-price').value);

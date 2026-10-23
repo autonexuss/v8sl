@@ -362,9 +362,17 @@
 
   window.AutonexusAccount = { prepare, get user() { return currentUser; } };
   setMode('signin');
+  const requestedAccountMode = new URLSearchParams(window.location.search).get('autonexus-open-signin');
+  if (requestedAccountMode) {
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete('autonexus-open-signin');
+    window.history.replaceState(window.history.state, '', cleanUrl);
+    requestAnimationFrame(() => profileToggle.click());
+  }
   if (configured) {
     const start = () => prepare();
     if ('requestIdleCallback' in window) window.requestIdleCallback(start, { timeout: 3500 });
     else window.setTimeout(start, 800);
   }
 })();
+

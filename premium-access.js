@@ -22,9 +22,11 @@
     input.value = '';
     status.textContent = '';
     checkoutStatus.textContent = 'Secure checkout is not connected yet. No payment will be taken.';
-    if (!dialog.open) {
-      try { dialog.showModal(); }
-      catch { dialog.setAttribute('open', ''); }
+    try {
+      if (dialog.open && !dialog.matches(':modal')) dialog.close();
+      if (!dialog.open) dialog.showModal();
+    } catch {
+      dialog.setAttribute('open', '');
     }
     window.AutonexusAccount?.prepare();
     requestAnimationFrame(() => checkoutButton.focus({ preventScroll: true }));
@@ -33,9 +35,9 @@
   document.addEventListener('click', event => {
     const target = event.target;
     const link = target instanceof Element
-      ? target.closest('.premium-feature-grid a[href^="#"], .glass-nav-group--pro a[href^="#"]')
+      ? target.closest('#premium-features a[href^="#"], .premium-feature-grid a[href^="#"], .glass-nav-group--pro a[href^="#"]')
       : null;
-    if (!link || hasSessionAccess()) return;
+    if (!link || link.hash === '#service-report' || hasSessionAccess()) return;
 
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -66,3 +68,4 @@
     if (event.target === dialog) dialog.close('backdrop');
   });
 })();
+

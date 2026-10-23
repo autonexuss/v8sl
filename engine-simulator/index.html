@@ -233,7 +233,7 @@
 .anx-dialog h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
 .anx-dialog dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: center; margin-bottom: 16px; }
 .anx-dialog dt { white-space: nowrap; } .anx-dialog dd { color: var(--anx-muted); }
-.anx-license-dialog { margin: auto; width: min(680px, calc(100% - 24px)); max-height: min(90vh, 820px); overflow: auto; padding: 24px; border: 1px solid var(--anx-line-2); border-radius: 16px; background: var(--anx-panel); color: var(--anx-text); font-family: "Autonexus Inter", Arial, sans-serif; }
+.anx-license-dialog { position: fixed; inset: 50% auto auto 50%; translate: -50% -50%; margin: 0; width: min(680px, calc(100vw - 24px)); max-height: min(90dvh, 820px); overflow: auto; padding: 24px; border: 1px solid var(--anx-line-2); border-radius: 16px; background: var(--anx-panel); color: var(--anx-text); font-family: "Autonexus Inter", Arial, sans-serif; }
 .anx-license-dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
 .anx-license-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
 .anx-license-eyebrow { color: var(--anx-accent); font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
@@ -246,6 +246,7 @@
 .anx-license-plan > strong small { color: var(--anx-muted); font-size: 11px; font-weight: 500; }
 .anx-license-plan p { min-height: 38px; margin: 0; color: var(--anx-muted); font-size: 11px; line-height: 1.55; }
 .anx-license-plan .anx-btn { width: 100%; min-height: 38px; height: auto; white-space: normal; }
+.anx-license-account-link { text-decoration: none; }
 .anx-license-note { margin: 10px 0 18px; padding: 10px 12px; border-left: 2px solid var(--anx-accent); background: rgba(202, 38, 49, .08); }
 .anx-license-key { display: grid; gap: 9px; padding-top: 15px; border-top: 1px solid var(--anx-line); }
 .anx-license-key label { font-size: 11px; font-weight: 700; }
@@ -1458,8 +1459,8 @@ const TEMPLATE = '' +
 '  <div class="anx-license-head"><div><div class="anx-license-eyebrow">Autonexus Engine Simulator · Pro</div><h3 id="anx-license-title-{{id}}">Unlock the full engine lab.</h3></div><button type="button" class="anx-license-close" data-ref="licenseClose" aria-label="Close licence options">×</button></div>' +
 '  <p class="anx-license-lead" data-ref="licenseLead">This engine or editable specifications require a simulator licence.</p>' +
 '  <div class="anx-license-plans" aria-label="Simulator licence options">' +
-'   <section class="anx-license-plan"><span>Personal licence</span><strong>₹1,500 <small>/ year</small></strong><p>For one person using the full simulator and every engine profile.</p><button type="button" class="anx-btn anx-primary" data-ref="licensePersonal">Choose personal licence</button></section>' +
-'   <section class="anx-license-plan"><span>Educational licence</span><strong>₹25,000 <small>/ year</small></strong><p>For educational use with multiple user logins under one licence.</p><button type="button" class="anx-btn anx-primary" data-ref="licenseEducation">Choose educational licence</button></section>' +
+'   <section class="anx-license-plan"><span>Personal licence</span><strong>₹1,500 <small>/ year</small></strong><p>For one person using the full simulator and every engine profile.</p><a class="anx-btn anx-primary anx-license-account-link" href="../index.html?autonexus-open-signin=personal" target="_blank" rel="noopener noreferrer">Choose personal licence ↗</a></section>' +
+'   <section class="anx-license-plan"><span>Educational licence</span><strong>₹25,000 <small>/ year</small></strong><p>For educational use with multiple user logins under one licence.</p><a class="anx-btn anx-primary anx-license-account-link" href="../index.html?autonexus-open-signin=educational" target="_blank" rel="noopener noreferrer">Choose educational licence ↗</a></section>' +
 '  </div>' +
 '  <p class="anx-license-note" data-ref="licensePlanStatus" role="status" aria-live="polite">Secure checkout is not connected. Choosing a plan will not take payment or activate a paid licence.</p>' +
 '  <form class="anx-license-key" data-ref="licenseForm"><label for="anx-license-key-{{id}}">Have a licence key?</label><div class="anx-license-key-row"><input id="anx-license-key-{{id}}" data-ref="licenseInput" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter licence key"><button type="submit" class="anx-btn anx-primary">Unlock</button></div><p class="anx-license-status" data-ref="licenseStatus" role="status" aria-live="polite"></p></form>' +
@@ -1909,8 +1910,6 @@ function mount(target, userOpts) {
     if (!hasProAccess()) { event.preventDefault(); pendingSpecs = true; pendingEngine = null; showLicenseGate('Editable engine specifications are a Pro feature. Choose a simulator licence or enter your licence key to unlock the controls.'); }
   });
   on(R.licenseClose, 'click', closeLicenseGate);
-  on(R.licensePersonal, 'click', () => { R.licensePlanStatus.textContent = 'Personal licence selected: ₹1,500 per year. Secure checkout is not connected; no payment or activation has occurred.'; });
-  on(R.licenseEducation, 'click', () => { R.licensePlanStatus.textContent = 'Educational licence selected: ₹25,000 per year for multiple user logins. Secure checkout is not connected; no payment or activation has occurred.'; });
   on(R.licenseForm, 'submit', event => {
     event.preventDefault();
     if (R.licenseInput.value.trim().toLowerCase() !== 'innotech') { R.licenseStatus.textContent = 'That licence key was not recognized.'; return; }
