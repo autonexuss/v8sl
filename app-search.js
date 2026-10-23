@@ -137,7 +137,6 @@ reportForm?.addEventListener('submit', event => {
   if (!regularRegistration && !bhRegistration) {
     reportResult.hidden = false;
     reportResult.textContent = 'Enter a valid-looking Indian vehicle registration, such as DL 8C AB 1234. The number will not be checked here.';
-    document.getElementById('record-action-grid').hidden = true;
     reportRegistration.focus();
     return;
   }
@@ -159,7 +158,6 @@ reportForm?.addEventListener('submit', event => {
     reportResult.append(availability);
   }, { once: true });
   reportResult.append(heading, detail, continueButton);
-  document.getElementById('record-action-grid').hidden = false;
 });
 
 const toast = document.getElementById('toast');
