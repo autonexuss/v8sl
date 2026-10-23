@@ -1873,11 +1873,13 @@ function mount(target, userOpts) {
   const sh = d => {
     if (!AUTO && !autoGearbox && !cp) { toast('Press and hold the clutch to shift gears'); return false; }
     const n = Math.max(-1, Math.min((E.G || DG).length, gear + d));
+    if (n === -1 && Math.abs(v) > .5) { toast('Stop before selecting reverse'); return false; }
     if (n != gear) { gear = n; cd = .3; }
     return true;
   };
   const selectGear = target => {
     if (!AUTO && !autoGearbox && !cp) { toast('Press and hold the clutch to shift gears'); return false; }
+    if (target === -1 && gear !== -1 && Math.abs(v) > .5) { toast('Stop before selecting reverse'); return false; }
     const maxGear = (E.G || DG).length;
     if (target > maxGear) { toast('This engine has only ' + maxGear + ' forward gears'); return false; }
     if (target !== gear) { gear = target; cd = .3; }
