@@ -1493,6 +1493,16 @@ function mount(target, userOpts) {
   const DG = [3.6, 2.2, 1.5, 1.1, .85, .7];
   const curve = (r, g) => { const x = r < g.pk ? (g.pk - r) / g.pk : (r - g.pk) / (g.rl - g.pk); return Math.max(.12, 1 - (r < g.pk ? .6 : .55) * x * x); };
   function step(dt) {
+    // Physics-level interlock: never apply reverse torque against forward road speed.
+    // This catches any alternate gear-selection path before force integration.
+    if (gear === -1 && v > .5) {
+      gear = 0;
+      autoShiftTarget = 0;
+      autoShiftRpmCeiling = 0;
+      autoShiftTimer = 0;
+      autoShiftDuration = 0;
+      toast('Reverse cancelled: stop before selecting reverse');
+    }
     const g = E, f = rpm / g.rl;
     const smallEngine = g.cat === 'Inline & boxer' || g.cat === 'Small & bike';
     const vis = 1 + Math.max(0, 60 - Tc) * .025;            // cold oil is thick: more friction
