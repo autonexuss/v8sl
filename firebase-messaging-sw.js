@@ -10,17 +10,17 @@ if (self.CHASSIS_FIREBASE_CONFIG?.apiKey && self.CHASSIS_FIREBASE_CONFIG?.projec
     self.registration.showNotification(notification.title || 'Autonexus update', {
       body: notification.body || 'Open Autonexus to see the latest update.',
       icon: new URL('./assets/autonexus-icon.png', self.registration.scope).href,
-      data: { link: payload.fcmOptions?.link || 'https://v8sl-grg.github.io/v8sl/' }
+      data: { link: payload.fcmOptions?.link || 'https://autonexuss.github.io/v8sl/' }
     });
   });
 }
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const destination = event.notification.data?.link || 'https://v8sl-grg.github.io/v8sl/';
+  const destination = event.notification.data?.link || 'https://autonexuss.github.io/v8sl/';
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
     for (const client of clients) {
-      if ('focus' in client && client.url.startsWith('https://v8sl-grg.github.io/v8sl/')) {
+      if ('focus' in client && client.url.startsWith('https://autonexuss.github.io/v8sl/')) {
         client.navigate(destination);
         return client.focus();
       }

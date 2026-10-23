@@ -12,7 +12,7 @@ The site uses Firebase Authentication's free email/password provider. Firebase s
 
 1. In Firebase, open **Authentication → Sign-in method**.
 2. Enable **Email/Password**.
-3. Open **Authentication → Settings → Authorized domains** and add `v8sl-grg.github.io`.
+3. Open **Authentication → Settings → Authorized domains** and add `autonexuss.github.io`.
 4. In **Authentication → Templates**, confirm the verification-email and password-reset templates are enabled and use your preferred sender name.
 
 ## 3. Add the public web config

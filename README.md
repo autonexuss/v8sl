@@ -1,7 +1,7 @@
 Warning: fs was declared with const; use let for reassignable variables.
 # Autonexus
 
-Autonexus is an independent car-discovery and ownership website: <https://v8sl-grg.github.io/v8sl/>. GitHub Actions publishes the `main` branch to GitHub Pages. This project is a static site and does not require Firebase or billing to serve its current features.
+Autonexus is an independent car-discovery and ownership website: <https://autonexuss.github.io/v8sl/>. GitHub Actions publishes the `main` branch to GitHub Pages. This project is a static site and does not require Firebase or billing to serve its current features.
 
 ## Homepage and 3D feature panels
 

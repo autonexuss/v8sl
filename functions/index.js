@@ -150,9 +150,9 @@ exports.notifyListingInterest = onDocumentCreated({
     data: {
       title: 'Someone is interested in your Autonexus listing',
       body: `${listing.year} ${listing.make} ${listing.model} · open Autonexus to view their contact details`,
-      link: 'https://v8sl-grg.github.io/v8sl/#ownership-tools'
+      link: 'https://autonexuss.github.io/v8sl/#ownership-tools'
     },
-    webpush: { fcmOptions: { link: 'https://v8sl-grg.github.io/v8sl/#ownership-tools' } }
+    webpush: { fcmOptions: { link: 'https://autonexuss.github.io/v8sl/#ownership-tools' } }
   });
 });
 
@@ -184,9 +184,9 @@ exports.notifyDueReminders = onSchedule({
       data: {
         title: 'An Autonexus reminder is due',
         body: ready.slice(0, 3).map(item => `${item.type}${item.title ? ` · ${item.title}` : ''}`).join(' / '),
-        link: 'https://v8sl-grg.github.io/v8sl/#private-reminders'
+        link: 'https://autonexuss.github.io/v8sl/#private-reminders'
       },
-      webpush: { fcmOptions: { link: 'https://v8sl-grg.github.io/v8sl/#private-reminders' } }
+      webpush: { fcmOptions: { link: 'https://autonexuss.github.io/v8sl/#private-reminders' } }
     });
     const invalid = [];
     response.responses.forEach((result, index) => {
