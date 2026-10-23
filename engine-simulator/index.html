@@ -233,6 +233,27 @@
 .anx-dialog h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
 .anx-dialog dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; align-items: center; margin-bottom: 16px; }
 .anx-dialog dt { white-space: nowrap; } .anx-dialog dd { color: var(--anx-muted); }
+.anx-license-dialog { margin: auto; width: min(680px, calc(100% - 24px)); max-height: min(90vh, 820px); overflow: auto; padding: 24px; border: 1px solid var(--anx-line-2); border-radius: 16px; background: var(--anx-panel); color: var(--anx-text); font-family: "Autonexus Inter", Arial, sans-serif; }
+.anx-license-dialog::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(4px); }
+.anx-license-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+.anx-license-eyebrow { color: var(--anx-accent); font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.anx-license-dialog h3 { margin: 8px 0 0; font-size: clamp(21px, 4vw, 29px); line-height: 1.15; }
+.anx-license-lead, .anx-license-note, .anx-license-status { color: var(--anx-muted); font-size: 12px; line-height: 1.6; }
+.anx-license-plans { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 20px 0 8px; }
+.anx-license-plan { display: grid; align-content: start; gap: 10px; padding: 16px; border: 1px solid var(--anx-line); border-radius: 12px; background: var(--anx-panel-2); }
+.anx-license-plan > span { color: var(--anx-accent); font-size: 9px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.anx-license-plan > strong { font-size: 22px; line-height: 1; }
+.anx-license-plan > strong small { color: var(--anx-muted); font-size: 11px; font-weight: 500; }
+.anx-license-plan p { min-height: 38px; margin: 0; color: var(--anx-muted); font-size: 11px; line-height: 1.55; }
+.anx-license-plan .anx-btn { width: 100%; min-height: 38px; height: auto; white-space: normal; }
+.anx-license-note { margin: 10px 0 18px; padding: 10px 12px; border-left: 2px solid var(--anx-accent); background: rgba(202, 38, 49, .08); }
+.anx-license-key { display: grid; gap: 9px; padding-top: 15px; border-top: 1px solid var(--anx-line); }
+.anx-license-key label { font-size: 11px; font-weight: 700; }
+.anx-license-key-row { display: flex; gap: 8px; }
+.anx-license-key input { min-width: 0; flex: 1; height: 38px; padding: 0 11px; border: 1px solid var(--anx-line-2); border-radius: 8px; background: var(--anx-panel-2); color: var(--anx-text); font: inherit; }
+.anx-license-status { min-height: 1.5em; margin: 0; }
+.anx-license-close { flex: 0 0 auto; width: 34px; height: 34px; border: 1px solid var(--anx-line); border-radius: 50%; background: var(--anx-panel-2); color: var(--anx-text); font-size: 20px; cursor: pointer; }
+@container anx (max-width: 560px) { .anx-license-dialog { padding: 18px; } .anx-license-plans { grid-template-columns: 1fr; } .anx-license-plan p { min-height: 0; } }
 
 /* ------------------------------------------------------------ responsive */
 @container anx (max-width: 1180px) {
@@ -1433,13 +1454,25 @@ const TEMPLATE = '' +
 '  <dt><kbd>N</kbd></dt><dd>Neutral</dd><dt><kbd>M</kbd></dt><dd>Mute</dd><dt><kbd>R</kbd></dt><dd>Reset all inputs</dd><dt><kbd>F</kbd></dt><dd>Fullscreen</dd>' +
 '  <dt>Mouse / touch</dt><dd>Drag the 3D view to orbit; Ctrl + wheel or the +/- buttons to zoom</dd></dl>' +
 '  <button type="button" class="anx-btn anx-primary" data-ref="dlgClose">Close</button></dialog>' +
+' <dialog class="anx-license-dialog" data-ref="licenseDlg" aria-labelledby="anx-license-title-{{id}}">' +
+'  <div class="anx-license-head"><div><div class="anx-license-eyebrow">Autonexus Engine Simulator · Pro</div><h3 id="anx-license-title-{{id}}">Unlock the full engine lab.</h3></div><button type="button" class="anx-license-close" data-ref="licenseClose" aria-label="Close licence options">×</button></div>' +
+'  <p class="anx-license-lead" data-ref="licenseLead">This engine or editable specifications require a simulator licence.</p>' +
+'  <div class="anx-license-plans" aria-label="Simulator licence options">' +
+'   <section class="anx-license-plan"><span>Personal licence</span><strong>₹1,500 <small>/ year</small></strong><p>For one person using the full simulator and every engine profile.</p><button type="button" class="anx-btn anx-primary" data-ref="licensePersonal">Choose personal licence</button></section>' +
+'   <section class="anx-license-plan"><span>Educational licence</span><strong>₹25,000 <small>/ year</small></strong><p>For educational use with multiple user logins under one licence.</p><button type="button" class="anx-btn anx-primary" data-ref="licenseEducation">Choose educational licence</button></section>' +
+'  </div>' +
+'  <p class="anx-license-note" data-ref="licensePlanStatus" role="status" aria-live="polite">Secure checkout is not connected. Choosing a plan will not take payment or activate a paid licence.</p>' +
+'  <form class="anx-license-key" data-ref="licenseForm"><label for="anx-license-key-{{id}}">Have a licence key?</label><div class="anx-license-key-row"><input id="anx-license-key-{{id}}" data-ref="licenseInput" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter licence key"><button type="submit" class="anx-btn anx-primary">Unlock</button></div><p class="anx-license-status" data-ref="licenseStatus" role="status" aria-live="polite"></p></form>' +
+' </dialog>' +
 '</div>';
 
 /* ========================================================================== *
  * 6. MOUNT  (one closure per simulator instance; several can live on a page)
  * ========================================================================== */
 let uid = 0;
-const DEFAULTS = { engine: 'd8', sound: 1, volume: 70, ambient: 20, keyboard: 'engaged', persist: true, storageKey: 'autonexus.engineSim.v1', workletUrl: '', autoOrbit: true };
+const PRO_ENGINES = new Set(['t8', 'g8', 'i6', 'vt']);
+const PRO_SESSION_KEY = 'autonexus-engine-pro-session-v1';
+const DEFAULTS = { engine: 't8', sound: 1, volume: 70, ambient: 20, keyboard: 'engaged', persist: true, storageKey: 'autonexus.engineSim.v1', workletUrl: '', autoOrbit: true };
 const KEYS = { thr: ['KeyW'], brk: ['KeyS'] };
 
 function mount(target, userOpts) {
@@ -1454,10 +1487,17 @@ function mount(target, userOpts) {
     set(p) { try { if (o.persist) global.localStorage.setItem(o.storageKey, JSON.stringify(Object.assign(store.get(), p))); } catch (e) {} },
     clear() { try { global.localStorage.removeItem(o.storageKey); } catch (e) {} }
   };
+  let unlockedForPage = false;
+  const hasProAccess = () => {
+    if (unlockedForPage) return true;
+    try { return global.sessionStorage.getItem(PRO_SESSION_KEY) === '1'; } catch (e) { return false; }
+  };
+  const canUseEngine = k => PRO_ENGINES.has(k) || hasProAccess();
   const saved = store.get();
   const pick = (k, ok) => (uo[k] !== undefined ? uo[k] : saved[k] !== undefined && ok(saved[k]) ? saved[k] : o[k]);
-  const startEngine = ENG[o.engine] ? o.engine : 'd8';
-  const init = { engine: ENG[pick('engine', k => !!ENG[k])] ? pick('engine', k => !!ENG[k]) : startEngine, sound: pick('sound', v => v >= 0 && v <= 3), volume: pick('volume', v => v >= 0 && v <= 100), ambient: clamp(+pick('ambient', v => v >= -40 && v <= 55), -40, 55) };
+  const requestedEngine = pick('engine', k => !!ENG[k] && canUseEngine(k));
+  const startEngine = ENG[o.engine] && canUseEngine(o.engine) ? o.engine : 't8';
+  const init = { engine: ENG[requestedEngine] && canUseEngine(requestedEngine) ? requestedEngine : startEngine, sound: pick('sound', v => v >= 0 && v <= 3), volume: pick('volume', v => v >= 0 && v <= 100), ambient: clamp(+pick('ambient', v => v >= -40 && v <= 55), -40, 55) };
 
   const id = ++uid;
   host.classList.add('anx-sim'); host.innerHTML = TEMPLATE.replace(/\{\{id\}\}/g, id);
@@ -1751,7 +1791,7 @@ function mount(target, userOpts) {
 
   /* ---------- engine selection + specs ---------- */
   const cats = []; for (const k in ENG) { if (cats.indexOf(ENG[k].cat) < 0) cats.push(ENG[k].cat); }
-  cats.forEach(c => { const og = document.createElement('optgroup'); og.label = c; for (const k in ENG) if (ENG[k].cat === c) { const op = document.createElement('option'); op.value = k; op.textContent = ENG[k].name; og.appendChild(op); } R.eng.appendChild(og); });
+  cats.forEach(c => { const og = document.createElement('optgroup'); og.label = c; for (const k in ENG) if (ENG[k].cat === c) { const op = document.createElement('option'); op.value = k; op.textContent = ENG[k].name + (PRO_ENGINES.has(k) ? '' : ' · Pro'); og.appendChild(op); } R.eng.appendChild(og); });
   const SP = [
     ['Cylinders', 'n', 1, 12, 1, ''], ['Bank angle', 'V', 0, 180, 5, '°'],
     ['Bore', 'bore', 50, 130, 1, ' mm'], ['Stroke', 'stroke', 50, 130, 1, ' mm'],
@@ -1843,12 +1883,50 @@ function mount(target, userOpts) {
     if (R.dsp) R.dsp.textContent = E.disp.toFixed(2) + ' L';
     updateInfo(); pushEngine(); if (view) view.setEngine(E); dynoDirty = true;
   }
+  let pendingEngine = null, pendingSpecs = false;
+  function showLicenseGate(reason) {
+    R.licenseLead.textContent = reason || 'This engine or editable specifications require a simulator licence.';
+    R.licenseStatus.textContent = '';
+    if (R.licenseDlg.showModal) { if (!R.licenseDlg.open) R.licenseDlg.showModal(); }
+    else R.licenseDlg.setAttribute('open', '');
+  }
+  function closeLicenseGate() { if (R.licenseDlg.close) R.licenseDlg.close(); else R.licenseDlg.removeAttribute('open'); }
   function setEngine(k, quiet) {
     if (!ENG[k]) return;
+    if (!canUseEngine(k)) {
+      pendingEngine = k;
+      R.eng.value = engKey;
+      showLicenseGate(`${ENG[k].name} is a Pro engine. Choose a simulator licence or enter your licence key to unlock it.`);
+      return;
+    }
     engKey = k; E = { ...ENG[k], JScale: 1 }; state = 0; startCatchT = 1; startCatchFrom = 0; knk = 0; rpm = 0; v = 0; gear = 0; bst = 0; msg = 'OFF'; dyn = null; cut = 0; hist.length = 0; spMax = 200; R.eng.value = k;
     E.stockHP = estimate().hp; buildSpecs(); recompute(); buildPips(); store.set({ engine: k }); setText(R.pkP, '-'); setText(R.pkT, '-');
     if (!quiet) emit('engine', { key: k, name: ENG[k].name });
   }
+  const specsDetails = R.spec.closest('details');
+  const specsSummary = specsDetails && specsDetails.querySelector('summary');
+  if (specsSummary) on(specsSummary, 'click', event => {
+    if (!hasProAccess()) { event.preventDefault(); pendingSpecs = true; pendingEngine = null; showLicenseGate('Editable engine specifications are a Pro feature. Choose a simulator licence or enter your licence key to unlock the controls.'); }
+  });
+  on(R.licenseClose, 'click', closeLicenseGate);
+  on(R.licensePersonal, 'click', () => { R.licensePlanStatus.textContent = 'Personal licence selected: ₹1,500 per year. Secure checkout is not connected; no payment or activation has occurred.'; });
+  on(R.licenseEducation, 'click', () => { R.licensePlanStatus.textContent = 'Educational licence selected: ₹25,000 per year for multiple user logins. Secure checkout is not connected; no payment or activation has occurred.'; });
+  on(R.licenseForm, 'submit', event => {
+    event.preventDefault();
+    if (R.licenseInput.value.trim().toLowerCase() !== 'innotech') { R.licenseStatus.textContent = 'That licence key was not recognized.'; return; }
+    unlockedForPage = true;
+    try { global.sessionStorage.setItem(PRO_SESSION_KEY, '1'); } catch (e) { /* Unlock remains available for this page session. */ }
+    R.licenseInput.value = '';
+    R.licensePlanStatus.textContent = 'Simulator features unlocked for this browser tab session.';
+    R.licenseStatus.textContent = '';
+    const engineToOpen = pendingEngine;
+    const openSpecs = pendingSpecs;
+    pendingEngine = null; pendingSpecs = false;
+    closeLicenseGate();
+    if (engineToOpen) setEngine(engineToOpen);
+    if (openSpecs && specsDetails) specsDetails.open = true;
+  });
+  on(R.licenseDlg, 'click', event => { if (event.target === R.licenseDlg) closeLicenseGate(); });
   on(R.eng, 'change', () => { setEngine(R.eng.value); R.eng.blur(); });
   const keys = Object.keys(ENG);
   on(R.prevEng, 'click', e => { setEngine(keys[(keys.indexOf(engKey) + keys.length - 1) % keys.length]); e.currentTarget.blur(); });
@@ -2152,3 +2230,4 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 </script>
 <script>AutonexusEngineSimulator.mount('#autonexus-sim',{keyboard:'always'});</script>
 </body></html>
+

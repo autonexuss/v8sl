@@ -317,16 +317,44 @@ document.getElementById('service-form').addEventListener('submit', event => {
 const reminderKey = 'chassis-private-reminders-v2';
 const reminderForm = document.getElementById('reminder-form');
 const reminderList = document.getElementById('reminder-list');
+const reminderCount = document.getElementById('reminder-count');
 const reminderNotifyButton = document.getElementById('enable-reminder-notifications');
+const insuranceRenewalLinks = [
+  { name: 'ACKO', href: 'https://www.acko.com/car-insurance/' },
+  { name: 'HDFC ERGO', href: 'https://www.hdfcergo.com/car-insurance' },
+  { name: 'ICICI Lombard', href: 'https://www.icicilombard.com/renew-policy-online' }
+];
+function reminderDaysRemaining(dateValue) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue || '')) return null;
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const [todayYear, todayMonth, todayDay] = localToday().split('-').map(Number);
+  const due = Date.UTC(year, month - 1, day), today = Date.UTC(todayYear, todayMonth - 1, todayDay);
+  return Math.round((due - today) / 86400000);
+}
 function renderReminders() {
   const entries = readLocalList(reminderKey);
   reminderList.replaceChildren();
+  reminderCount.textContent = `${entries.length} reminder${entries.length === 1 ? '' : 's'} saved on this device.`;
   entries.forEach((entry, index) => {
-    const row = document.createElement('div'); row.className = `private-item reminder-item${entry.date <= localToday() ? ' is-due' : ''}`;
-    const text = document.createElement('span'); text.textContent = `${entry.date} · ${entry.type}${entry.title ? ` · ${entry.title}` : ''}${entry.date <= localToday() ? ' · DUE' : ''}`;
+    const daysRemaining = reminderDaysRemaining(entry.date);
+    const isDue = daysRemaining !== null && daysRemaining <= 0;
+    const row = document.createElement('div'); row.className = `private-item reminder-item${isDue ? ' is-due' : ''}`;
+    const content = document.createElement('div'); content.className = 'reminder-item-content';
+    const text = document.createElement('span'); text.textContent = `${entry.date} · ${entry.type}${entry.title ? ` · ${entry.title}` : ''}${isDue ? ' · DUE' : ''}`;
+    content.append(text);
+    if (entry.type === 'Insurance renewal' && daysRemaining !== null && daysRemaining >= 0 && daysRemaining < 10) {
+      const renewalNotice = document.createElement('p'); renewalNotice.className = 'reminder-renewal-notice';
+      renewalNotice.textContent = daysRemaining === 0 ? 'Insurance renewal is due today. Please renew before your policy expires:' : `Insurance expires in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}. Please renew before it expires:`;
+      const links = document.createElement('div'); links.className = 'reminder-renewal-links';
+      insuranceRenewalLinks.forEach(insurer => {
+        const link = document.createElement('a'); link.href = insurer.href; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        link.textContent = `Visit ${insurer.name} ↗`; link.setAttribute('aria-label', `Open ${insurer.name} car insurance in a new tab`); links.append(link);
+      });
+      content.append(renewalNotice, links);
+    }
     const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = 'Remove'; remove.setAttribute('aria-label', 'Remove saved reminder');
     remove.addEventListener('click', () => { const next = readLocalList(reminderKey); next.splice(index, 1); syncPrivateList('reminders', next); renderReminders(); });
-    row.append(text, remove); reminderList.append(row);
+    row.append(content, remove); reminderList.append(row);
   });
   if (!entries.length) { const empty = document.createElement('small'); empty.textContent = 'Nothing saved yet.'; reminderList.append(empty); }
 }
@@ -487,3 +515,4 @@ garageForm.addEventListener('submit', event => {
 });
 renderPrivateList(serviceKey, 'service-list', ['date', 'odometer', 'note']);
 renderReminders(); renderGarage();
+
